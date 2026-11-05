@@ -6,7 +6,8 @@ import { prisma } from "@/server/db/prisma";
 import { RecurringClient } from "./recurring-client";
 import { PageTutorial } from "@/components/dashboard/page-tutorial";
 import { DASHBOARD_PERMISSIONS } from "@/core/permissions";
-import { hasBusinessPermission } from "@/server/services/permissions.service";
+import { hasBusinessPermission, getEffectiveBusinessPermissions } from "@/server/services/permissions.service";
+import { redactPrivateData } from "@/server/services/private-data";
 import { getCountryConfig } from "@/core/countries";
 
 export const dynamic = "force-dynamic";
@@ -23,6 +24,7 @@ export default async function RecurringPage() {
   const country = getCountryConfig(business.countryCode);
 
   const agendaScope = await getStaffAgendaScope(user, business);
+  const permissions = await getEffectiveBusinessPermissions(user, business);
   const scopedStaffFilter = agendaScope.canSeeAllAgendas
     ? {}
     : { staffId: agendaScope.staffId ?? "__no_staff_access__" };
@@ -46,7 +48,7 @@ export default async function RecurringPage() {
     },
   });
 
-  const serialized = bookings.map((b) => ({
+  const serialized = bookings.map((b) => redactPrivateData({
     id: b.id,
     status: b.status as string,
     customerName: b.customerName,
@@ -85,7 +87,7 @@ export default async function RecurringPage() {
       requestedByClient: o.requestedByClient,
       createdAt: o.createdAt.toISOString(),
     })),
-  }));
+  }, permissions, agendaScope.ownStaffId));
 
   return (
     <div className="space-y-6">

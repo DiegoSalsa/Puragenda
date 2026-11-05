@@ -8,7 +8,7 @@ import {
 const clientListInclude = {
   _count: {
     select: {
-      appointments: { where: { status: "CHECKED_IN" as const } },
+      appointments: { where: { status: "COMPLETED" as const } },
     },
   },
   recurringBookings: {

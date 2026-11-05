@@ -4,7 +4,14 @@ import { getCurrentSessionUser } from "@/server/auth/user-session";
 import { getBusinessForUser } from "@/server/services/business.service";
 import { getBusinessHours } from "@/server/services/businessHours.service";
 import { prisma } from "@/server/db/prisma";
+import { CommercialTrialPanel } from "@/components/dashboard/commercial-trial-panel";
+import { CommercialSubscriptionPanel } from "@/components/dashboard/commercial-subscription-panel";
+import { CommercialUsagePanel } from "@/components/dashboard/commercial-usage-panel";
+import { getCommercialPlanAccess, isRegistrationV2Contract, isV2Plan } from "@/server/services/commercial-plan-access";
+import { hasOperationalSubscriptionAccess } from "@/core/subscription-access";
 import { PRICING } from "@/core/constants";
+import { contractedProfessionalsLabel } from "@/core/commercial-display";
+import { getStaffLimit } from "@/core/subscription-plan";
 import Link from "next/link";
 import { LATEST_CHANGELOG_VERSION } from "@/config/changelog";
 import { Key, Link2, Code2, Clock, Store, ImageIcon, MapPin, Crown, CheckCircle2, AlertCircle, CreditCard, Banknote, RefreshCw, Sparkles, Package, CalendarRange, Globe2 } from "@/components/icons/hover-icons";
@@ -40,6 +47,7 @@ import {
   isMercadoPagoCurrencyCompatible,
 } from "@/core/countries";
 import { getMercadoPagoOAuthConfig } from "@/server/services/mercadopago-oauth.service";
+import { getWidgetUrl } from "@/server/booking/widget-url";
 
 export const dynamic = "force-dynamic";
 
@@ -68,26 +76,20 @@ export default async function SettingsPage({ searchParams }: { searchParams: Pro
   const mpConnectedSuccess = params.mp_connected === "true";
   const mpError = params.mp_error;
 
-  const isProduction = process.env.NODE_ENV === "production";
-  const widgetUrl = isProduction
-    ? `https://www.puragenda.cl/widget/${business.slug}`
-    : `http://localhost:3000/widget/${business.slug}`;
+  const widgetUrl = getWidgetUrl(business.slug);
   const iframeCode = `<iframe src="${widgetUrl}" width="100%" height="700" frameborder="0" style="border-radius: 16px; border: 1px solid #222;"></iframe>`;
 
-  const planName = subscription?.plan === "EQUIPO" ? "Equipo" : "Individual";
+  const commercialAccess = await getCommercialPlanAccess(business.id);
+  const contract = commercialAccess.v2 ? commercialAccess.snapshot : null;
+  const planName = contract ? (contract.planCode === "PURAGENDA_PLUS" ? "Puragenda+" : "Puragenda") : "Puragenda";
   const isManualTransfer = subscription?.paymentMethod === "BANK_TRANSFER";
-  const planPrice = isManualTransfer && subscription.customMonthlyPriceClp != null
+  const planPrice = contract?.totalPriceClp ?? (subscription?.recurringPriceOverrideClp ?? (isManualTransfer && subscription.customMonthlyPriceClp != null
     ? subscription.customMonthlyPriceClp
-    : subscription?.plan === "EQUIPO" ? PRICING.EQUIPO.monthly : PRICING.INDIVIDUAL.monthly;
-  const isActive = subscription?.status === "ACTIVE";
+    : subscription?.plan === "EQUIPO" ? PRICING.EQUIPO.monthly : PRICING.INDIVIDUAL.monthly));
+  const isActive = hasOperationalSubscriptionAccess(subscription) && !subscription?.isTrial;
   const isTrial = subscription?.isTrial ?? false;
   const showUpgrade =
-    !isManualTransfer &&
-    business.countryCode === "CL" &&
-    subscription?.status !== "PAST_DUE" &&
-    (!subscription ||
-      subscription.plan === "INDIVIDUAL" ||
-      (subscription.plan === "EQUIPO" && isTrial));
+    business.ownerId === user.id && subscription?.plan !== "PURAGENDA_PLUS";
 
   const isMpConnected = !!business.mpAccessToken;
   const region = getCountryConfig(business.countryCode);
@@ -102,6 +104,7 @@ export default async function SettingsPage({ searchParams }: { searchParams: Pro
 
   return (
     <div className="min-w-0 max-w-full overflow-x-hidden space-y-8">
+      {commercialAccess.v2 && <CommercialUsagePanel />}
       <div>
         <h1 className="text-3xl font-bold tracking-tight"><LocalizedText id="u1BxN-NjE3kV" /></h1>
         <p className="mt-1 text-muted-foreground"><LocalizedText id="M-ZrZLBNmuDs" /></p>
@@ -189,14 +192,19 @@ export default async function SettingsPage({ searchParams }: { searchParams: Pro
                 )}
               </div>
               <p className="text-sm text-muted-foreground">
-                {business.countryCode === "CL"
+                {contract ? `$${planPrice.toLocaleString("es-CL")} CLP/${contract.billingCycle === "ANNUAL" ? "año · 2 meses gratis" : "mes"} · IVA incluido` : business.countryCode === "CL"
                   ? `$${planPrice.toLocaleString("es-CL")} CLP/mes`
                   : subscription?.plan === "EQUIPO" ? "USD 32,99/mes base" : "USD 13,99/mes base"}
                   {isManualTransfer && " · IVA incluido · Transferencia bancaria"}
-                {subscription?.currentPeriodEnd && (
+                {contract?.status === "TRIALING" && contract.trialEnd ? (
+                  <> · Prueba hasta el {contract.trialEnd.toLocaleDateString("es-CL", { timeZone: "America/Santiago" })}</>
+                ) : contract?.periodEnd ? (
+                  <> · Acceso pagado hasta el {contract.periodEnd.toLocaleDateString("es-CL", { timeZone: "America/Santiago" })}</>
+                ) : !contract && subscription?.currentPeriodEnd && (
                   <> <LocalizedText id="U34Bfej7YVY-" /> {new Date(subscription.currentPeriodEnd).toLocaleDateString("es-CL")}</>
                 )}
               </p>
+              <p className="text-sm text-muted-foreground">{contractedProfessionalsLabel(contract?.professionalTotal ?? getStaffLimit(subscription))}</p>
             </div>
             {showUpgrade && (
               <div className="w-full sm:w-auto sm:min-w-[220px]">
@@ -204,6 +212,8 @@ export default async function SettingsPage({ searchParams }: { searchParams: Pro
               </div>
             )}
           </div>
+          {contract && isV2Plan(contract.planCode) && contract.status === "TRIALING" && contract.trialEnd && <CommercialTrialPanel plan={contract.planCode as "PURAGENDA" | "PURAGENDA_PLUS"} professionalTotal={contract.professionalTotal} billingCycle={contract.billingCycle} trialEnd={contract.trialEnd.toISOString()} billingLocked={!!contract.externalSubscriptionId && contract.renewalCancellationStatus !== "CANCELLED_VERIFIED"} />}
+          {contract && isV2Plan(contract.planCode) && business.ownerId === user.id && <CommercialSubscriptionPanel />}
         </div>
 
         {/* ── Mercado Pago Connection ── */}
@@ -253,6 +263,7 @@ export default async function SettingsPage({ searchParams }: { searchParams: Pro
             <Globe2 className="h-4 w-4 text-brand-foreground" /> <LocalizedText id="AzILVqHZj-3Z" />
           </div>
           <BusinessCountryEditor
+            registrationV2={isRegistrationV2Contract(commercialAccess.snapshot)}
             initialCountryCode={business.countryCode}
             initialTimezone={business.timezone}
             initialCurrencyCode={business.currencyCode}
@@ -316,7 +327,7 @@ export default async function SettingsPage({ searchParams }: { searchParams: Pro
           />
         </div>
 
-        <div id="schedule-overrides" className="rounded-2xl border border-border bg-card p-6">
+        <div data-tour="schedule-overrides" id="schedule-overrides" className="rounded-2xl border border-border bg-card p-6">
           <div className="mb-4 flex items-center gap-2 text-sm font-medium">
             <CalendarRange className="h-4 w-4 text-brand-foreground" /> <LocalizedText id="1cGLUQ-u54FK" />
           </div>

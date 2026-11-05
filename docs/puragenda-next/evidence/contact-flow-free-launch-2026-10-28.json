@@ -1,0 +1,154 @@
+{
+  "capturedAt": "2026-10-28T22:23:09.207Z",
+  "branch": "feature/puragenda-next",
+  "status": "IMPLEMENTED_NOT_ACTIVATED",
+  "productionActivationApplied": false,
+  "remoteAccountMutations": 0,
+  "newRealEmails": 0,
+  "planPurchases": 0,
+  "commits": 0,
+  "pushes": 0,
+  "deploys": 0,
+  "capacity": {
+    "mode": "shared_free",
+    "commercialDaily": 10,
+    "commercialMonthly": 200,
+    "transactionalDailyReserve": 40,
+    "transactionalMonthlyReserve": 1000,
+    "pollSeconds": 30,
+    "maxAgeSeconds": 60,
+    "uncertaintyStopsCommercialOnly": true,
+    "existingLedgerReused": true
+  },
+  "allowances": {
+    "paidPlus": {
+      "daily": 10,
+      "monthly": 150,
+      "campaignsPerMonth": 3,
+      "maxContactsPerCampaign": 50,
+      "recipientCooldownDays": 30
+    },
+    "trialPlus": {
+      "daily": 5,
+      "totalTrial": 30,
+      "campaignsDuringTrial": 1,
+      "maxContactsPerCampaign": 30,
+      "recipientCooldownDays": 30
+    },
+    "basic": false
+  },
+  "endpoints": {
+    "origin": "https://www.puragenda.cl",
+    "webhook": "/api/contact-flow/webhooks/resend",
+    "unsubscribe": "/contact-flow/unsubscribe",
+    "booking": "/contact-flow/r",
+    "worker": "/api/cron/puragenda-next"
+  },
+  "providerEvents": [
+    "email.sent",
+    "email.delivered",
+    "email.delivery_delayed",
+    "email.bounced",
+    "email.complained",
+    "email.failed",
+    "email.suppressed"
+  ],
+  "firstPaidPlusAlert": {
+    "source": "contact_flow_capacity_alert",
+    "eventId": "FIRST_PAID_PLUS_PRODUCTION",
+    "requires": "Confirmed reconciled V2 production Plus money",
+    "atomicUniqueInsertion": true,
+    "automaticPurchase": false
+  },
+  "tests": {
+    "checks": {
+      "typegen": 0,
+      "typecheck": 0,
+      "eslint": 0,
+      "unit": 0,
+      "postgres": 0,
+      "productionControls": 0,
+      "build": 0
+    },
+    "general": {
+      "filesPassed": 236,
+      "filesSkipped": 4,
+      "passed": 1610,
+      "skipped": 102,
+      "failed": 0
+    },
+    "postgres": {
+      "filesPassed": 10,
+      "passed": 280,
+      "skipped": 0,
+      "failed": 0,
+      "freeProductionControls": 25
+    },
+    "build": {
+      "bundler": "webpack",
+      "isolated": true,
+      "providerCredentialsPresent": false
+    },
+    "scriptPreflightWithoutOwnerInput": "Closed before external operations"
+  },
+  "preservation": {
+    "baselineFiles": 97,
+    "backupVerified": true,
+    "missingBaselineFiles": [],
+    "modifiedBaselineFiles": [
+      ".env.example",
+      "scripts/test-commercial-postgres.mjs",
+      "src/components/dashboard/puri-plus/contact-flow-lab.tsx",
+      "src/server/commercial-worker.ts",
+      "src/server/contact-flow/campaigns.ts",
+      "src/server/contact-flow/events.ts",
+      "src/server/contact-flow/providers.ts",
+      "src/server/contact-flow/resend-test.ts",
+      "src/server/contact-flow/worker.ts",
+      "src/server/contact-flow/operations.ts",
+      "src/server/contact-flow/resend-release.ts",
+      "tests/server/contact-flow-release.test.ts"
+    ],
+    "unexpectedBaselineChanges": [],
+    "transactionalUnchanged": true,
+    "originalEnvironmentUnchanged": true,
+    "mercadoPagoAndPuriBaselineFilesUnchanged": true,
+    "stagedFiles": 0
+  },
+  "security": {
+    "publicCandidatesScanned": 117,
+    "secretValuesCompared": 18,
+    "secretOccurrences": 0,
+    "ignoredCredentialFiles": true
+  },
+  "pending": [
+    "Attended Reply-To mailbox; puragenda.cl MX lookup ENODATA",
+    "Owner-authorized Next deployment and permanent commercial webhook configuration",
+    "Dedicated production sender/read credentials, secrets and bound v2 manifest",
+    "Authenticated recurring worker scheduler",
+    "Explicit production activation as part of authorized release"
+  ],
+  "limitations": [
+    "Shared finite Free capacity cannot guarantee unlimited future transactional traffic; reserves must match essential traffic",
+    "Provider metering plus conservative commitment deductions may pause commercial mail early",
+    "General suite retains 102 environment-dependent skipped tests; none in the 25 new production controls"
+  ],
+  "cleanup": {
+    "ownedPostgresStopped": true,
+    "noOtherPostgresClients": true,
+    "noTaskServersStarted": true,
+    "noTunnelsStarted": true
+  },
+  "validationLogSha256": {
+    "unit-full-final.log": "ebeb75ff41212f8659cd80ec9407202ad0a250e089c72e5d35db88e70505a98e",
+    "postgres-full-final.log": "12e1d16fd83a688ea353f10f4626f6f42987c2d7c82a241cf976734a8c07b4b8",
+    "postgres-production-final.log": "a27c4a6614c76d9d164277860b0fac414183048ff73aa230e4b4045c313d55c2",
+    "release-final.log": "30951ec0613d20a9f079da479c7dec4475f7bcc57475b20e7a2c2b0de78ebf90",
+    "typegen.log": "8b0db89a1e25137a4cb79143a4ea63ae347e6f5f2247f026d984e133255d3084",
+    "typecheck.log": "e3b0c44298fc1c149afbf4c8996fb92427ae41e4649b934ca495991b7852b855",
+    "eslint-final.log": "e3b0c44298fc1c149afbf4c8996fb92427ae41e4649b934ca495991b7852b855",
+    "eslint-release-final.log": "e3b0c44298fc1c149afbf4c8996fb92427ae41e4649b934ca495991b7852b855",
+    "build.log": "e196a1594119c09d6516291c600ac117302df37ac23f5a115aea03d26c80f9ac",
+    "preflight-closed.log": "ede65ab0ba74b27f9ec8b21f40a38985edc2f75244ea65dcbbd0b94a6f0cc05a"
+  }
+}

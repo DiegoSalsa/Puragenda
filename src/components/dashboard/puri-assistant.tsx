@@ -3,22 +3,21 @@
 import Link from "next/link";
 import { useLocale, useTranslations } from "next-intl";
 import { usePathname, useSearchParams } from "next/navigation";
-import { FormEvent, useEffect, useId, useMemo, useRef, useState } from "react";
+import { FormEvent, useCallback, useEffect, useId, useMemo, useRef, useState } from "react";
 import { createPortal } from "react-dom";
 import { ArrowUp, ChevronRight, X } from "@/components/icons/hover-icons";
 import { PuriMascot } from "@/components/brand/puri-mascot";
 import { PuriMessageText } from "@/components/dashboard/puri-message-text";
 import { track } from "@/lib/analytics/client";
 import type { PuriAnswer, PuriCard } from "@/server/puri/types";
+import { puriSessionId } from "./puri-session";
+import { useDashboardOverlay } from "./dashboard-overlay-context";
+import { CommercialUsagePanel } from "./commercial-usage-panel";
+import { commercialUsageMessage } from "@/core/commercial-usage";
 
 type Message = { role: "user" | "assistant"; content: string; answer?: PuriAnswer; failed?: boolean; responseId?: string; rating?: "positive" | "negative" };
+let impressionRecorded = false;
 
-function puriSessionId() {
-  const key = "puragenda_puri_session_id";
-  let id = window.sessionStorage.getItem(key);
-  if (!id) { id = crypto.randomUUID(); window.sessionStorage.setItem(key, id); }
-  return id;
-}
 
 function recordPuriUiEvent(event: "impression" | "opened" | "action_clicked", locationSlug?: string, actionId?: string) {
   void fetch("/api/dashboard/puri/events", { method: "POST", headers: { "Content-Type": "application/json" },
@@ -43,7 +42,9 @@ export function PuriAssistant() {
   const pathname = usePathname();
   const searchParams = useSearchParams();
   const titleId = useId();
-  const [open, setOpen] = useState(false);
+  const { activeHelp, openHelp, closeHelp } = useDashboardOverlay();
+  const open = activeHelp === "assistant";
+  const setOpen = useCallback((value: boolean) => { if (value) openHelp("assistant"); else closeHelp("assistant"); }, [openHelp, closeHelp]);
   const [messages, setMessages] = useState<Message[]>([]);
   const [input, setInput] = useState("");
   const [loading, setLoading] = useState(false);
@@ -66,6 +67,7 @@ export function PuriAssistant() {
 
   useEffect(() => {
     if (!open) return;
+    window.dispatchEvent(new Event("dashboard:overlay-open"));
     const priorOverflow = document.body.style.overflow;
     document.body.style.overflow = "hidden";
     inputRef.current?.focus();
@@ -83,21 +85,24 @@ export function PuriAssistant() {
       document.body.style.overflow = priorOverflow;
       window.removeEventListener("keydown", onKeyDown);
       requestAnimationFrame(() => {
+        if (document.querySelector('[role="dialog"][aria-labelledby="learning-title"]')) return;
         if (returnFocus?.isConnected) returnFocus.focus();
         else document.querySelector<HTMLButtonElement>(".puri-launcher")?.focus();
       });
     };
-  }, [open]);
+  }, [open, setOpen]);
 
   useEffect(() => {
     if (open && stickToBottomRef.current && scrollerRef.current) scrollerRef.current.scrollTop = scrollerRef.current.scrollHeight;
   }, [messages, loading, open]);
 
   useEffect(() => {
-    if (open || !launcherRef.current || window.sessionStorage.getItem("puragenda_puri_impression_recorded")) return;
+    if (open || !launcherRef.current || impressionRecorded) return;
+    try { if (window.sessionStorage.getItem("puragenda_puri_impression_recorded")) return; } catch { /* Optional analytics storage. */ }
     const observer = new IntersectionObserver(([entry]) => {
       if (!entry?.isIntersecting) return;
-      window.sessionStorage.setItem("puragenda_puri_impression_recorded", "1");
+      impressionRecorded = true;
+      try { window.sessionStorage.setItem("puragenda_puri_impression_recorded", "1"); } catch { /* Optional analytics storage. */ }
       recordPuriUiEvent("impression", searchParams.get("location") ?? undefined);
       observer.disconnect();
     }, { threshold: 0.5 });
@@ -108,6 +113,7 @@ export function PuriAssistant() {
   useEffect(() => {
     function handleAsk(event: Event) {
       const message = (event as CustomEvent<string>).detail;
+      if (pathname === "/dashboard/setup") { window.dispatchEvent(new CustomEvent("puri:setup-ask", { detail: message })); return; }
       returnFocusRef.current = document.activeElement instanceof HTMLElement ? document.activeElement : null;
       setOpen(true);
       track("puri_opened", { section: pathname.split("/")[2] ?? "today" });
@@ -143,14 +149,14 @@ export function PuriAssistant() {
       const payload = await response.json().catch(() => null);
       if (!response.ok) {
         const errorKey: Record<string, string> = { UNAUTHENTICATED: "authRequired", INVALID_REQUEST: "invalidRequest", RATE_LIMIT: "rateLimit", FORBIDDEN: "forbidden", NOT_CONFIGURED: "notConfigured" };
-        throw new Error(t(errorKey[payload?.code] ?? "error"));
+        throw new Error(commercialUsageMessage(payload?.code ?? "") ?? t(errorKey[payload?.code] ?? "error"));
       }
       for (const tool of payload.answer.toolsUsed ?? []) track("puri_tool_called", { tool });
       setMessages([...nextMessages, { role: "assistant", content: payload.answer.message, answer: payload.answer, responseId: payload.responseId }]);
     } catch (error) {
       track("puri_error", { stage: "request" });
       setMessages([...nextMessages, { role: "assistant", content: error instanceof Error ? error.message : t("error"), failed: true }]);
-    } finally { sendingRef.current = false; setLoading(false); }
+    } finally { sendingRef.current = false; setLoading(false); window.dispatchEvent(new Event("commercial:usage-changed")); }
   }
 
   function submit(event: FormEvent<HTMLFormElement>) { event.preventDefault(); void send(input); }
@@ -176,8 +182,10 @@ export function PuriAssistant() {
       <aside ref={panelRef} role="dialog" aria-modal="true" aria-labelledby={titleId} className="absolute inset-0 flex min-h-0 flex-col overflow-hidden border-black bg-[#FFFCF5] text-[#171717] shadow-[-7px_7px_0_#171717] sm:inset-auto sm:bottom-[max(1rem,env(safe-area-inset-bottom))] sm:right-[max(1rem,env(safe-area-inset-right))] sm:h-[min(780px,calc(100dvh-2rem))] sm:w-[min(470px,calc(100vw-2rem))] sm:rounded-[1.75rem] sm:border-[3px]">
         <header className="flex shrink-0 items-center justify-between gap-3 border-b-[3px] border-black bg-[#E9D8FF] px-4 pb-3 pt-[max(0.75rem,env(safe-area-inset-top))] sm:px-5 sm:py-3">
           <div className="flex min-w-0 items-center gap-2.5"><div className="flex h-12 w-12 shrink-0 items-center justify-center rounded-xl border-2 border-black bg-white shadow-[2px_2px_0_#171717]"><PuriMascot variant="default" compact className="h-11 w-11" /></div><div><h2 id={titleId} className="text-lg font-black leading-none">Puri</h2><p className="mt-1 text-xs font-semibold text-[#5B486C]">{t("subtitle")}</p></div></div>
+          <button type="button" data-tour="puri-learning" onClick={() => { setOpen(false); window.dispatchEvent(new Event("learning:open")); }} className="ml-auto min-h-11 rounded-lg border border-black bg-white px-3 text-xs font-bold">Guías</button>
           <button type="button" onClick={() => setOpen(false)} className="flex h-11 w-11 shrink-0 items-center justify-center rounded-xl border-2 border-black bg-white shadow-[2px_2px_0_#171717] focus-visible:outline focus-visible:outline-2 focus-visible:outline-offset-2 focus-visible:outline-[#7C3AED]" aria-label={t("close")}><X className="h-5 w-5" /></button>
         </header>
+        <div className="shrink-0 px-3 pt-3"><CommercialUsagePanel compact refreshKey={messages.length} /></div>
         <div ref={scrollerRef} onScroll={(event) => { const node = event.currentTarget; stickToBottomRef.current = node.scrollHeight - node.scrollTop - node.clientHeight < 96; }} className="min-h-0 flex-1 space-y-5 overflow-y-auto overscroll-contain px-4 py-5 sm:px-5">
           {messages.length === 0 ? <div className="space-y-5"><div className="rounded-[1.5rem] border-[3px] border-black bg-[#FFF5BA] px-5 pb-5 pt-3 shadow-[4px_4px_0_#171717]"><PuriMascot variant="greeting" className="mx-auto h-36 w-36" /><p className="text-center text-xl font-black leading-tight">{t("emptyTitle")}</p><p className="mx-auto mt-1 max-w-64 text-center text-sm font-medium leading-snug text-[#534B40]">{t("emptyBody")}</p></div><div className="grid gap-2">{suggestions.map((suggestion) => <button key={suggestion} type="button" onClick={() => void send(suggestion)} className="min-h-11 rounded-xl border-2 border-black bg-white px-3.5 py-2.5 text-left text-sm font-bold shadow-[2px_2px_0_#171717] transition hover:-translate-y-0.5 hover:bg-[#F4EBFF] focus-visible:outline focus-visible:outline-2 focus-visible:outline-offset-2 focus-visible:outline-[#7C3AED]">{suggestion}</button>)}</div></div>
           : messages.map((message, index) => <div key={index} className={message.role === "user" ? "ml-8" : "mr-2"}>
@@ -185,6 +193,7 @@ export function PuriAssistant() {
             <div role={message.failed ? "alert" : undefined} className={message.role === "user" ? "rounded-[1.15rem] rounded-br-sm border-2 border-black bg-[#7C3AED] px-4 py-3 text-sm font-medium leading-relaxed text-white shadow-[2px_2px_0_#171717]" : `rounded-[1.15rem] rounded-tl-sm border-2 border-black px-4 py-3 text-sm font-medium leading-relaxed shadow-[2px_2px_0_#171717] ${message.failed ? "bg-[#FFF5BA]" : "bg-white"}`}><PuriMessageText content={message.content} /></div>
             {message.failed && <button type="button" onClick={() => void send(messages[index - 1]?.content ?? "", true)} className="mt-2 min-h-11 rounded-lg border-2 border-black bg-white px-3 text-xs font-black shadow-[2px_2px_0_#171717] focus-visible:outline focus-visible:outline-2 focus-visible:outline-offset-2 focus-visible:outline-[#7C3AED]">{t("retry")}</button>}
             {!!message.answer?.cards?.length && <div className="mt-2 grid grid-cols-2 gap-2">{message.answer.cards.map((card, cardIndex) => <div key={cardIndex} className={`min-w-0 rounded-xl border-2 border-black p-3 shadow-[2px_2px_0_#171717] ${cardIndex % 3 === 0 ? "bg-[#FFF5BA]" : cardIndex % 3 === 1 ? "bg-[#E9D8FF]" : "bg-white"}`}><p className="break-words text-lg font-black leading-tight">{cardText(card, locale)}</p><p className="mt-1 text-[10px] font-black uppercase leading-snug tracking-[0.08em] text-[#4A355E]">{cardLabel(card, locale)}</p>{card.detail && <p className="mt-1 text-xs font-medium leading-snug text-[#534B40]">{card.detail}</p>}</div>)}</div>}
+            {!!message.answer?.guides?.length && <div className="mt-3 space-y-2">{message.answer.guides.map(guide => <Link key={guide.id} href={guide.href} onClick={() => setOpen(false)} className="inline-flex min-h-11 items-center rounded-xl border-2 border-black bg-[#E9D8FF] px-4 py-2 text-sm font-bold text-black focus-visible:outline focus-visible:outline-2 focus-visible:outline-offset-2 focus-visible:outline-[#7C3AED]">{guide.title} <ChevronRight className="ml-2 h-4 w-4" /></Link>)}</div>}
             {!!message.answer?.actions?.length && <div className="mt-3 flex flex-wrap gap-2">{message.answer.actions.map((action, actionIndex) => <Link key={action.id} href={action.href} onClick={() => { track("puri_action_clicked", { action: action.id }); recordPuriUiEvent("action_clicked", searchParams.get("location") ?? undefined, action.id); setOpen(false); }} className={`inline-flex min-h-11 items-center rounded-lg border-2 border-black px-3 py-2 text-xs font-black shadow-[2px_2px_0_#171717] transition hover:-translate-y-0.5 focus-visible:outline focus-visible:outline-2 focus-visible:outline-offset-2 focus-visible:outline-[#7C3AED] ${actionIndex === 0 ? "bg-[#7C3AED] text-white" : "bg-white"}`}>{t("actions." + action.id)} <ChevronRight aria-hidden="true" className="ml-1 h-3 w-3" /></Link>)}</div>}
             {message.responseId && <div className="mt-2 flex flex-wrap items-center gap-2 text-xs text-[#5B486C]"><span>¿Fue útil?</span><button type="button" aria-label="Respuesta útil" aria-pressed={message.rating === "positive"} onClick={() => void submitFeedback(message.responseId!, "positive")} className="rounded border border-current px-2 py-1 aria-pressed:bg-[#E9D8FF]">👍</button><button type="button" aria-label="Respuesta no útil" aria-pressed={message.rating === "negative"} onClick={() => void submitFeedback(message.responseId!, "negative")} className="rounded border border-current px-2 py-1 aria-pressed:bg-[#FFF5BA]">👎</button>{feedbackReasonId === message.responseId && <div className="flex flex-wrap gap-1" aria-label="Motivo opcional">{[["incorrect", "Incorrecta"], ["misunderstood", "No entendió"], ["wrong_information", "Información equivocada"], ["missing_information", "Faltó información"], ["slow", "Lenta"], ["unsupported", "No podía hacerlo"], ["other", "Otro"]].map(([reason, label]) => <button key={reason} type="button" onClick={() => void submitFeedback(message.responseId!, "negative", reason)} className="rounded border border-[#7C3AED] px-2 py-1">{label}</button>)}</div>}</div>}
           </div>)}
@@ -193,7 +202,7 @@ export function PuriAssistant() {
         <form onSubmit={submit} className="shrink-0 border-t-[3px] border-black bg-[#FFFDF8] px-3 pb-[max(0.75rem,env(safe-area-inset-bottom))] pt-3 sm:px-4"><div className="flex items-end gap-2 rounded-xl border-2 border-black bg-white p-2 shadow-[2px_2px_0_#171717]"><textarea ref={inputRef} value={input} onChange={(event) => setInput(event.target.value)} onKeyDown={(event) => { if (event.key === "Enter" && !event.shiftKey && !event.nativeEvent.isComposing) { event.preventDefault(); void send(input); } }} placeholder={t("placeholder")} rows={2} maxLength={2000} aria-label={t("placeholder")} className="min-h-11 max-h-32 flex-1 resize-none bg-transparent px-2 py-1.5 text-sm font-medium outline-none placeholder:text-[#6E6576]" /><button type="submit" disabled={loading || !input.trim()} className="flex h-11 w-11 shrink-0 items-center justify-center rounded-lg border-2 border-black bg-[#7C3AED] text-white shadow-[2px_2px_0_#171717] focus-visible:outline focus-visible:outline-2 focus-visible:outline-offset-2 focus-visible:outline-[#7C3AED] disabled:cursor-not-allowed disabled:opacity-40" aria-label={t("send")}><ArrowUp className="h-5 w-5" /></button></div></form>
       </aside>
     </div>, document.body)}
-    {!open && <button ref={launcherRef} type="button" onClick={(event) => { returnFocusRef.current = event.currentTarget; track("puri_opened", { section: pathname.split("/")[2] ?? "today" }); recordPuriUiEvent("opened", searchParams.get("location") ?? undefined); setOpen(true); }} aria-label={t("open")} title={t("ask")} className={`puri-launcher fixed z-[9999] flex h-14 items-center gap-1.5 rounded-full border-[3px] border-black bg-[#E9D8FF] pl-1 pr-4 text-sm font-black text-black shadow-[4px_4px_0_#171717] transition hover:-translate-y-1 focus-visible:outline focus-visible:outline-2 focus-visible:outline-offset-4 focus-visible:outline-[#7C3AED] ${pathname.includes("/stories") ? "puri-launcher--above-rail" : ""} ${pathname === "/dashboard" ? "puri-launcher--hide-on-mobile-today" : ""}`} style={{ position: "fixed", right: "max(1rem, env(safe-area-inset-right))", bottom: pathname.includes("/stories") ? "calc(max(1rem, env(safe-area-inset-bottom)) + 9.5rem)" : "calc(max(1rem, env(safe-area-inset-bottom)) + 4.5rem)" }}><PuriMascot variant="default" compact className="h-12 w-12" /><span>Puri</span></button>}
+    {!open && pathname !== "/dashboard/setup" && <button ref={launcherRef} type="button" onClick={(event) => { returnFocusRef.current = event.currentTarget; track("puri_opened", { section: pathname.split("/")[2] ?? "today" }); recordPuriUiEvent("opened", searchParams.get("location") ?? undefined); setOpen(true); }} data-tour="puri-launcher" aria-label={t("open")} title={t("ask")} className={`puri-launcher fixed z-[9999] flex h-14 items-center gap-1.5 rounded-full border-[3px] border-black bg-[#E9D8FF] pl-1 pr-4 text-sm font-black text-black shadow-[4px_4px_0_#171717] transition hover:-translate-y-1 focus-visible:outline focus-visible:outline-2 focus-visible:outline-offset-4 focus-visible:outline-[#7C3AED] ${pathname.includes("/stories") ? "puri-launcher--above-rail" : ""} ${pathname === "/dashboard" ? "puri-launcher--hide-on-mobile-today" : ""}`} style={{ position: "fixed", right: "max(1rem, env(safe-area-inset-right))", bottom: pathname.includes("/stories") ? "calc(max(1rem, env(safe-area-inset-bottom)) + 9.5rem)" : "calc(max(1rem, env(safe-area-inset-bottom)) + 4.5rem)" }}><PuriMascot variant="default" compact className="h-12 w-12" /><span>Puri</span></button>}
   </>;
 }
 

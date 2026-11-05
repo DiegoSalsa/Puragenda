@@ -1,0 +1,30 @@
+{
+  "version": "CONTACT_FLOW_FREE_APPROVED_2026_10_28",
+  "trial": {
+    "PURAGENDA_PLUS": {
+      "puri": { "ALL": { "limitMicros": 0, "limitUnits": 100 }, "ANALYSIS_SQL": { "limitMicros": 0, "limitUnits": 100 } },
+      "contactFlow": {
+        "dailyLimit": 5, "monthlyLimit": 30, "trialLimit": 30,
+        "campaignsPerPeriod": 1, "maxContactsPerCampaign": 30, "contactDays": 30,
+        "senderEmail": "contacto@contacto.puragenda.cl", "emailEnabled": true, "killed": false
+      }
+    }
+  },
+  "paid": {
+    "PURAGENDA_PLUS": {
+      "puri": { "ALL": { "limitMicros": 0, "limitUnits": 500 }, "ANALYSIS_SQL": { "limitMicros": 0, "limitUnits": 500 } },
+      "contactFlow": {
+        "dailyLimit": 10, "monthlyLimit": 150,
+        "campaignsPerPeriod": 3, "maxContactsPerCampaign": 50, "contactDays": 30,
+        "senderEmail": "contacto@contacto.puragenda.cl", "emailEnabled": true, "killed": false
+      }
+    }
+  },
+  "global": {
+    "puri": { "limitMicros": 0, "limitUnits": 100000 },
+    "contactFlow": {
+      "dailyLimit": 10, "monthlyLimit": 200, "contactDays": 30,
+      "senderEmail": "contacto@contacto.puragenda.cl", "emailEnabled": true, "killed": false
+    }
+  }
+}

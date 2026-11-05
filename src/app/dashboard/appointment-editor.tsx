@@ -41,7 +41,12 @@ export interface AppointmentEditorClient {
 }
 
 export interface EditableAppointment {
+  serviceName?: string;
+  totalPrice?: number;
+  totalDuration?: number;
   id: string;
+  updatedAt?: string;
+  locationId?: string | null;
   customerName: string;
   customerEmail: string;
   customerPhone: string | null;
@@ -50,7 +55,7 @@ export interface EditableAppointment {
   staffId: string | null;
   startTime: string;
   internalNotes: string | null;
-  selectedOptions: { alternativeId?: string }[];
+  selectedOptions: { alternativeId?: string; alternativeName?: string; categoryName?: string }[];
 }
 
 export function AppointmentEditor({
@@ -60,10 +65,13 @@ export function AppointmentEditor({
   initialServiceId,
   initialSelectedOptionIds = [],
   timeZone,
+  locationId,
+  locationName,
   services,
   staff,
   clients,
   currencyCode,
+  canViewInternalNotes = false,
   onClose,
 }: {
   appointment?: EditableAppointment;
@@ -72,10 +80,13 @@ export function AppointmentEditor({
   initialServiceId?: string;
   initialSelectedOptionIds?: string[];
   timeZone?: string;
+  locationId?: string;
+  locationName?: string;
   services: AppointmentEditorService[];
   staff: AppointmentEditorStaff[];
   clients: AppointmentEditorClient[];
   currencyCode: string;
+  canViewInternalNotes?: boolean;
   onClose: () => void;
 }) {
   const t = useTranslations("dashboard.editor");
@@ -107,9 +118,11 @@ export function AppointmentEditor({
   const selectedAlternatives = selectedService?.optionCategories.flatMap((category) =>
     category.alternatives.filter((alternative) => selectedOptionIds.includes(alternative.id))
   ) ?? [];
-  const totalDuration = (selectedService?.duration ?? 0) +
+  const keepContract = !!appointment && serviceId === appointment.serviceId &&
+    JSON.stringify([...selectedOptionIds].sort()) === JSON.stringify(appointment.selectedOptions.flatMap(option => option.alternativeId ? [option.alternativeId] : []).sort());
+  const totalDuration = keepContract && appointment.totalDuration !== undefined ? appointment.totalDuration : (selectedService?.duration ?? 0) +
     selectedAlternatives.reduce((sum, alternative) => sum + alternative.durationDelta, 0);
-  const totalPrice = (selectedService?.price ?? 0) +
+  const totalPrice = keepContract && appointment.totalPrice !== undefined ? appointment.totalPrice : (selectedService?.price ?? 0) +
     selectedAlternatives.reduce((sum, alternative) => sum + alternative.priceDelta, 0);
 
   function chooseClient(nextId: string) {
@@ -168,9 +181,11 @@ export function AppointmentEditor({
             clientId: clientId || undefined,
             serviceId,
             staffId,
+            locationId: locationId ?? appointment?.locationId ?? undefined,
+            expectedUpdatedAt: appointment?.updatedAt,
             selectedOptionAlternativeIds: selectedOptionIds,
             startTime: startTime.toISOString(),
-            internalNotes,
+            ...(canViewInternalNotes ? { internalNotes } : {}),
             sendConfirmation,
           }),
         },
@@ -199,6 +214,7 @@ export function AppointmentEditor({
               <div>
                 <h2 className="font-semibold">{appointment ? t("editTitle") : t("newTitle")}</h2>
                 <p className="text-xs text-muted-foreground">{t("validationHint")}</p>
+                {locationName && <p className="text-xs font-semibold">{locationName}</p>}
               </div>
             </div>
             <button type="button" onClick={onClose} className="rounded-lg p-2 text-muted-foreground hover:bg-muted">
@@ -207,7 +223,7 @@ export function AppointmentEditor({
           </div>
 
           <div className="max-h-[70vh] space-y-5 overflow-y-auto p-5">
-            <section className="space-y-3">
+            <section data-tour="appointment-customer" className="space-y-3">
               <p className="text-xs font-semibold uppercase tracking-wider text-muted-foreground">{t("customerSection")}</p>
               <select value={clientId} onChange={(event) => chooseClient(event.target.value)} className="w-full rounded-xl border border-border bg-background px-3 py-2.5 text-sm">
                 <option value="">{t("newCustomer")}</option>
@@ -224,6 +240,7 @@ export function AppointmentEditor({
               <p className="text-xs font-semibold uppercase tracking-wider text-muted-foreground">{t("serviceSection")}</p>
               <div className="grid gap-3 sm:grid-cols-2">
                 <select required value={serviceId} onChange={(event) => chooseService(event.target.value)} className="rounded-xl border border-border bg-background px-3 py-2.5 text-sm">
+                  {appointment && !services.some(service => service.id === appointment.serviceId) && <option value={appointment.serviceId}>{appointment.serviceName || "Servicio contratado"} (archivado)</option>}
                   {services.map((service) => <option key={service.id} value={service.id}>{service.name}</option>)}
                 </select>
                 <select required value={staffId} onChange={(event) => setStaffId(event.target.value)} className="rounded-xl border border-border bg-background px-3 py-2.5 text-sm">
@@ -232,6 +249,7 @@ export function AppointmentEditor({
                 </select>
               </div>
 
+              {keepContract && <p className="text-xs text-muted-foreground">Se conservan el precio, duración y opciones contratados. {appointment.selectedOptions.map(option => option.alternativeName).filter(Boolean).join(", ")}</p>}
               {selectedService?.optionCategories.map((category) => (
                 <div key={category.id} className="rounded-xl border border-border bg-muted/25 p-3">
                   <p className="text-sm font-medium">
@@ -276,7 +294,7 @@ export function AppointmentEditor({
                 <span className="rounded-full bg-muted px-3 py-1.5">{t("minutes", { count: totalDuration })}</span>
                 <span className="rounded-full bg-muted px-3 py-1.5">{formatPrice(Math.round(totalPrice), currencyCode)}</span>
               </div>
-              <textarea value={internalNotes} onChange={(event) => setInternalNotes(event.target.value)} placeholder={t("internalNote")} rows={3} className="w-full resize-none rounded-xl border border-border bg-background px-3 py-2.5 text-sm" />
+              {canViewInternalNotes && <textarea value={internalNotes} onChange={(event) => setInternalNotes(event.target.value)} placeholder={t("internalNote")} rows={3} className="w-full resize-none rounded-xl border border-border bg-background px-3 py-2.5 text-sm" />}
               <label className="flex items-center gap-3 rounded-xl border border-border bg-muted/25 p-3 text-sm">
                 <input type="checkbox" checked={sendConfirmation} onChange={(event) => setSendConfirmation(event.target.checked)} className="h-4 w-4 accent-[#7C3AED]" />
                 <Mail className="h-4 w-4 text-brand-foreground" />
@@ -289,7 +307,7 @@ export function AppointmentEditor({
 
           <div className="flex flex-col-reverse gap-3 border-t border-border bg-muted/20 px-5 py-4 sm:flex-row sm:justify-end">
             <button type="button" onClick={onClose} className="rounded-xl border border-border px-5 py-2.5 text-sm font-medium">{t("cancel")}</button>
-            <button type="submit" disabled={pending || !services.length || !staffId} className="inline-flex items-center justify-center gap-2 rounded-xl bg-[#7C3AED] px-5 py-2.5 text-sm font-semibold text-white disabled:opacity-50">
+            <button type="submit" disabled={pending || (!services.length && !appointment) || !staffId} className="inline-flex items-center justify-center gap-2 rounded-xl bg-[#7C3AED] px-5 py-2.5 text-sm font-semibold text-white disabled:opacity-50">
               {pending ? <Loader2 className="h-4 w-4 animate-spin" /> : <CheckCircle2 className="h-4 w-4" />}
               {pending ? t("saving") : appointment ? t("saveChanges") : t("create")}
             </button>

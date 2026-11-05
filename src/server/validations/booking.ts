@@ -1,6 +1,8 @@
 import { z } from "zod";
+import { COMMERCIAL_CONSENT_VERSION } from "@/core/commercial-consent";
 
 export const optionAlternativeSchema = z.object({
+  id: z.string().min(1).max(100).optional(),
   name: z
     .string({ message: "El nombre de la alternativa es obligatorio" })
     .min(1, "El nombre de la alternativa no puede estar vacio")
@@ -23,6 +25,7 @@ export const optionAlternativeSchema = z.object({
 });
 
 export const optionCategorySchema = z.object({
+  id: z.string().min(1).max(100).optional(),
   name: z
     .string({ message: "El nombre de la categoria es obligatorio" })
     .min(1, "El nombre de la categoria no puede estar vacio")
@@ -77,6 +80,8 @@ export const bookingSchema = z
     discountCode: z.string().trim().max(50).optional(),
     promotionId: z.string().min(1, "La promoción seleccionada no es válida").optional(),
     storyCampaignToken: z.string().trim().min(8).max(64).optional(),
+    contactFlowToken: z.string().regex(/^[\w-]{43}\.[\w-]{43}$/).optional(),
+    commercialConsent: z.object({ accepted: z.boolean(), textVersion: z.literal(COMMERCIAL_CONSENT_VERSION) }).strict().optional(),
     giftCardId: z.string().min(1).max(100).optional(),
 
     customerName: z
@@ -136,6 +141,10 @@ export const recurringBookingRequestSchema = z.object({
   healthAnswers: z.record(z.string(), z.string().max(1000)).optional(),
   healthExtra: z.string().max(2000).optional(),
   healthAccepted: z.boolean().optional(),
+  healthConsentVersion: z.string().max(80).optional(),
+  healthFormRevision: z.string().regex(/^[a-f0-9]{64}$/).optional(),
+  healthConsentLocale: z.string().max(10).optional(),
+  commercialConsent: z.object({ accepted: z.boolean(), textVersion: z.literal(COMMERCIAL_CONSENT_VERSION) }).strict().optional(),
 });
 
 export const customProductionWindowSchema = z.object({
@@ -165,6 +174,7 @@ const optionalClock = z.preprocess(
 );
 
 export const serviceSchema = z.object({
+  expectedCatalogVersion: z.number().int().min(0).optional(),
   name: z
     .string({ message: "El nombre es obligatorio" })
     .min(1, "El nombre no puede estar vacio")
@@ -325,6 +335,7 @@ export const serviceSchema = z.object({
 export type ServiceInput = z.infer<typeof serviceSchema>;
 
 export const productionOrderSchema = z.object({
+  commercialConsent: z.object({ accepted: z.boolean(), textVersion: z.literal(COMMERCIAL_CONSENT_VERSION) }).strict().optional(),
   serviceId: z.string().min(1),
   selectedOptionAlternativeIds: z.array(z.string()).max(50).optional().default([]),
   productionWeek: z.string().date("La semana de produccion no es valida"),

@@ -2,12 +2,12 @@ import { prisma } from "@/server/db/prisma";
 import { Prisma } from "@prisma/client";
 import bcrypt from "bcrypt";
 import crypto from "crypto";
-import { addDays } from "date-fns";
-import { SALT_ROUNDS, API_KEY_PREFIX, TRIAL_DURATION_DAYS, SUPERADMIN_EMAILS } from "@/core/constants";
+import { commercialSelectionSchema, createRegistrationContract } from "./commercial-trial.service";
+import { SALT_ROUNDS, API_KEY_PREFIX, STAFF_LIMITS, SUPERADMIN_EMAILS } from "@/core/constants";
 import { toSlug } from "@/core/validators/slug";
 import { applyReferralCode } from "@/server/services/affiliate.service";
 import { sendWelcomeEmail, sendNewRegistrationNotification } from "@/server/email/send";
-import { getCountryConfig } from "@/core/countries";
+import { registrationMarketSchema } from "@/core/registration-market";
 import { createPrimaryLocation } from "@/server/services/location.service";
 import {
   createRegistrationMarketplaceListing,
@@ -42,9 +42,9 @@ function createApiKey(): string {
  * Check if IP or email has already used a trial.
  * Returns true if trial should be BLOCKED.
  */
-async function isTrialBlocked(email: string, ip: string | null): Promise<boolean> {
+async function isTrialBlocked(email: string, ip: string | null, db: Prisma.TransactionClient): Promise<boolean> {
   // Check if email already used trial
-  const existingUser = await prisma.user.findFirst({
+  const existingUser = await db.user.findFirst({
     where: { email, trialUsedAt: { not: null } },
   });
   if (existingUser) return true;
@@ -53,11 +53,11 @@ async function isTrialBlocked(email: string, ip: string | null): Promise<boolean
   const WHITELISTED_IPS = (process.env.WHITELISTED_IPS || "").split(",").map(i => i.trim()).filter(Boolean);
   const LOCAL_IPS = ["unknown", "::1", "127.0.0.1", "localhost", ...WHITELISTED_IPS];
   if (ip && !LOCAL_IPS.includes(ip)) {
-    const blacklisted = await prisma.blacklistedIp.findUnique({ where: { ip } });
+    const blacklisted = await db.blacklistedIp.findUnique({ where: { ip } });
     if (blacklisted) return true;
 
     // Check if another user with this IP already used a trial
-    const ipUser = await prisma.user.findFirst({
+    const ipUser = await db.user.findFirst({
       where: { registrationIp: ip, trialUsedAt: { not: null } },
     });
     if (ipUser) return true;
@@ -81,7 +81,9 @@ export async function registerUser(data: {
   currencyCode?: string;
   ip?: string | null;
   referralCode?: string | null;
-  planIntent?: "INDIVIDUAL" | "EQUIPO" | "TEST" | null;
+  planIntent?: "INDIVIDUAL" | "EQUIPO" | "PURAGENDA" | "PURAGENDA_PLUS" | null;
+  commercialPlanIntent?: "PURAGENDA" | "PURAGENDA_PLUS";
+  professionalTotal?: number;
   extraStaffCount?: number;
   websiteIntent?: boolean;
   billingCycle?: "MONTHLY" | "ANNUAL";
@@ -93,13 +95,18 @@ export async function registerUser(data: {
   marketplaceCityName?: string | null;
   marketplaceAuthorized?: boolean;
 }) {
+  // Validate before any lookup, identity creation, referral or notification.
+  const market = registrationMarketSchema.safeParse(data);
+  if (!market.success) {
+    return { success: false as const, error: market.error.issues[0].message, status: 400 as const };
+  }
   const existing = await prisma.user.findUnique({ where: { email: data.email } });
   if (existing) {
     return { success: false as const, error: "Ya existe una cuenta con ese email", status: 409 as const };
   }
 
   const marketplace = await resolveRegistrationMarketplaceClassification({
-    countryCode: data.countryCode,
+    countryCode: market.data.countryCode,
     categorySlug: data.marketplaceCategorySlug,
     otherDescription: data.marketplaceOtherDescription,
     localitySlug: data.marketplaceLocalitySlug,
@@ -112,11 +119,18 @@ export async function registerUser(data: {
   }
 
   const ip = data.ip || null;
-  const trialBlocked = await isTrialBlocked(data.email, ip);
+  const selection = commercialSelectionSchema.parse({
+    plan: data.commercialPlanIntent ?? (data.planIntent === "PURAGENDA_PLUS" || data.websiteIntent ? "PURAGENDA_PLUS" : "PURAGENDA"),
+    professionalTotal: data.professionalTotal ?? (data.planIntent === "EQUIPO" ? STAFF_LIMITS.EQUIPO + (data.extraStaffCount ?? 0) : 1),
+    billingCycle: data.billingCycle ?? "MONTHLY",
+  });
   const isSuperAdmin = SUPERADMIN_EMAILS.includes(data.email);
   const hashedPassword = await bcrypt.hash(data.password, SALT_ROUNDS);
 
   const created = await prisma.$transaction(async (tx) => {
+    // Serialize trial claims for the same IP; email uniqueness also prevents replay.
+    await tx.$queryRaw`SELECT pg_advisory_xact_lock(hashtextextended(${`trial:${ip || data.email}`}, 0))::text`;
+    const trialBlocked = await isTrialBlocked(data.email, ip, tx);
     const now = new Date();
     const user = await tx.user.create({
       data: {
@@ -136,16 +150,15 @@ export async function registerUser(data: {
     const baseSlug = toSlug(data.businessName);
     const slug = await generateUniqueBusinessSlug(baseSlug, tx);
 
-    const region = getCountryConfig(data.countryCode);
     const business = await tx.business.create({
       data: {
         name: businessName,
         slug,
         apiKey: createApiKey(),
         ownerId: user.id,
-        countryCode: region.code,
-        currencyCode: data.currencyCode || region.currency,
-        timezone: data.timezone || region.timezone,
+        countryCode: market.data.countryCode,
+        currencyCode: market.data.currencyCode,
+        timezone: market.data.timezone,
         locale: resolveLocale(data.locale),
       },
       select: { id: true, name: true, slug: true, timezone: true, locale: true },
@@ -168,49 +181,9 @@ export async function registerUser(data: {
       classification: marketplace.classification,
     });
 
-    // Determine subscription plan and status
-    const planIntent = data.planIntent;
-    const trialEligiblePlans = ["INDIVIDUAL", "EQUIPO"] as const;
-    const isTrialPlan = !planIntent || (trialEligiblePlans as readonly string[]).includes(planIntent);
-    const givesTrial = !trialBlocked && isTrialPlan;
-
-    let plan: "INDIVIDUAL" | "EQUIPO" | "TEST";
-    let status: "ACTIVE" | "TRIALING" | "PAST_DUE" | "INACTIVE" | "CANCELLED";
-    let isTrial = false;
-    let trialEndsAt: Date | null = null;
-
-    if (givesTrial) {
-      // Eligible for trial → keep chosen plan (default EQUIPO) in TRIALING
-      plan = planIntent === "INDIVIDUAL" ? "INDIVIDUAL" : "EQUIPO";
-      status = "TRIALING";
-      isTrial = true;
-      trialEndsAt = addDays(now, TRIAL_DURATION_DAYS);
-    } else if (planIntent) {
-      // User chose a specific plan → INACTIVE until they pay via MercadoPago
-      plan = planIntent;
-      status = "INACTIVE";
-    } else {
-      // No trial, no plan intent → INDIVIDUAL INACTIVE (must pay)
-      plan = "INDIVIDUAL";
-      status = "INACTIVE";
-    }
-
-    await tx.subscription.create({
-      data: {
-        businessId: business.id,
-        billingCycle: data.billingCycle ?? "MONTHLY",
-        plan,
-        status,
-        isTrial,
-        trialEndsAt,
-        extraStaffCount: plan === "EQUIPO" ? Math.max(0, Math.min(20, Math.floor(data.extraStaffCount ?? 0))) : 0,
-      },
-    });
-
-    // Selection persists independently of entitlement and Founder eligibility.
-    if (data.websiteIntent && region.code === "CL" && plan !== "TEST") {
-      await tx.websitePurchaseIntent.create({ data: { businessId: business.id } });
-    }
+    const givesTrial = !trialBlocked;
+    const plan = selection.plan;
+    await createRegistrationContract(tx, { ...selection, businessId: business.id, trialEligible: givesTrial, now });
 
     // Record IP for future fraud detection
     const WHITELISTED_IPS = (process.env.WHITELISTED_IPS || "").split(",").map(i => i.trim()).filter(Boolean);
@@ -223,6 +196,7 @@ export async function registerUser(data: {
       });
     }
 
+    await tx.businessSetup.create({ data: { businessId: business.id } });
     return { user, business, givesTrial, plan };
   });
 

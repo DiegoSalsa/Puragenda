@@ -1,0 +1,28 @@
+{
+  "date": "2026-10-22",
+  "baseCommit": "5c89ab4dc808eefbfff608f59b7be9886cb41403",
+  "phases": [
+    {
+      "passed": 188,
+      "skipped": 0
+    },
+    {
+      "passed": 1539,
+      "skipped": 131
+    }
+  ],
+  "passed": 1727,
+  "skipped": 131,
+  "failed": 0,
+  "postgresPassed": 188,
+  "newContactFlowPostgres": 61,
+  "newContactFlowUnit": 26,
+  "typescript": "passed",
+  "build": "passed",
+  "lintErrors": 0,
+  "lintPreexistingWarnings": 32,
+  "productionActivated": false,
+  "realCommercialDeliveries": 0,
+  "externalExecutionSealed": true,
+  "publicMcpCampaignTools": false
+}

@@ -59,7 +59,7 @@ export function PurchaseFlow(props: PurchaseFlowProps) {
     <p className="font-bold">Dos suscripciones recurrentes independientes. Contratas cada una por separado y puedes cancelar el sitio sin cancelar la agenda.</p>
     <section className="space-y-4 rounded-2xl border-4 border-black bg-[#FFF5BA] p-5 text-black">
       <h2 className="text-xl font-black">Paso 1 de 2 — Puragenda</h2>
-      <p className="font-bold">{props.plan === "EQUIPO" ? "Equipo" : "Individual"}: {money(props.basePrice)}/{props.cycle === "annual" ? "año" : "mes"}{props.extras ? ` · ${props.extras} profesionales extra` : ""}</p>
+      <p className="font-bold">Puragenda: {money(props.basePrice)}/{props.cycle === "annual" ? "año" : "mes"}{props.extras ? ` · ${props.extras} profesionales extra` : ""}</p>
       {props.basePaid ? <p className="font-black">✓ Suscripción Puragenda confirmada</p> : props.basePastDue ? <><p>Regulariza tu suscripción Puragenda antes de contratar el sitio.</p><Link className="font-black underline" href="/dashboard/settings">Regularizar Puragenda</Link></> : <>
         <p>{props.basePending ? "Estamos confirmando tu suscripción Puragenda." : "Activa Puragenda para continuar. La prueba de 30 días no activa ni cobra Sitio Web."}</p>
         <div className="flex flex-wrap gap-4">

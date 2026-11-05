@@ -16,7 +16,7 @@ import {
 } from "@/components/landing/seo";
 import { breadcrumbListNode, faqPageNode, jsonLdGraph, organizationRef, softwareApplicationNode } from "@/lib/json-ld";
 import { createPageMetadata } from "@/lib/seo";
-import { EXTRA_STAFF_COST, PRICING, STAFF_LIMITS, TRIAL_DURATION_DAYS } from "@/core/constants";
+import { TRIAL_DURATION_DAYS } from "@/core/constants";
 import { formatLandingClp } from "@/lib/data/scheduling-system-landing";
 import { MANICURE_SOFTWARE_PATH, manicureCatalogExample, manicureProblems, manicureSoftwareCopy, manicureSoftwareFaqs, manicureSoftwareMetadata, manicureWorkflow } from "@/lib/data/manicure-software-landing";
 import { cn } from "@/lib/utils";
@@ -180,7 +180,7 @@ export default function ManicureSoftwareLandingPage() {
       <section className={seo.section} aria-labelledby="individual-equipo">
         <SectionIntro id="individual-equipo" title="Tu mesa de trabajo o un nail studio con equipo">
           <p>
-            Si atiendes sola, organiza el catálogo y los bloques disponibles con el horario del negocio. Si trabajan varias manicuristas, asigna a cada una los servicios que realiza y su jornada en el plan Equipo. Una profesional que hace esmaltado no tiene por qué ofrecer también todos los mantenimientos o diseños.
+            Si atiendes sola, organiza el catálogo y los bloques disponibles con el horario del negocio. Si trabajan varias manicuristas, asigna a cada una los servicios que realiza y su jornada en Puragenda. Una profesional que hace esmaltado no tiene por qué ofrecer también todos los mantenimientos o diseños.
           </p>
           <p>
             Los <strong>bloqueos</strong> marcan períodos sin atención. Si necesitas reservar tiempo para preparar tu mesa o dejar un descanso, configúralo; no depende de que la clienta lo recuerde al elegir su hora.
@@ -251,21 +251,6 @@ export default function ManicureSoftwareLandingPage() {
       <PricingSection
         id="precios"
         title="Cuánto cuesta un software de agenda para manicure o un salón de uñas"
-        individual={{
-          name: PRICING.INDIVIDUAL.name,
-          price: formatLandingClp(PRICING.INDIVIDUAL.monthly),
-          detail: `${STAFF_LIMITS.INDIVIDUAL} profesional. Disponibilidad con el horario del negocio.`,
-        }}
-        team={{
-          name: PRICING.EQUIPO.name,
-          price: formatLandingClp(PRICING.EQUIPO.monthly),
-          detail: (
-            <>
-              <p>{STAFF_LIMITS.EQUIPO} profesionales incluidos, con horarios por integrante.</p>
-              <p className="mt-3">Profesional adicional: {formatLandingClp(EXTRA_STAFF_COST.EQUIPO)} CLP / mes.</p>
-            </>
-          ),
-        }}
         footer={
           <p>
             Prueba de {TRIAL_DURATION_DAYS} días. Son los planes generales de Puragenda; consulta las condiciones vigentes y opciones de contratación en <Link href="/pricing" className={seo.link}>Precios</Link>.

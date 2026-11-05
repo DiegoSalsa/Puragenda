@@ -127,6 +127,7 @@ export async function createAppointment(data: {
   internalNotes?: string;
   allowPrioritySlots?: boolean;
   storyCampaignId?: string;
+  contactFlowToken?: string;
 }, options?: { tx?: Prisma.TransactionClient; syncGoogle?: boolean }): Promise<
   { success: true; appointment: Prisma.AppointmentGetPayload<{ include: { service: true } }> }
   | { success: false; error: string; code?: string }
@@ -150,6 +151,7 @@ export async function createAppointment(data: {
     const { getBookingAvailability, loadBookingContext } = await import("@/server/booking/read.service");
     const current = await loadBookingContext(data.businessId, db);
     const approvedQuote = bookingExpectedQuoteContext.getStore();
+    await approvedQuote?.authorize?.(db);
     if (approvedQuote?.requirePublicParticipation && !current.mcpPublicDiscovery) throw new BookingSelectionError("El negocio ya no participa", "BUSINESS_NOT_FOUND", 404);
     if (approvedQuote && (approvedQuote.price !== data.totalPrice || approvedQuote.duration !== data.totalDuration || (approvedQuote.forbidDeposit && current.depositRequired))) {
       throw new BookingSelectionError("La selección cambió; prepara y aprueba una nueva operación", "SELECTION_CHANGED", 409);
@@ -244,6 +246,10 @@ export async function createAppointment(data: {
     include: { service: true },
   });
 
+  if(data.contactFlowToken) {
+    const { attributeBooking }=await import("@/server/contact-flow/tokens");
+    await attributeBooking(db,data.contactFlowToken,appointment);
+  }
   await checkpointBookingOperation(db, appointment);
 
   return { success: true as const, appointment };
@@ -252,6 +258,7 @@ export async function createAppointment(data: {
 export function isAppointmentCapacityConflict(error: unknown): boolean {
   if (!error || typeof error !== "object") return false;
   const item = error as { code?: string; message?: string; cause?: unknown; meta?: unknown };
+  if (["SERVICE_NOT_BOOKABLE", "STAFF_NOT_BOOKABLE"].some(code => item.message?.includes(code) || JSON.stringify(item.meta ?? {}).includes(code))) return true;
   return item.code === "23P01" || item.message?.includes("BOOKING_SLOT_CONFLICT") === true
     || (item.cause !== undefined && isAppointmentCapacityConflict(item.cause))
     || (item.meta !== undefined && JSON.stringify(item.meta).includes("BOOKING_SLOT_CONFLICT"));

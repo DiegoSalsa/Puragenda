@@ -26,10 +26,10 @@ export default async function GiftCardsStorePage({ params }: { params: Promise<{
       widgetHeaderAlign: true,
       mpAccessToken: true,
       subscription: {
-        select: { status: true, isTrial: true, trialEndsAt: true, gracePeriodEndsAt: true },
+        select: { plan: true, currentPeriodEnd: true, status: true, isTrial: true, trialEndsAt: true, gracePeriodEndsAt: true },
       },
       giftCardTemplates: {
-        where: { isActive: true, isPublic: true },
+        where: { isActive: true, isPublic: true, services: { none: { service: { isActive: false } } } },
         include: { services: { include: { service: { select: { name: true } } } } },
         orderBy: [{ position: "asc" }, { createdAt: "desc" }],
       },

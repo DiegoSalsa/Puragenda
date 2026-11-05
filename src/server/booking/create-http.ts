@@ -5,6 +5,7 @@ import { sendBookingNotifications } from "@/server/email/send";
 import { bookingSchema } from "@/server/validations/booking";
 import { prisma } from "@/server/db/prisma";
 import { NextRequest } from "next/server";
+import { getOrCreateBookingClient } from "@/server/services/booking-client.service";
 import { bookingLimiter } from "@/server/lib/rate-limit";
 import { MercadoPagoConfig, Preference } from "mercadopago";
 import { toZonedTime } from "date-fns-tz";
@@ -28,6 +29,8 @@ import { operationalSubscriptionDeniedResponse } from "@/server/http/subscriptio
 import { quoteBookingSelection, BookingSelectionError } from "@/core/booking-selection";
 import { getBookingAvailability, loadBookingContext } from "@/server/booking/read.service";
 import { paymentHoldExpiresAt } from "@/server/services/payment-hold.service";
+import { DEPOSIT_UNAVAILABLE_MESSAGE } from "@/core/booking-deposit";
+import { publicConsentEnabled, recordPublicConsent } from "@/server/contact-flow/public-consent";
 import { bookingJson } from "@/server/booking/response";
 import { bookingContractContext, bookingReviewContext, bookingOperationContext, bookingPayloadHash, bookingResult, claimBookingOperation, completeBookingOperation, checkpointBookingResponse } from "@/server/booking/idempotency";
 
@@ -244,7 +247,11 @@ async function handleBooking(
       );
     }
 
-    const { serviceId, serviceIds, selectedOptionAlternativeIds, customerName, customerEmail, customerPhone, customerAddress, startTime, endTime, staffId, staffAssignments, rewardCode, discountCode, promotionId, locationId, storyCampaignToken, giftCardId } = parsed.data;
+    const { serviceId, serviceIds, selectedOptionAlternativeIds, customerName, customerEmail, customerPhone, customerAddress, startTime, endTime, staffId, staffAssignments, rewardCode, discountCode, promotionId, locationId, storyCampaignToken, contactFlowToken, giftCardId } = parsed.data;
+    if(contactFlowToken) {
+      const { contactLabEnabled }=await import("@/server/contact-flow/policy");
+      if(!contactLabEnabled() || (staffAssignments?.length??0)>1 || (serviceIds?.length??1)>1) return Response.json({code:"CONTACT_FLOW_ATTRIBUTION_UNAVAILABLE"},{status:400});
+    }
     if (isBookingV1(request) && selectedOptionAlternativeIds.length > 50) return bookingJson({ error: "Máximo 50 opciones por selección v1", code: "INVALID_REQUEST" }, 400);
     if (isBookingV1(request) && (rewardCode || discountCode || promotionId || giftCardId)) return bookingJson({ error: "El contrato v1 no admite incentivos", code: "UNSUPPORTED_CAPABILITY" }, 400);
 
@@ -294,7 +301,7 @@ async function handleBooking(
 
     // Verify primary service belongs to business
     const service = await getServiceByIdAndBusiness(serviceId, business.id);
-    if (!service) {
+    if (!service || service.isActive === false) {
       return Response.json(
         { error: "Servicio no encontrado para este negocio" },
         { status: 404 }
@@ -319,8 +326,8 @@ async function handleBooking(
     const allSelectedServices = [service];
     if (additionalIds.length > 0) {
       const additionalServices = await prisma.service.findMany({
-        where: { id: { in: additionalIds }, businessId: business.id },
-        include: { category: true, optionCategories: { orderBy: { position: "asc" }, include: { alternatives: { orderBy: { position: "asc" } } } } },
+        where: { isActive: true, id: { in: additionalIds }, businessId: business.id },
+        include: { category: true, optionCategories: { where: { isActive: true }, orderBy: { position: "asc" }, include: { alternatives: { where: { isActive: true }, orderBy: { position: "asc" } } } } },
       });
       if (additionalServices.length !== additionalIds.length) return Response.json({ error: "Uno o mas servicios seleccionados no pertenecen a este negocio" }, { status: 400 });
       allSelectedServices.push(...additionalServices);
@@ -477,6 +484,56 @@ async function handleBooking(
         );
       }
     }
+
+    // ── Check deposit requirements (per-service) ──
+    let totalDepositAmount = allSelectedServices.reduce(
+      (sum, selected) => sum + (selected.depositAmount || 0),
+      0,
+    );
+    totalDepositAmount = Math.min(totalDepositAmount, remainingAfterGiftCard);
+    const usesManualPaymentLink = business.depositPaymentMode === "MANUAL_LINK";
+    const manualPaymentUrl = usesManualPaymentLink ? service.depositPaymentUrl : null;
+
+    if (business.depositRequired && totalDepositAmount > 0 && usesManualPaymentLink) {
+      if (allServiceIds.length > 1) {
+        return Response.json(
+          { error: "El pago por link solo admite un servicio por reserva. Selecciona un único servicio." },
+          { status: 409 },
+        );
+      }
+      if (!manualPaymentUrl) {
+        return Response.json(
+          { error: "Este servicio todavía no tiene configurado su link de pago. Contacta al negocio." },
+          { status: 409 },
+        );
+      }
+    }
+
+    let businessMpAccessToken: string | null = null;
+    if (business.depositRequired && totalDepositAmount > 0 && !usesManualPaymentLink) {
+      try { businessMpAccessToken = await getValidMercadoPagoAccessToken(business.id); }
+      catch { /* A refresh failure cannot waive an obligatory deposit. */ }
+      if (!businessMpAccessToken) {
+        return Response.json({ error: DEPOSIT_UNAVAILABLE_MESSAGE, code: "DEPOSIT_UNAVAILABLE" }, { status: 503 });
+      }
+    }
+    if (
+      businessMpAccessToken
+      && !isMercadoPagoCurrencyCompatible(business.countryCode, business.currencyCode)
+    ) {
+      const expectedCurrency = getMercadoPagoCurrency(business.countryCode);
+      return Response.json(
+        {
+          error: expectedCurrency
+            ? `El pago online de este negocio está temporalmente bloqueado: Mercado Pago requiere ${expectedCurrency}.`
+            : "El pago online no está disponible para el país de este negocio.",
+        },
+        { status: 409 },
+      );
+    }
+    const depositRequired = business.depositRequired && totalDepositAmount > 0 && (
+      usesManualPaymentLink ? !!manualPaymentUrl : !!businessMpAccessToken
+    );
 
     if (isBookingV1(request)) {
       if (hasStaffAssignments) throw new BookingSelectionError("El contrato v1 no admite profesionales separados por servicio", "UNSUPPORTED_CAPABILITY");
@@ -662,21 +719,15 @@ async function handleBooking(
 
     }
 
-    const client = await prisma.client.upsert({
-      where: {
-        businessId_email: { businessId: business.id, email: customerEmail },
-      },
-      update: {
-        name: customerName,
-        phone: customerPhone,
-      },
-      create: {
-        name: customerName,
-        email: customerEmail,
-        phone: customerPhone,
-        businessId: business.id,
-      },
-    });
+    const client = await getOrCreateBookingClient({ businessId: business.id, name: customerName, email: customerEmail, phone: customerPhone });
+    const bookingClientId = client.portalOwnerEmail === customerEmail ? client.id : undefined;
+    if (bookingClientId && parsed.data.commercialConsent?.accepted === true && publicConsentEnabled()) {
+      await recordPublicConsent({
+        businessId: business.id, clientId: client.id,
+        ...parsed.data.commercialConsent,
+        verifiedAccount: await getClientPortalAccountFromRequest(request),
+      });
+    }
     await updateClientPortalProfileFromBooking({
       sessionEmail: await getClientPortalEmailFromRequest(request),
       customerEmail,
@@ -685,50 +736,6 @@ async function handleBooking(
       address: requiresHomeAddress ? customerAddress : null,
     });
 
-    // ── Check deposit requirements (per-service) ──
-    let totalDepositAmount = allSelectedServices.reduce(
-      (sum, selected) => sum + (selected.depositAmount || 0),
-      0,
-    );
-    totalDepositAmount = Math.min(totalDepositAmount, remainingAfterGiftCard);
-    const usesManualPaymentLink = business.depositPaymentMode === "MANUAL_LINK";
-    const manualPaymentUrl = usesManualPaymentLink ? service.depositPaymentUrl : null;
-
-    if (business.depositRequired && totalDepositAmount > 0 && usesManualPaymentLink) {
-      if (allServiceIds.length > 1) {
-        return Response.json(
-          { error: "El pago por link solo admite un servicio por reserva. Selecciona un único servicio." },
-          { status: 409 },
-        );
-      }
-      if (!manualPaymentUrl) {
-        return Response.json(
-          { error: "Este servicio todavía no tiene configurado su link de pago. Contacta al negocio." },
-          { status: 409 },
-        );
-      }
-    }
-
-    const businessMpAccessToken = business.depositRequired && totalDepositAmount > 0 && !usesManualPaymentLink
-      ? await getValidMercadoPagoAccessToken(business.id)
-      : null;
-    if (
-      businessMpAccessToken
-      && !isMercadoPagoCurrencyCompatible(business.countryCode, business.currencyCode)
-    ) {
-      const expectedCurrency = getMercadoPagoCurrency(business.countryCode);
-      return Response.json(
-        {
-          error: expectedCurrency
-            ? `El pago online de este negocio está temporalmente bloqueado: Mercado Pago requiere ${expectedCurrency}.`
-            : "El pago online no está disponible para el país de este negocio.",
-        },
-        { status: 409 },
-      );
-    }
-    const depositRequired = business.depositRequired && totalDepositAmount > 0 && (
-      usesManualPaymentLink ? !!manualPaymentUrl : !!businessMpAccessToken
-    );
     // Only the integrated Mercado Pago flow receives a short-lived hold. The
     // deadline is calculated on the server and persisted with the appointment.
     const paymentHoldDeadline = depositRequired && !!businessMpAccessToken && !usesManualPaymentLink
@@ -927,12 +934,13 @@ async function handleBooking(
           promotionId: appliedPromotion?.id,
           promotionTitle: appliedPromotion?.title,
           selectedOptions: selectedOptionsSnapshot.filter((option) => assignments.some((assignment) => assignment.serviceId === option.serviceId)),
-          clientId: client.id,
+          clientId: bookingClientId,
           depositRequired,
           depositAmount: groupDeposit,
           depositPaymentUrl: manualPaymentUrl,
           paymentHoldExpiresAt: paymentHoldDeadline,
           storyCampaignId: storyCampaign?.id,
+          contactFlowToken,
         }, { tx, syncGoogle: false });
 
         if (!result.success) throw new BookingGroupError(result.error);
@@ -1075,13 +1083,14 @@ async function handleBooking(
       promotionId: appliedPromotion?.id,
       promotionTitle: appliedPromotion?.title,
       selectedOptions: selectedOptionsSnapshot,
-      clientId: client.id,
+      clientId: bookingClientId,
       depositRequired,
       depositAmount: totalDepositAmount,
       depositPaymentUrl: manualPaymentUrl,
       paymentHoldExpiresAt: paymentHoldDeadline,
       status: giftCardPaidAmount > 0 && remainingAfterGiftCard === 0 ? "CONFIRMED" : undefined,
       storyCampaignId: storyCampaign?.id,
+      contactFlowToken,
     }, appliedReward, giftCardQuote && portalAccount ? {
       id: giftCardQuote.card.id,
       accountId: portalAccount.id,

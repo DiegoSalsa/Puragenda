@@ -13,6 +13,8 @@ import { PosPaymentDialog } from "./pos-payment-dialog";
 
 export type DashboardAppointment = {
   id: string;
+  updatedAt?: string;
+  locationId?: string | null;
   customerName: string;
   customerEmail: string;
   customerPhone: string | null;
@@ -62,22 +64,28 @@ export function AppointmentDetailDialog({
   appointment,
   onClose,
   canManageAppointments,
+  canViewInternalNotes = false,
   posEnabled,
   services,
   staff,
   clients,
   currencyCode,
   timeZone,
+  locationId,
+  locationName,
 }: {
   appointment: DashboardAppointment;
   onClose: () => void;
   canManageAppointments: boolean;
+  canViewInternalNotes?: boolean;
   posEnabled: boolean;
   services: AppointmentEditorService[];
   staff: AppointmentEditorStaff[];
   clients: AppointmentEditorClient[];
   currencyCode: string;
   timeZone?: string;
+  locationId?: string;
+  locationName?: string;
 }) {
   const t = useTranslations("dashboard.calendar");
   const todayT = useTranslations("dashboard.today");
@@ -160,7 +168,10 @@ export function AppointmentDetailDialog({
   if (editor) {
     return (
       <AppointmentEditor
+        canViewInternalNotes={canViewInternalNotes}
         appointment={editor}
+        locationId={locationId}
+        locationName={locationName}
         timeZone={timeZone}
         services={services}
         staff={staff}
@@ -311,11 +322,16 @@ export function AppointmentDetailDialog({
             {canManageAppointments && !appointment.recurringBookingId && !["CANCELLED", "COMPLETED", "NO_SHOW"].includes(appointment.status) && (
               <button type="button" onClick={() => setEditor({
                 id: appointment.id,
+                updatedAt: appointment.updatedAt,
+                locationId: appointment.locationId,
                 customerName: appointment.customerName,
                 customerEmail: appointment.customerEmail,
                 customerPhone: appointment.customerPhone,
                 clientId: appointment.clientId,
                 serviceId: appointment.serviceId,
+                serviceName: appointment.serviceName,
+                totalPrice: appointment.totalPrice,
+                totalDuration: (new Date(appointment.endTime).getTime() - new Date(appointment.startTime).getTime()) / 60_000,
                 staffId: appointment.staffId,
                 startTime: appointment.startTime,
                 internalNotes: appointment.internalNotes ?? null,

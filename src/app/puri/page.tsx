@@ -7,6 +7,8 @@ import { TrackedLink } from "@/components/analytics/tracked-link";
 import { JsonLd } from "@/components/json-ld";
 import { breadcrumbListNode, faqPageNode, jsonLdGraph, organizationRef, softwareApplicationNode } from "@/lib/json-ld";
 import { createPageMetadata } from "@/lib/seo";
+import Link from "next/link";
+import { PLUS_GROWTH_SUMMARY } from "@/lib/public-plans";
 
 export const revalidate = 3600;
 
@@ -48,6 +50,11 @@ export default async function PuriPage() {
           <p className="inline-flex border-2 border-black bg-[#FFD84D] px-3 py-1 text-xs font-black uppercase tracking-[0.16em] text-black shadow-[3px_3px_0_#000] dark:border-white dark:shadow-[3px_3px_0_#fff]">{t("eyebrow")}</p>
           <h1 className="mt-6 max-w-2xl text-[clamp(3rem,7vw,6.5rem)] font-black leading-[.9] tracking-[-.08em]">{t("homeTitle")}</h1>
           <p className="mt-6 max-w-xl text-lg font-bold leading-8 text-black/70 dark:text-white/70">{t("pageSubtitle")}</p>
+          <div className="mt-6 max-w-xl rounded-2xl border-3 border-black bg-[#FFF5BA] p-4 text-sm font-bold text-black shadow-[4px_4px_0_#000]">
+            <p className="font-black uppercase tracking-wide">Puri y Puri avanzado</p>
+            <p className="mt-2">Puri está incluido en ambos planes para consultar agenda, cobros y disponibilidad. Con Puragenda+, el mismo asistente amplía sus capacidades. {PLUS_GROWTH_SUMMARY}</p>
+            <Link href="/puragenda-plus" className="mt-3 inline-flex min-h-11 items-center font-black text-[#6D28D9] underline underline-offset-4">Ver qué incluye Puragenda+ →</Link>
+          </div>
           <TrackedLink href="/register" cta="register" placement="puri_hero" className="mt-7 inline-flex min-h-12 items-center gap-2 border-4 border-black bg-[#FFB5E8] px-6 py-3 text-base font-black uppercase text-black shadow-[5px_5px_0_#000] transition-transform hover:translate-x-1 hover:translate-y-1 hover:shadow-none focus-visible:outline-2 focus-visible:outline-offset-4 focus-visible:outline-[#7C3AED] dark:border-white dark:shadow-[5px_5px_0_#fff]">
             {t("secondaryCta")} <ArrowRight className="h-5 w-5" aria-hidden="true" />
           </TrackedLink>

@@ -3,13 +3,13 @@ import { getApiSessionUser } from "@/server/auth/user-session";
 import { getBusinessForUser } from "@/server/services/business.service";
 import { getSubscriptionByBusinessId } from "@/server/services/subscription.service";
 import {
-  getMarketingLimits,
   getCampaignsThisMonth,
   getLastCampaign,
 } from "@/server/services/marketing.service";
 import type { SubscriptionPlan, MarketingStatus } from "@/core/entities";
 import { DASHBOARD_PERMISSIONS } from "@/core/permissions";
 import { hasBusinessPermission } from "@/server/services/permissions.service";
+import { getMarketingAvailability } from "@/server/services/marketing-availability.service";
 
 export async function GET(request: NextRequest) {
   try {
@@ -28,17 +28,21 @@ export async function GET(request: NextRequest) {
 
     const subscription = await getSubscriptionByBusinessId(business.id);
     const plan: SubscriptionPlan = subscription?.plan ?? "INDIVIDUAL";
-    const limits = getMarketingLimits(plan);
-
-    const [campaignsSent, lastCampaign] = await Promise.all([
+    const [campaignsSent, lastCampaign, availability] = await Promise.all([
       getCampaignsThisMonth(business.id),
       getLastCampaign(business.id),
+      getMarketingAvailability(user, business.id),
     ]);
 
     const status: MarketingStatus = {
       campaignsSentThisMonth: campaignsSent,
-      maxCampaignsPerMonth: limits.maxCampaignsPerMonth,
-      maxAudienceSize: limits.maxEmails,
+      // Keep old readers compatible while reporting usable capacity truthfully.
+      // Contractual limits remain untouched in the commercial catalog.
+      maxCampaignsPerMonth: 0,
+      maxAudienceSize: 0,
+      legacySendingPaused: true,
+      sendingEnabled: false,
+      availability,
       plan,
       lastCampaign: lastCampaign
         ? {
@@ -49,7 +53,7 @@ export async function GET(request: NextRequest) {
         : null,
     };
 
-    return NextResponse.json(status);
+    return NextResponse.json(status, { headers: { "Cache-Control": "private, no-store" } });
   } catch (error) {
     console.error("[Marketing] Status error:", error);
     return NextResponse.json(

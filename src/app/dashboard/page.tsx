@@ -1,3 +1,6 @@
+import { canManageSetup } from "@/core/onboarding";
+import { loadSetup, setupContext } from "@/server/onboarding/service";
+import { SetupActivationCard } from "@/components/dashboard/setup-activation-card";
 import { redirect } from "next/navigation";
 import { getTranslations } from "next-intl/server";
 import { SubscriptionBanner } from "@/components/dashboard/subscription-banner";
@@ -51,6 +54,8 @@ export default async function DashboardPage({
     return <div className="py-20 text-center text-muted-foreground">{t("noFeatures")}</div>;
   }
 
+  const setup = canManageSetup(permissions) ? await loadSetup(await setupContext(user)) : null;
+  if (setup?.started && !setup.paused && !setup.completed && !setup.dismissed) redirect("/dashboard/setup");
   const params = await searchParams;
   if (params.date && AGENDA_PARAM.test(params.date)) {
     const query = new URLSearchParams();
@@ -79,6 +84,7 @@ export default async function DashboardPage({
       <SubscriptionBanner businessId={business.id} timezone={business.timezone} countryCode={business.countryCode} hideHealthyStatus />
       {websiteLaunch ? <WebsiteDiscoveryCard context={websiteLaunch} /> : null}
       {marketplacePrompt ? <MarketplaceConsentPrompt prompt={marketplacePrompt} /> : null}
+      {setup ? <SetupActivationCard snapshot={setup} /> : null}
       <TodayScreen data={data} userName={user.name} />
     </div>
   );

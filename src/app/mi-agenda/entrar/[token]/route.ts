@@ -1,8 +1,7 @@
 import { NextRequest, NextResponse } from "next/server";
 import {
   CLIENT_PORTAL_COOKIE_NAME,
-  consumeClientPortalMagicToken,
-  createClientPortalAccountSession,
+  consumeClientPortalAccessSession,
   getClientPortalCookieOptions,
   getClientPortalAppUrl,
 } from "@/server/services/client-portal.service";
@@ -14,10 +13,10 @@ export async function GET(
   { params }: { params: Promise<{ token: string }> },
 ) {
   const { token } = await params;
-  const email = await consumeClientPortalMagicToken(token);
+  const session = await consumeClientPortalAccessSession(token);
   const destination = new URL("/mi-agenda", getClientPortalAppUrl(request.nextUrl.origin));
 
-  if (!email) {
+  if (!session) {
     destination.searchParams.set("error", "enlace-invalido");
     return NextResponse.redirect(destination, { status: 303 });
   }
@@ -25,7 +24,7 @@ export async function GET(
   const response = NextResponse.redirect(destination, { status: 303 });
   response.cookies.set(
     CLIENT_PORTAL_COOKIE_NAME,
-    await createClientPortalAccountSession(email),
+    session,
     getClientPortalCookieOptions(),
   );
   response.headers.set("Cache-Control", "no-store");

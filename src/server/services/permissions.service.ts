@@ -1,4 +1,5 @@
 import { prisma } from "@/server/db/prisma";
+import type { Prisma } from "@prisma/client";
 import {
   DASHBOARD_PERMISSIONS,
   LEGACY_ROLE_PERMISSIONS,
@@ -9,17 +10,19 @@ import {
 export async function getEffectiveBusinessPermissions(
   user: { id: string; role: string },
   business: { id: string; ownerId: string | null },
+  db: Pick<Prisma.TransactionClient, "staff"> = prisma,
 ): Promise<DashboardPermission[]> {
   if (business.ownerId === user.id || user.role === "SUPERADMIN") {
     return LEGACY_ROLE_PERMISSIONS.ADMIN;
   }
 
-  const staff = await prisma.staff.findFirst({
+  const staff = await db.staff.findFirst({
     where: { businessId: business.id, userId: user.id, isActive: true },
     select: { accessProfile: { select: { permissions: true } } },
   });
 
-  if (staff?.accessProfile) {
+  if (!staff) return [];
+  if (staff.accessProfile) {
     return normalizeDashboardPermissions(staff.accessProfile.permissions);
   }
 
@@ -30,8 +33,9 @@ export async function hasBusinessPermission(
   user: { id: string; role: string },
   business: { id: string; ownerId: string | null },
   permission: DashboardPermission,
+  db: Pick<Prisma.TransactionClient, "staff"> = prisma,
 ) {
-  const permissions = await getEffectiveBusinessPermissions(user, business);
+  const permissions = await getEffectiveBusinessPermissions(user, business, db);
   return permissions.includes(permission);
 }
 

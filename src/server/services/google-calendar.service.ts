@@ -1,3 +1,4 @@
+import { resolveAppointmentVenue, appointmentVenueSelect } from "@/server/services/appointment-venue";
 import crypto from "node:crypto";
 import type { GoogleCalendarConnection } from "@prisma/client";
 import { fromZonedTime } from "date-fns-tz";
@@ -434,6 +435,7 @@ export async function saveGoogleCalendarConnection(input: {
   tokens: GoogleTokenResponse & { access_token: string };
   googleEmail: string;
 }) {
+  if (input.state.scope === "STAFF" && !await prisma.staff.findFirst({ where: { id: input.state.staffId ?? "", businessId: input.state.businessId, userId: input.state.userId, isActive: true }, select: { id: true } })) throw new Error("El profesional está inactivo");
   const existing = await prisma.googleCalendarConnection.findUnique({
     where: {
       businessId_scopeKey: {
@@ -532,7 +534,21 @@ function uniqueAttendees(values: Array<string | null | undefined>, organizer: st
 async function appointmentForGoogle(appointmentId: string) {
   return prisma.appointment.findUnique({
     where: { id: appointmentId },
-    include: {
+    // Keep appointment fields explicit. Internal notes never belong in Google,
+    // even when customer invitations are disabled.
+    select: {
+      id: true,
+      businessId: true,
+      locationId: true,
+      staffId: true,
+      customerName: true,
+      customerEmail: true,
+      customerPhone: true,
+      customerAddress: true,
+      startTime: true,
+      endTime: true,
+      status: true,
+      location: { select: appointmentVenueSelect },
       service: { select: { name: true } },
       staff: {
         select: {
@@ -550,7 +566,7 @@ async function appointmentForGoogle(appointmentId: string) {
           timezone: true,
           owner: { select: { email: true } },
           googleCalendarConnections: {
-            where: { syncEnabled: true },
+            where: { syncEnabled: true, OR: [{ scope: "BUSINESS" }, { staff: { isActive: true } }] },
             orderBy: [{ scope: "desc" }, { updatedAt: "desc" }],
           },
         },
@@ -576,7 +592,8 @@ function selectAppointmentConnection(appointment: GoogleAppointment) {
   );
 }
 
-function buildGoogleEvent(appointment: GoogleAppointment, connection: GoogleCalendarConnection) {
+async function buildGoogleEvent(appointment: GoogleAppointment, connection: GoogleCalendarConnection) {
+  const venue = await resolveAppointmentVenue(appointment);
   const staffName = appointment.staff?.name ?? "Sin profesional asignado";
   const attendees = uniqueAttendees(
     [
@@ -594,7 +611,6 @@ function buildGoogleEvent(appointment: GoogleAppointment, connection: GoogleCale
     `Servicio: ${appointment.service.name}`,
     `Profesional: ${staffName}`,
     `Estado: ${appointment.status}`,
-    appointment.internalNotes ? `Notas internas: ${appointment.internalNotes}` : null,
     `ID Puragenda: ${appointment.id}`,
   ]
     .filter(Boolean)
@@ -604,14 +620,14 @@ function buildGoogleEvent(appointment: GoogleAppointment, connection: GoogleCale
     id: googleEventId(appointment.id),
     summary: `${appointment.service.name} · ${appointment.customerName}`,
     description,
-    location: appointment.customerAddress || appointment.business.address || undefined,
+    location: appointment.customerAddress || venue.businessAddress || undefined,
     start: {
       dateTime: appointment.startTime.toISOString(),
-      timeZone: appointment.business.timezone,
+      timeZone: venue.timezone,
     },
     end: {
       dateTime: appointment.endTime.toISOString(),
-      timeZone: appointment.business.timezone,
+      timeZone: venue.timezone,
     },
     attendees,
     extendedProperties: {
@@ -626,10 +642,18 @@ function buildGoogleEvent(appointment: GoogleAppointment, connection: GoogleCale
 async function deleteMappedGoogleEvent(
   mapping: NonNullable<GoogleAppointment["googleCalendarEvent"]>,
 ) {
+  const eventPath = `/calendar/v3/calendars/${encodeURIComponent(mapping.calendarId)}/events/${encodeURIComponent(mapping.googleEventId)}`;
   try {
+    // Older events may already contain internal notes. Clear their description
+    // before notifying guests of a cancellation, calendar move or disconnect.
+    // If redaction fails, retain the mapping for a safe retry without notifying.
+    await googleApiRequest(mapping.connection, `${eventPath}?sendUpdates=none`, {
+      method: "PATCH",
+      body: JSON.stringify({ description: "" }),
+    });
     await googleApiRequest(
       mapping.connection,
-      `/calendar/v3/calendars/${encodeURIComponent(mapping.calendarId)}/events/${encodeURIComponent(mapping.googleEventId)}?sendUpdates=all`,
+      `${eventPath}?sendUpdates=all`,
       { method: "DELETE" },
     );
   } catch (error) {
@@ -676,7 +700,7 @@ export async function syncAppointmentToGoogle(appointmentId: string) {
       await deleteMappedGoogleEvent(existingMapping);
     }
 
-    const event = buildGoogleEvent(appointment, connection);
+    const event = await buildGoogleEvent(appointment, connection);
     const path = `/calendar/v3/calendars/${encodeURIComponent(connection.calendarId)}/events`;
     let response: Response;
     const canUpdateExisting =
@@ -856,7 +880,7 @@ export async function getGoogleCalendarBusySlots(
   businessId?: string,
 ) {
   let connection = await prisma.googleCalendarConnection.findFirst({
-    where: { staffId, scope: "STAFF", syncEnabled: true },
+    where: { staffId, scope: "STAFF", syncEnabled: true, staff: { isActive: true } },
     orderBy: { updatedAt: "desc" },
   });
   if (!connection && businessId) {
@@ -880,8 +904,16 @@ export async function getGoogleCalendarBusySlots(
         }),
       });
       const data = (await response.json()) as {
-        calendars?: Record<string, { busy?: Array<{ start?: string; end?: string }> }>;
+        calendars?: Record<string, { errors?: unknown[]; busy?: Array<{ start?: string; end?: string }> }>;
       };
+      for (const selected of selections) {
+        const calendar = data.calendars?.[selected.calendarId];
+        if (!calendar || calendar.errors?.length || !Array.isArray(calendar.busy)
+          || calendar.busy.some(range => !range.start || !range.end || !Number.isFinite(Date.parse(range.start))
+            || !Number.isFinite(Date.parse(range.end)) || Date.parse(range.end) <= Date.parse(range.start))) {
+          throw new Error("Google Calendar FreeBusy returned an incomplete or failed calendar");
+        }
+      }
       ranges = selections.flatMap((calendar) => data.calendars?.[calendar.calendarId]?.busy ?? [])
         .filter((range) => range.start && range.end)
         .map((range) => ({

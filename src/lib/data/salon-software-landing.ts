@@ -1,11 +1,6 @@
-import {
-  EXTRA_STAFF_COST,
-  PRICING,
-  STAFF_LIMITS,
-  TRIAL_DURATION_DAYS,
-} from "@/core/constants";
+import { PUBLIC_PLANS_PRICE_SUMMARY } from "@/lib/public-plans";
+import { TRIAL_DURATION_DAYS } from "@/core/constants";
 import type { FaqItem } from "@/lib/json-ld";
-import { formatLandingClp } from "@/lib/data/scheduling-system-landing";
 
 export const SALON_SOFTWARE_PATH = "/software-agenda-peluquerias";
 
@@ -135,10 +130,6 @@ export const salonCustomerSteps = [
 ] as const;
 
 export function salonSoftwareFaqs(): FaqItem[] {
-  const individual = formatLandingClp(PRICING.INDIVIDUAL.monthly);
-  const team = formatLandingClp(PRICING.EQUIPO.monthly);
-  const extraStaff = formatLandingClp(EXTRA_STAFF_COST.EQUIPO);
-
   return [
     {
       question: "¿Puedo configurar servicios con distinta duración en la peluquería?",
@@ -177,7 +168,7 @@ export function salonSoftwareFaqs(): FaqItem[] {
     },
     {
       question: "¿Cuánto cuesta el software de agenda para una peluquería?",
-      answer: `El plan ${PRICING.INDIVIDUAL.name} cuesta ${individual} al mes para un profesional. El plan ${PRICING.EQUIPO.name} cuesta ${team} al mes e incluye ${STAFF_LIMITS.EQUIPO} profesionales. Extra en Equipo: ${extraStaff} al mes cada uno. La prueba dura ${TRIAL_DURATION_DAYS} días y no pide tarjeta.`,
+      answer: `${PUBLIC_PLANS_PRICE_SUMMARY} La prueba de Puragenda dura ${TRIAL_DURATION_DAYS} días y no pide tarjeta.`,
     },
   ];
 }

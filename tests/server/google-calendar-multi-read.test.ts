@@ -88,6 +88,21 @@ describe("Google Calendar multiple availability calendars", () => {
   });
   const busy = () => getGoogleCalendarBusySlots("staff-1", start, end, "business-1");
 
+  it.each(["notFound", "internalError", "futureProviderReason"])("fails closed on a calendar-level HTTP 200 error: %s", async reason => {
+    vi.stubGlobal("fetch", vi.fn().mockResolvedValue(Response.json({ calendars: {
+      personal: { busy: [] }, therapy: { errors: [{ domain: "global", reason }] }, meetings: { busy: [] },
+    } })));
+    await expect(busy()).resolves.toEqual([{ startTime: start, endTime: end }]);
+  });
+  it("accepts genuinely empty selected calendars", async () => {
+    vi.stubGlobal("fetch", vi.fn().mockResolvedValue(Response.json({ calendars: { personal: { busy: [] }, therapy: { busy: [] }, meetings: { busy: [] } } })));
+    await expect(busy()).resolves.toEqual([]);
+  });
+  it("fails closed if a selected calendar or its busy array is missing", async () => {
+    vi.stubGlobal("fetch", vi.fn().mockResolvedValue(Response.json({ calendars: { personal: { busy: [] }, meetings: { busy: [] } } })));
+    await expect(busy()).resolves.toEqual([{ startTime: start, endTime: end }]);
+  });
+
   it("recovers business calendars with legacy scopes and keeps real events blocked", async () => {
     mocks.findFirst.mockResolvedValueOnce(null).mockResolvedValueOnce({ ...connection, scope: "BUSINESS", staffId: null });
     mocks.findMany.mockResolvedValue([]); // Existing grants predate read selections.

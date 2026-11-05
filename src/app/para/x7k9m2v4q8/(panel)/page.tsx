@@ -19,6 +19,7 @@ import {
 } from "@/components/icons/hover-icons";
 import Link from "next/link";
 import { ADMIN_SECRET_PATH } from "@/core/constants";
+import { ContactFlowOperationsCard } from "./contact-flow-operations-card";
 
 export const dynamic = "force-dynamic";
 
@@ -90,19 +91,19 @@ export default async function AdminDashboardPage() {
 
   const trialBusinesses = subscriptions.filter((s) => s.status === "TRIALING").length;
 
-  const paidIndividual = subscriptions.filter(
-    (s) => s.plan === "INDIVIDUAL" && s.status === "ACTIVE" && !s.isTrial
+  const paidPuragenda = subscriptions.filter(
+    (s) => s.plan !== "PURAGENDA_PLUS" && s.status === "ACTIVE" && !s.isTrial
   ).length;
 
-  const paidEquipo = subscriptions.filter(
-    (s) => s.plan === "EQUIPO" && s.status === "ACTIVE" && !s.isTrial
+  const paidPlus = subscriptions.filter(
+    (s) => s.plan === "PURAGENDA_PLUS" && s.status === "ACTIVE" && !s.isTrial
   ).length;
 
   const billingReports = subscriptions.map(s => getAdminSubscriptionReport(s, s.business, now));
   const revenue = getAdminRevenueSummary(billingReports);
   const estimatedMRR = revenue.monthlyRevenueClp;
 
-  const paidActive = paidIndividual + paidEquipo;
+  const paidActive = paidPuragenda + paidPlus;
   const everConverted = subscriptions.filter(
     (s) => s.status === "ACTIVE" && !s.isTrial
   ).length;
@@ -145,6 +146,8 @@ export default async function AdminDashboardPage() {
           <LocalizedText id="VvuwYQzMj7ZD" />
         </Link>
       </div>
+
+      <ContactFlowOperationsCard />
 
       {/* Stats Grid */}
       <div className="grid grid-cols-2 gap-3 lg:grid-cols-5">
@@ -215,7 +218,7 @@ export default async function AdminDashboardPage() {
           </div>
           <p className="text-2xl sm:text-4xl font-black text-black tracking-tighter">{paidActive}</p>
           <p className="mt-1 text-xs font-bold text-black/50">
-            {paidIndividual} <LocalizedText id="XYqeAm4QjvCB" /> {paidEquipo} <LocalizedText id="wpRGdUrhm5Ag" />
+            {paidPuragenda} Puragenda · {paidPlus} Puragenda+
           </p>
         </div>
         <div className="border-4 border-black bg-white p-5 shadow-[6px_6px_0_#000]">
@@ -237,8 +240,8 @@ export default async function AdminDashboardPage() {
           </h3>
           <div className="space-y-3">
             {[
-              { name: "Individual", plan: "INDIVIDUAL", count: paidIndividual, bg: "bg-[#FFF5BA]" },
-              { name: "Plan Equipo", plan: "EQUIPO", count: paidEquipo, bg: "bg-[#B28DFF]" },
+              { name: "Puragenda", plan: "PURAGENDA", count: paidPuragenda, bg: "bg-[#FFF5BA]" },
+              { name: "Puragenda+", plan: "PURAGENDA_PLUS", count: paidPlus, bg: "bg-[#B28DFF]" },
             ].map((item) => (
               <div
                 key={item.name}

@@ -1,8 +1,11 @@
 import { prisma } from "@/server/db/prisma";
+import { getOrCreateBookingClient } from "@/server/services/booking-client.service";
 import { createRecurringBookingAction } from "@/server/actions/recurring.actions";
 import { NextRequest } from "next/server";
 import { recurringBookingRequestSchema } from "@/server/validations/booking";
 import { operationalSubscriptionDeniedResponse } from "@/server/http/subscription-access";
+import { publicConsentEnabled, recordPublicConsent } from "@/server/contact-flow/public-consent";
+import { getClientPortalAccountFromRequest } from "@/server/services/client-portal.service";
 
 /**
  * POST /api/widget/[slug]/book-recurring
@@ -24,7 +27,7 @@ export async function POST(
       select: {
         id: true,
         subscription: {
-          select: { status: true, isTrial: true, trialEndsAt: true, gracePeriodEndsAt: true },
+          select: { plan: true, currentPeriodEnd: true, status: true, isTrial: true, trialEndsAt: true, gracePeriodEndsAt: true },
         },
       },
     });
@@ -71,9 +74,9 @@ export async function POST(
     }
 
     const service = await prisma.service.findFirst({
-      where: { id: serviceId, businessId: business.id },
+      where: { isActive: true, id: serviceId, businessId: business.id },
       include: {
-        optionCategories: { include: { alternatives: true } },
+        optionCategories: { where: { isActive: true }, include: { alternatives: true } },
       },
     });
     if (!service) {
@@ -111,6 +114,11 @@ export async function POST(
       return Response.json({ error: "Debes indicar la direccion para el servicio a domicilio" }, { status: 400 });
     }
 
+    if (parsed.data.commercialConsent?.accepted && publicConsentEnabled()) {
+      const email = customerEmail.trim().toLowerCase();
+      const client = await getOrCreateBookingClient({ businessId: business.id, name: customerName, email, phone: normalizedPhone });
+      if (client.portalOwnerEmail === email) await recordPublicConsent({ businessId: business.id, clientId: client.id, ...parsed.data.commercialConsent, verifiedAccount: await getClientPortalAccountFromRequest(request) });
+    }
     const result = await createRecurringBookingAction({
       businessSlug: slug,
       serviceId,
@@ -127,7 +135,10 @@ export async function POST(
       customerRut: rut || undefined,
       healthAnswers: healthAnswers || undefined,
       healthFreeText: healthExtra || undefined,
-      healthAccepted: healthAccepted ?? true,
+      healthAccepted: healthAccepted === true,
+      healthConsentVersion: parsed.data.healthConsentVersion,
+      healthFormRevision: parsed.data.healthFormRevision,
+      healthConsentLocale: parsed.data.healthConsentLocale,
     });
 
     if (result.error) {
@@ -135,8 +146,8 @@ export async function POST(
     }
 
     return Response.json(result, { status: 201 });
-  } catch (error) {
-    console.error("[api/widget/book-recurring] Error:", error);
+  } catch {
+    console.error("[api/widget/book-recurring] Error:");
     return Response.json({ error: "Error del servidor" }, { status: 500 });
   }
 }

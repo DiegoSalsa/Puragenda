@@ -17,7 +17,7 @@ const requestSchema = z.object({
 });
 
 export async function POST(request: NextRequest) {
-  const limited = clientPortalLinkLimiter.check(request);
+  const limited = await clientPortalLinkLimiter.check(request);
   if (limited) return limited;
 
   try {
@@ -39,8 +39,8 @@ export async function POST(request: NextRequest) {
       ok: true,
       message: "Si encontramos reservas asociadas, recibirás un enlace en unos minutos.",
     });
-  } catch (error) {
-    console.error("[client portal request link]", error);
+  } catch {
+    console.error("[client portal request link]");
     return Response.json({ error: "No pudimos procesar la solicitud" }, { status: 500 });
   }
 }

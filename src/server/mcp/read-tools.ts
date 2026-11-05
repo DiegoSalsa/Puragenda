@@ -40,7 +40,7 @@ function puri(name: string, description: string, scope: McpScope, puriName: stri
   } };
 }
 
-export const readTools: ReadTool[] = [
+const declarations: ReadTool[] = [
   { name: "get_connected_account", description: "Identifica la cuenta y el negocio autorizados por esta conexión. No recibe IDs de negocio.", scope: "account:read", profile: true, schema: z.object({}).strict(), async run(_args, identity) {
     const context = await authorizedContext(identity, "account:read");
     return { id: identity!.connection.profile.id, name: context.access.user.name,
@@ -89,3 +89,13 @@ export const readTools: ReadTool[] = [
   puri("get_loyalty_summary", "Resume sellos y recompensas del negocio. Nombres de clientes sólo si también se autorizó clients:read.", "loyalty:read", "getLoyaltySummary", {}, true),
   puri("get_gift_cards_summary", "Resume cantidades y saldos de gift cards por moneda. No devuelve códigos ni permite comprar o canjear tarjetas.", "loyalty:read", "getGiftCardsSummary", {}, true),
 ];
+
+// A connection may be revoked while the underlying query is running. The
+// response must obey both the original upper bound and current authorization.
+export const readTools: ReadTool[] = declarations.map(tool => ({ ...tool, async run(args, identity) {
+  const before = await authorizedContext(identity, tool.scope, args.locationId as string | undefined);
+  const result = await tool.run(args, identity);
+  const after = await authorizedContext(identity, tool.scope, args.locationId as string | undefined);
+  if (before.business.id !== after.business.id || before.location?.id !== after.location?.id || before.staffId !== after.staffId || before.ownAgenda !== after.ownAgenda || before.permissions.some(p => !after.permissions.includes(p))) throw new McpError("ACCESS_REVOKED", 401);
+  return result;
+} }));

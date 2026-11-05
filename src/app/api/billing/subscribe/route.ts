@@ -24,6 +24,7 @@ import {
   localProviderId,
 } from "@/server/services/local-payment-simulator";
 import { getPaddleCheckoutItems } from "@/server/lib/paddle";
+import { handleMpV2Command } from "@/server/commercial-billing/mercadopago-v2-http";
 
 type ValidPlan = "INDIVIDUAL" | "EQUIPO" | "TEST";
 
@@ -31,7 +32,7 @@ export async function POST(request: NextRequest) {
   let bundleClaim: { businessId: string; key: string } | null = null;
   try {
     // Rate limiting
-    const blocked = billingLimiter.check(request);
+    const blocked = await billingLimiter.check(request);
     if (blocked) return blocked;
 
     // 1. Verify authenticated session
@@ -58,8 +59,10 @@ export async function POST(request: NextRequest) {
     let discountCode: string | undefined;
     let mercadoPagoEmail = user.email;
     let requestedExtraStaffCount = 0;
+    let v2Body: unknown;
     try {
       const body = await request.json();
+      v2Body = body;
       if (body.plan === "INDIVIDUAL" || body.plan === "EQUIPO" || body.plan === "TEST") {
         requestedPlan = body.plan;
       }
@@ -87,6 +90,9 @@ export async function POST(request: NextRequest) {
     const subscription = await prisma.subscription.findUnique({
       where: { businessId: business.id },
     });
+    if (subscription?.plan === "PURAGENDA" || subscription?.plan === "PURAGENDA_PLUS") {
+      return handleMpV2Command(request, v2Body);
+    }
     if (subscription?.paymentMethod === "BANK_TRANSFER") {
       return NextResponse.json(
         { error: "Tu suscripción se paga por transferencia bancaria. Contacta a administración para renovarla.", code: "MANUAL_TRANSFER_SUBSCRIPTION" },

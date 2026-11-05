@@ -1,4 +1,8 @@
 "use client";
+import { healthConsentText, HEALTH_CONSENT_VERSION } from "@/core/health-consent";
+import { CommercialConsentChoice } from "@/components/commercial-consent-choice";
+import { COMMERCIAL_CONSENT_VERSION } from "@/core/commercial-consent";
+import { selectedDepositUnavailable, type DepositPaymentStatus } from "@/core/booking-deposit";
 
 import { LocalizedText } from "@/components/i18n/localized-text";
 
@@ -36,6 +40,7 @@ interface RecurringPlan {
   requiresApproval: boolean;
   requiresHealthForm: boolean;
   healthQuestions: string[];
+  healthFormRevision?: string;
   requiresRut: boolean;
   renewalMessage: string | null;
   expirationWarningDays: number;
@@ -51,6 +56,7 @@ interface Service {
   duration: number;
   price: number;
   depositAmount: number;
+  depositPaymentStatus?: DepositPaymentStatus;
   bookingMode: "APPOINTMENT" | "PRODUCTION";
   productionScheduleMode: "WEEKLY" | "CUSTOM";
   weeklyProductionCapacity: number;
@@ -122,6 +128,8 @@ interface Props {
   initialStaffId?: string;
   initialDate?: string;
   storyCampaignToken?: string;
+  contactFlowToken?: string;
+  commercialConsentEnabled?: boolean;
   previewMode?: boolean;
   useBusinessScheduleOnly?: boolean;
   availableRewards?: { code: string; rewardName: string | null; rewardType: string; expiresAt: string | null }[];
@@ -241,7 +249,7 @@ function isStaffAvailableForSlot(staff: StaffMember, slot: { start: Date; end: D
 /** Returns the shared accessible foreground for the business color. */
 const getContrastColor = getWidgetContrastColor;
 
-export function WidgetClient({ business, services, primaryColor, businessHours, scheduleOverrides = [], staffMembers, maxServicesPerBooking = 1, groupServicesByCategory = false, depositRequired = false, allowSameDayBookings = false, slotInterval = 30, minAdvanceBookingMinutes = 120, promoBlocks = [], locations = [], initialLocationSlug, initialServiceId, initialStaffId, initialDate, storyCampaignToken, previewMode = false, useBusinessScheduleOnly = false, availableRewards = [], availableGiftCards = [], hasGiftCards = false }: Props) {
+export function WidgetClient({ business, services, primaryColor, businessHours, scheduleOverrides = [], staffMembers, maxServicesPerBooking = 1, groupServicesByCategory = false, depositRequired = false, allowSameDayBookings = false, slotInterval = 30, minAdvanceBookingMinutes = 120, promoBlocks = [], locations = [], initialLocationSlug, initialServiceId, initialStaffId, initialDate, storyCampaignToken, contactFlowToken, commercialConsentEnabled = false, previewMode = false, useBusinessScheduleOnly = false, availableRewards = [], availableGiftCards = [], hasGiftCards = false }: Props) {
   const router = useRouter();
   const legacy = useTranslations("legacy");
   const t = useTranslations("widget");
@@ -555,6 +563,7 @@ export function WidgetClient({ business, services, primaryColor, businessHours, 
   const remainingAfterGiftCard = Math.max(0, totalPrice - giftCardPreviewAmount);
   const effectiveDepositAmount = Math.min(depositAmount, remainingAfterGiftCard);
   const showDeposit = depositRequired && effectiveDepositAmount > 0;
+  const depositUnavailable = selectedDepositUnavailable(depositRequired, activeServices, remainingAfterGiftCard);
 
   // Filter staff who can perform the selected service(s)
   const filteredStaff = useMemo(() => {
@@ -902,6 +911,8 @@ export function WidgetClient({ business, services, primaryColor, businessHours, 
     }
   }
 
+  const [commercialConsent, setCommercialConsent] = useState(false);
+
   async function handleConfirm(e: React.FormEvent) {
     e.preventDefault();
     setTouched({ name: true, email: true, phone: true, address: requiresHomeAddress });
@@ -947,6 +958,8 @@ export function WidgetClient({ business, services, primaryColor, businessHours, 
           discountCode: discountCodeStatus === "valid" ? discountCode.trim().toUpperCase() : undefined,
           promotionId: promotionResult?.quote ? activePromotionId || undefined : undefined,
           storyCampaignToken,
+          contactFlowToken,
+          commercialConsent: commercialConsentEnabled ? { accepted: commercialConsent, textVersion: COMMERCIAL_CONSENT_VERSION } : undefined,
           giftCardId: selectedGiftCardId || undefined,
         }),
       });
@@ -1133,6 +1146,10 @@ export function WidgetClient({ business, services, primaryColor, businessHours, 
           healthAnswers: Object.keys(healthAnswers).length > 0 ? healthAnswers : undefined,
           healthExtra: healthExtra || undefined,
           healthAccepted: healthTerms,
+          healthConsentVersion: HEALTH_CONSENT_VERSION,
+          healthFormRevision: selectedService?.recurringPlan?.healthFormRevision,
+          healthConsentLocale: locale,
+          commercialConsent: commercialConsentEnabled ? { accepted: commercialConsent, textVersion: COMMERCIAL_CONSENT_VERSION } : undefined,
         }),
       });
       const data = await res.json();
@@ -1592,6 +1609,7 @@ export function WidgetClient({ business, services, primaryColor, businessHours, 
               textColor={textColor}
               textSecondary={textSecondary}
               previewMode={previewMode}
+              commercialConsentEnabled={commercialConsentEnabled}
               onBack={() => {
                 setSelectedOptionByCategory({});
                 setSelectedService(null);
@@ -1873,7 +1891,7 @@ export function WidgetClient({ business, services, primaryColor, businessHours, 
                 </div>
                 <label className="flex items-start gap-3 cursor-pointer">
                   <input type="checkbox" checked={healthTerms} onChange={(e) => setHealthTerms(e.target.checked)} className="mt-0.5 h-4 w-4 rounded" style={{ accentColor: pc }} />
-                  <span className="text-sm" style={{ color: textSecondary }}><LocalizedText id="vI24hOzffnNh" /></span>
+                  <span className="text-sm" style={{ color: textSecondary }}>{healthConsentText(locale)}</span>
                 </label>
               </div>
 
@@ -1982,6 +2000,7 @@ export function WidgetClient({ business, services, primaryColor, businessHours, 
                 )}
               </div>
 
+              {commercialConsentEnabled && <CommercialConsentChoice checked={commercialConsent} onChange={setCommercialConsent} />}
               {recurringError && <div className="rounded-xl border border-red-500/30 bg-red-500/10 px-4 py-3 text-sm text-red-500 font-medium">{recurringError}</div>}
 
               <button type="button"
@@ -2385,15 +2404,16 @@ export function WidgetClient({ business, services, primaryColor, businessHours, 
                     {selectedGiftCard && giftCardPreviewAmount > 0 && <div className="space-y-1 text-xs font-semibold" style={{ color: textSecondary }}><p className="flex justify-between"><span>Pagado con Gift Card</span><strong style={{ color: textColor }}>−{formatPrice(giftCardPreviewAmount, business.currencyCode)}</strong></p><p className="flex justify-between"><span>Pendiente</span><strong style={{ color: textColor }}>{formatPrice(remainingAfterGiftCard, business.currencyCode)}</strong></p></div>}
                   </div>
                 )}
+                {commercialConsentEnabled && <CommercialConsentChoice checked={commercialConsent} onChange={setCommercialConsent} />}
                 {/* Deposit notice */}
                 {showDeposit && !previewMode && (
                   <div className="rounded-xl border px-4 py-3 text-sm" style={{ borderColor: `${pc}30`, background: `${pc}08` }}>
                     <p className="font-medium" style={{ color: pc }}><LocalizedText id="8OlEyuapzFy5" /> {formatPrice(effectiveDepositAmount, business.currencyCode)}</p>
-                    <p className="text-xs mt-1" style={{ color: textSecondary }}>{t("depositRedirect")}</p>
+                    <p className="text-xs mt-1" role={depositUnavailable ? "alert" : undefined} style={{ color: textSecondary }}>{t(depositUnavailable ? "depositUnavailable" : "depositRedirect")}</p>
                   </div>
                 )}
                 {apiError && <div className="rounded-xl border border-red-500/30 bg-red-500/10 px-4 py-3 text-sm text-red-500 font-medium">{apiError}</div>}
-                <button type="submit" disabled={!isFormValid || submitting} className="flex w-full items-center justify-center gap-2 rounded-xl py-3.5 mt-2 text-sm font-bold transition-all hover:opacity-90 hover:shadow-lg hover:shadow-brand/20 active:scale-[0.98] disabled:opacity-30 disabled:pointer-events-none" style={{ background: pc, color: getContrastColor(pc) }}>
+                <button type="submit" disabled={!isFormValid || submitting || (!previewMode && depositUnavailable)} className="flex w-full items-center justify-center gap-2 rounded-xl py-3.5 mt-2 text-sm font-bold transition-all hover:opacity-90 hover:shadow-lg hover:shadow-brand/20 active:scale-[0.98] disabled:opacity-30 disabled:pointer-events-none" style={{ background: pc, color: getContrastColor(pc) }}>
                   {submitting ? <><Loader2 className="h-5 w-5 animate-spin" />{showDeposit ? t("redirecting") : t("confirming")}</> : <>{previewMode ? previewText.finish : showDeposit ? t("payDeposit") : t("confirmBooking")} <ChevronRight className="h-5 w-5" /></>}
                 </button>
               </form>

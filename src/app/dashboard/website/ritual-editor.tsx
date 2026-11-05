@@ -17,7 +17,7 @@ import LivePreviewFrame from "./live-preview-frame";
 import DomainPanel from "./domain-panel";
 import RitualGalleryPanel from "./ritual-gallery-panel";
 import RitualCopyFields from "./ritual-copy-fields";
-import BillingPanel from "./billing-panel";
+import BillingPanel from "./commercial-billing-panel";
 import styles from "./website-builder.module.css";
 import EditorNotice from "./editor-notice";
 
@@ -39,6 +39,7 @@ type Section = typeof sections[number]["key"];
 
 export default function RitualEditor(props: Props) {
   const router = useRouter();
+  const [mode, setMode] = useState<"edit" | "preview">("edit");
   const [publishWarning, setPublishWarning] = useState("");
   const [config, setConfig] = useState(props.initial), [subdomain, setSubdomain] = useState(props.subdomain), [section, setSection] = useState<Section>("design"), [viewport, setViewport] = useState<"desktop" | "mobile">("desktop"), [message, setMessage] = useState(""), [pending, start] = useTransition(), [uploads, setUploads] = useState(0), [visualMedia, setVisualMedia] = useState<Record<string, string>>({});
   const [autosave] = useState(() => new DraftAutosave<{ config: RitualConfig; subdomain: string }>({ config: props.initial, subdomain: props.subdomain }, props.revision, async (draft, revision) => {
@@ -99,13 +100,17 @@ export default function RitualEditor(props: Props) {
   useEffect(() => { autosave.resume(); return () => autosave.dispose(); }, [autosave]);
 
   const tokens = ritualTokens(config), unpublished = props.status !== "PUBLISHED" || save.revision !== props.publishedRevision || save.dirty;
-  return <div className={styles.builder}>
+  return <div className={styles.builder} data-mode={mode}>
     <header className={styles.topbar}>
       <div className={styles.title}><h1>Mi sitio</h1><p>Ritual · Masajes / Wellness / Terapias</p></div>
       <span className={styles.saveStatus}>{save.status === "saving" ? <LoaderCircle size={14} /> : <Check size={14} />}{save.status === "saving" ? "Guardando…" : "Guardado"}</span>
       {props.status === "PUBLISHED" ? <a className={styles.secondary} href={props.publicUrl} target="_blank" rel="noopener noreferrer">Ver sitio</a> : null}
       <button className={styles.publish} disabled={pending || uploads > 0 || !active || !unpublished} onClick={() => publish()}><Sparkles size={14} />Publicar cambios</button>
     </header>
+    <div className={styles.mobileTabs}>
+      <button aria-pressed={mode === "edit"} onClick={() => setMode("edit")}>Editar</button>
+      <button aria-pressed={mode === "preview"} onClick={() => { setViewport("mobile"); setMode("preview"); }}>Vista previa</button>
+    </div>
     {!active ? <div className={styles.notice}>Tu contenido sigue guardado. Activa Sitio Web para publicar.<button onClick={() => setSection("billing")}>Ver suscripción</button></div> : null}
     <div className={styles.body}>
       <nav className={styles.navigation} role="tablist" aria-label="Editar mi sitio">{sections.map(item => <button key={item.key} role="tab" aria-selected={section === item.key} onClick={() => setSection(item.key)}><item.icon size={18} />{item.name}</button>)}</nav>

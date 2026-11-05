@@ -1,4 +1,3 @@
-import { addMonths, addYears } from "date-fns";
 import { Invoice, PreApproval } from "mercadopago";
 import { NextRequest, NextResponse } from "next/server";
 
@@ -12,19 +11,19 @@ import {
 import { stateForCancelledProviderSubscription } from "@/server/services/subscription-billing.service";
 import { verifyMercadoPagoWebhookSignature } from "@/server/lib/mercadopago-webhook";
 import { syncMercadoPagoWebsitePreapproval, syncMercadoPagoWebsiteInvoice } from "@/server/websites/mercadopago-billing";
+import { handleMpV2Webhook } from "@/server/commercial-billing/mercadopago-v2";
 
-function dateOrNull(value?: string | null) {
-  if (!value) return null;
-  const date = new Date(value);
-  return Number.isNaN(date.getTime()) ? null : date;
-}
-
-async function processPreapproval(resourceId: string) {
+async function processPreapproval(resourceId: string, reconcileV2: () => Promise<void>) {
   const preapproval = new PreApproval(mpClient);
   const mpSubscription = await preapproval.get({ id: resourceId });
 
   if (!mpSubscription?.id) {
     return { handled: false, reason: "preapproval_not_found" };
+  }
+
+  if (mpSubscription.external_reference?.startsWith("v2_")) {
+    await reconcileV2();
+    return { handled: true, product: "commercial_v2" };
   }
 
   if (await syncMercadoPagoWebsitePreapproval(mpSubscription)) return { handled: true, product: "website" };
@@ -41,33 +40,9 @@ async function processPreapproval(resourceId: string) {
   }
 
   if (mpSubscription.status === "authorized") {
-    // An authorized preapproval only proves that the recurring agreement is
-    // active. It must never clear a PAST_DUE state; invoice notifications do.
-    const canActivateOnboarding =
-      (subscription.status === "INACTIVE" ||
-        subscription.status === "TRIALING") &&
-      !subscription.paymentFailedAt;
-
-    if (!canActivateOnboarding) {
-      return { handled: true, state: subscription.status };
-    }
-
-    const providerPeriodEnd = dateOrNull(mpSubscription.next_payment_date);
-    const fallbackPeriodEnd =
-      subscription.billingCycle === "ANNUAL"
-        ? addYears(new Date(), 1)
-        : addMonths(new Date(), 1);
-
-    await prisma.subscription.update({
-      where: { id: subscription.id },
-      data: {
-        status: "ACTIVE",
-        isTrial: false,
-        currentPeriodEnd: providerPeriodEnd ?? fallbackPeriodEnd,
-      },
-    });
-
-    return { handled: true, state: "ACTIVE" };
+    // Preserve legitimate legacy grants without creating paid time from a
+    // recurring authorization. Invoice reconciliation is the payment boundary.
+    return { handled: true, state: subscription.status };
   }
 
   if (
@@ -99,7 +74,14 @@ async function processPreapproval(resourceId: string) {
   return { handled: true, state: mpSubscription.status ?? "unknown" };
 }
 
-async function processPaymentNotification(resourceId: string) {
+async function isV2Invoice(invoice: MercadoPagoInvoiceSnapshot) {
+  if (process.env.PURAGENDA_MP_V2_ENVIRONMENT !== "production" || !invoice.preapproval_id) return false;
+  return !!await prisma.commercialBillingOperation.findFirst({ where: {
+    provider: "MERCADO_PAGO", environment: "V2_PRODUCTION", kind: "NEW_SUBSCRIPTION", providerSubscriptionId: invoice.preapproval_id,
+  }, select: { id: true } });
+}
+
+async function processPaymentNotification(resourceId: string, reconcileV2: () => Promise<void>) {
   const paymentId = Number(resourceId);
   if (!Number.isFinite(paymentId)) {
     return { handled: false, reason: "invalid_payment_id" };
@@ -110,6 +92,11 @@ async function processPaymentNotification(resourceId: string) {
   if (!invoice) {
     // The payment may belong to deposits or another integration.
     return { handled: false, reason: "subscription_invoice_not_found" };
+  }
+
+  if (await isV2Invoice(invoice)) {
+    await reconcileV2();
+    return { handled: true, product: "commercial_v2" };
   }
 
   if (await syncMercadoPagoWebsiteInvoice(invoice)) return { handled: true, product: "website" };
@@ -158,22 +145,29 @@ export async function POST(request: NextRequest) {
       return NextResponse.json({ received: true });
     }
 
+    // The current application-level callback remains valid for recurring V2
+    // contracts. The V2 reconciler verifies its own signature, account,
+    // application, environment and durable operation before granting access.
+    const reconcileV2 = () => handleMpV2Webhook(rawBody, request.headers, queryDataId ?? null);
+
     if (notificationType === "subscription_authorized_payment") {
       const invoiceClient = new Invoice(mpClient);
       const invoice = (await invoiceClient.get({
         id: resourceId,
       })) as MercadoPagoInvoiceSnapshot;
-      const result = await syncMercadoPagoWebsiteInvoice(invoice) ? { handled: true, product: "website" } : await processMercadoPagoInvoice(invoice);
+      const result = await isV2Invoice(invoice)
+        ? (await reconcileV2(), { handled: true, product: "commercial_v2" })
+        : await syncMercadoPagoWebsiteInvoice(invoice) ? { handled: true, product: "website" } : await processMercadoPagoInvoice(invoice);
       return NextResponse.json({ received: true, result });
     }
 
     if (notificationType === "subscription_preapproval") {
-      const result = await processPreapproval(resourceId);
+      const result = await processPreapproval(resourceId, reconcileV2);
       return NextResponse.json({ received: true, result });
     }
 
     if (notificationType === "payment") {
-      const result = await processPaymentNotification(resourceId);
+      const result = await processPaymentNotification(resourceId, reconcileV2);
       return NextResponse.json({ received: true, result });
     }
 

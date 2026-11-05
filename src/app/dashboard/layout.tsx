@@ -1,3 +1,6 @@
+import { LearningProvider } from "@/components/dashboard/learning-provider";
+import { canManageSetup } from "@/core/onboarding";
+import { growthSandboxEnabled } from "@/server/puri/growth/access";
 import { DashboardSidebar } from "@/components/dashboard/sidebar";
 import Link from "next/link";
 import { getCurrentSessionUser } from "@/server/auth/user-session";
@@ -19,6 +22,8 @@ import { isDemoAccountEmail } from "@/server/auth/demo-session";
 import { PuriAssistant } from "@/components/dashboard/puri-assistant";
 import { shouldShowWebsiteTrialReminder, websiteTrialReminderKey } from "@/websites/trial-reminder";
 import { getDashboardWebsiteLaunch } from "@/server/websites/launch-context";
+import { getCommercialPlanAccess } from "@/server/services/commercial-plan-access";
+import { resolveWebsiteCommercialAccess } from "@/server/websites/commercial-access";
 import { getCurrentAdminSessionUser } from "@/server/auth/admin-session";
 import { exitImpersonationAction } from "@/server/actions/impersonate.actions";
 
@@ -73,6 +78,7 @@ export default async function DashboardLayout({
           plan={subscription?.plan ?? "INDIVIDUAL"}
           paymentSimulatorEnabled={isLocalPaymentSimulatorEnabled()}
           reason={paymentWallReason}
+          canManageCommercialSubscription={business.ownerId === user.id}
         />
         </>
         </RequestIntlProvider>
@@ -80,6 +86,16 @@ export default async function DashboardLayout({
     }
   }
 
+  const setupState = business && canManageSetup(permissions) ? await prisma.businessSetup.findUnique({ where: { businessId: business.id }, select: { completedAt: true } }) : null;
+  const setupPriority = !!setupState && !setupState.completedAt;
+  const [commercialAccess, websiteAccess] = business
+    ? await Promise.all([
+        getCommercialPlanAccess(business.id),
+        resolveWebsiteCommercialAccess(business.id),
+      ])
+    : [null, null];
+  const marketingEnabled = !!commercialAccess?.has("contact_flow");
+  const websiteEnabled = !!websiteAccess?.editor;
   const changelogSeenVersion = (await cookies()).get("puragenda_changelog_seen")?.value;
   const websiteLaunch = await getDashboardWebsiteLaunch();
   const reminderCandidate = shouldShowWebsiteTrialReminder({
@@ -95,11 +111,11 @@ export default async function DashboardLayout({
     ? { ...websiteLaunch, businessName: business!.name, dismissalKey: websiteTrialReminderKey(business!.id) }
     : null;
   const LATEST_CHANGELOG_VERSION = CHANGELOG_DATA[0].version;
-  const shouldShowChangelogPopup = !!websiteReminder || changelogSeenVersion !== LATEST_CHANGELOG_VERSION;
+  const shouldShowChangelogPopup = !setupPriority && (!!websiteReminder || changelogSeenVersion !== LATEST_CHANGELOG_VERSION);
 
   return (
     <RequestIntlProvider>
-    <DashboardOverlayProvider initialChangelogOpen={shouldShowChangelogPopup}>
+    <DashboardOverlayProvider initialChangelogOpen={shouldShowChangelogPopup} setupPriority={setupPriority}>
       <div className="fixed inset-0 flex min-h-[100dvh] min-w-0 max-w-full overflow-hidden bg-background">
         <DashboardSidebar
           userName={user.name}
@@ -107,6 +123,10 @@ export default async function DashboardLayout({
           userRole={user.role}
           productionOrdersEnabled={business?.productionOrdersEnabled}
           permissions={permissions}
+          puriPlusEnabled={growthSandboxEnabled() && !!commercialAccess?.has("puri.plus")}
+          marketingEnabled={marketingEnabled}
+          websiteEnabled={websiteEnabled}
+          upgradeToPlus={!!business && business.ownerId === user.id && commercialAccess?.snapshot?.planCode !== "PURAGENDA_PLUS"}
         />
         <div className="flex min-w-0 flex-1 flex-col">
           {impersonationBanner}
@@ -120,8 +140,8 @@ export default async function DashboardLayout({
         <div className="md:hidden">
           <ContextualHelpButton />
         </div>
-        {business ? <PuriAssistant /> : null}
-        <ChangelogPopup websiteLaunch={websiteLaunch} websiteReminder={websiteReminder} />
+        {business ? <><PuriAssistant /><LearningProvider /></> : null}
+        <ChangelogPopup websiteLaunch={websiteLaunch} websiteReminder={websiteReminder} releaseAnnouncementPending={changelogSeenVersion !== LATEST_CHANGELOG_VERSION} />
       </div>
     </DashboardOverlayProvider>
     </RequestIntlProvider>

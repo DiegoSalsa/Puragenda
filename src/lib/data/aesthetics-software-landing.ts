@@ -1,6 +1,6 @@
-import { EXTRA_STAFF_COST, PRICING, STAFF_LIMITS, TRIAL_DURATION_DAYS } from "@/core/constants";
+import { PUBLIC_PLANS_PRICE_SUMMARY } from "@/lib/public-plans";
+import { TRIAL_DURATION_DAYS } from "@/core/constants";
 import type { FaqItem } from "@/lib/json-ld";
-import { formatLandingClp } from "@/lib/data/scheduling-system-landing";
 
 export const AESTHETICS_SOFTWARE_PATH = "/software-agenda-estetica";
 
@@ -41,7 +41,7 @@ export const aestheticsCoordinationProblems = [
 
 export const aestheticsWorkflow = [
   { title: "Prepara el catálogo", description: "Crea faciales, cejas, pestañas y los demás servicios no clínicos que ofreces. Define nombre, descripción, duración y precio; añade opciones solo cuando ayuden a elegir correctamente." },
-  { title: "Relaciona servicios y profesionales", description: "En el plan Equipo, asigna a cada integrante los servicios que realiza. En el plan Individual, la disponibilidad se organiza con el horario del negocio." },
+  { title: "Relaciona servicios y profesionales", description: "Asigna a cada integrante los servicios que realiza y configura la disponibilidad según los horarios de atención de tu negocio." },
   { title: "Configura jornadas y bloqueos", description: "Define los horarios de atención y marca períodos no disponibles. La agenda considera esas reglas junto con las citas existentes al mostrar horas." },
   { title: "Publica la reserva", description: "Comparte el enlace desde Instagram o integra el widget mediante iframe en tu sitio web. La clienta entra desde su navegador, sin instalar una aplicación." },
   { title: "La clienta elige", description: "Selecciona el servicio, la profesional cuando corresponde y una hora disponible. Completa sus datos y paga un abono mediante Mercado Pago si el negocio lo activó y configuró." },
@@ -51,15 +51,15 @@ export const aestheticsWorkflow = [
 export function aestheticsSoftwareFaqs(): FaqItem[] {
   return [
     { question: "¿Puedo configurar servicios con distinta duración?", answer: "Sí. Cada servicio tiene su propia duración y precio. Puragenda combina esa duración con la jornada, las citas y los bloqueos existentes para mostrar los horarios que están disponibles." },
-    { question: "¿Cada profesional puede ofrecer servicios diferentes?", answer: "Sí. En el plan Equipo puedes asignar a cada profesional los servicios que realiza. Así, una clienta que elige extensiones de pestañas ve únicamente a las profesionales configuradas para ese servicio." },
-    { question: "¿Cada profesional tiene su propio horario?", answer: "Sí. En Equipo, cada integrante puede tener su jornada, pausas y bloqueos. En Individual, la disponibilidad de quien atiende se organiza con el horario del negocio." },
+    { question: "¿Cada profesional puede ofrecer servicios diferentes?", answer: "Sí. Puedes asignar a cada profesional los servicios que realiza en ambos planes. Así, una clienta que elige extensiones de pestañas ve únicamente a las profesionales configuradas para ese servicio." },
+    { question: "¿Cada profesional tiene su propio horario?", answer: "Sí. Configura jornadas, pausas y bloqueos para reflejar cuándo atiende cada integrante. Ambos planes permiten sumar profesionales." },
     { question: "¿Puedo solicitar un abono al reservar?", answer: "Sí, cuando el negocio activa los abonos, configura el monto del servicio y conecta Mercado Pago. La clienta ve el monto antes de pagar. Una cita con abono aprobado requiere contactar al negocio para cancelarla o cambiarla." },
     { question: "¿Puedo integrar la agenda en mi sitio web?", answer: "Sí. Puedes insertar el widget mediante iframe o compartir el enlace directo de reservas. Ambos abren el flujo en el navegador de la clienta." },
     { question: "¿Puedo compartir la agenda desde Instagram?", answer: "Sí. Puedes poner el enlace de reservas en la biografía o compartirlo en tus contenidos. La clienta abre el catálogo, elige servicio, profesional y hora desde su navegador." },
     { question: "¿Los recordatorios se envían por WhatsApp?", answer: "No. Los recordatorios de cita descritos en esta página se envían por email para las citas del día siguiente; la clienta debe ingresar correctamente su correo al reservar." },
     { question: "¿Puragenda administra cabinas, salas o aparatología?", answer: "No. La disponibilidad de Puragenda se organiza por profesional, servicio y horario. Si el centro comparte una cabina, sala, cama o equipo físico, debe controlar ese recurso por separado." },
     { question: "¿Puragenda reemplaza una ficha clínica?", answer: "No. Puragenda conserva datos de contacto y un historial administrativo de citas. No es una ficha clínica ni un sistema para diagnósticos, indicaciones o tratamientos médicos." },
-    { question: "¿Cuánto cuesta Puragenda para un centro de estética?", answer: `El plan ${PRICING.INDIVIDUAL.name} cuesta ${formatLandingClp(PRICING.INDIVIDUAL.monthly)} CLP al mes e incluye ${STAFF_LIMITS.INDIVIDUAL} profesional. El plan ${PRICING.EQUIPO.name} cuesta ${formatLandingClp(PRICING.EQUIPO.monthly)} CLP al mes e incluye ${STAFF_LIMITS.EQUIPO} profesionales; cada profesional adicional cuesta ${formatLandingClp(EXTRA_STAFF_COST.EQUIPO)} CLP al mes. La prueba dura ${TRIAL_DURATION_DAYS} días. Los planes y condiciones vigentes están en Precios.` },
+    { question: "¿Cuánto cuesta Puragenda para un centro de estética?", answer: `${PUBLIC_PLANS_PRICE_SUMMARY} La prueba de Puragenda dura ${TRIAL_DURATION_DAYS} días y no pide tarjeta.` },
     { question: "¿Hay una agenda para estética gratis?", answer: `Puragenda ofrece una prueba gratuita de ${TRIAL_DURATION_DAYS} días sin tarjeta. Para continuar después de la prueba necesitas un plan de pago; no se ofrece un plan gratuito permanente.` },
   ];
 }

@@ -1,4 +1,5 @@
-import { AGENCY_NAME, APP_NAME, PRICING } from "@/core/constants";
+import { AGENCY_NAME, APP_NAME } from "@/core/constants";
+import { PUBLIC_PLAN_CODES, publicMonthlyQuote } from "@/lib/public-plans";
 import { DEFAULT_SOCIAL_IMAGE } from "@/lib/seo";
 import { SITE_URL, absoluteUrl } from "@/lib/site";
 import { SUPPORTED_LOCALES } from "@/i18n/config";
@@ -75,22 +76,23 @@ export function websiteNode() {
 }
 
 export function publishedSoftwareOffers() {
-  return [
-    {
+  return PUBLIC_PLAN_CODES.map((plan) => {
+    const quote = publicMonthlyQuote(plan);
+    return {
       "@type": "Offer",
-      name: `Plan ${PRICING.INDIVIDUAL.name}`,
-      price: String(PRICING.INDIVIDUAL.monthly),
-      priceCurrency: "CLP",
+      name: `${quote.displayName} · 1 profesional`,
+      price: String(quote.monthlyTotal),
+      priceCurrency: quote.currencyCode,
       url: absoluteUrl("/pricing"),
-    },
-    {
-      "@type": "Offer",
-      name: `Plan ${PRICING.EQUIPO.name}`,
-      price: String(PRICING.EQUIPO.monthly),
-      priceCurrency: "CLP",
-      url: absoluteUrl("/pricing"),
-    },
-  ];
+      priceSpecification: {
+        "@type": "UnitPriceSpecification",
+        price: quote.monthlyTotal,
+        priceCurrency: quote.currencyCode,
+        valueAddedTaxIncluded: true,
+        billingDuration: "P1M",
+      },
+    };
+  });
 }
 
 export function softwareApplicationNode(description = SOFTWARE_DESCRIPTION) {

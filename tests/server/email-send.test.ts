@@ -67,7 +67,7 @@ describe("booking notification delivery accounting", () => {
 
     expect(sendMock).toHaveBeenCalledTimes(3);
     expect(sendMock).toHaveBeenNthCalledWith(3, expect.objectContaining({
-      html: expect.stringContaining("/mi-agenda/entrar/portal-token"),
+      html: expect.stringContaining('href="https://www.puragenda.cl/mi-agenda"'),
     }));
     expect(errorSpy).toHaveBeenCalledWith(
       expect.stringContaining("Resend rejected"),

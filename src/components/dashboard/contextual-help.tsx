@@ -4,11 +4,14 @@ import { useTranslations } from "next-intl";
 import { LocalizedText } from "@/components/i18n/localized-text";
 import { GUIDED_HELP_KEYS } from "@/i18n/guided-help-keys";
 
+import { useDashboardOverlay } from "./dashboard-overlay-context";
+import { TUTORIALS } from "@/core/tutorials";
 import { CircleHelp } from "@/components/icons/hover-icons";
 import { usePathname } from "next/navigation";
 import { useEffect, useRef } from "react";
 import { driver, type DriveStep } from "driver.js";
 import "driver.js/dist/driver.css";
+import { findHelpTarget, helpOverlayBlocked, startDashboardTour } from "./guided-help-runtime";
 
 type TourStepSpec = {
   selectors: string[];
@@ -393,24 +396,24 @@ const TOURS: Record<string, TourDefinition> & Record<PrimaryHelpRoute, TourDefin
     steps: [
       pageHeading(
         "Marketing y recuperación",
-        "Prepara campañas para volver a contactar clientes inactivos y medir el resultado de cada envío."
+        "Consulta el estado de los envíos comerciales y el historial. Las campañas anteriores están pausadas por revisión de seguridad; esta página no permite enviar correos."
       ),
       {
-        selectors: ["#tutorial-main form", "#tutorial-main textarea", "#tutorial-main"],
+        selectors: ["#marketing-status", "#tutorial-main"],
         popover: {
-          title: "Preparar una campaña",
+          title: "Estado de los envíos",
           description:
-            "Selecciona la audiencia, revisa el contenido y confirma que el mensaje sea útil antes de enviarlo.",
+            "La pausa conserva tus datos y condiciones históricas. Si tienes acceso a Contact Flow, aquí se explica su disponibilidad; abrir su revisión no activa entregas.",
           side: "top",
           align: "start",
         },
       },
       {
-        selectors: ["#tutorial-main table", "#tutorial-main [class*='grid']", "#tutorial-main"],
+        selectors: ["#marketing-history", "#tutorial-main"],
         popover: {
-          title: "Seguimiento",
+          title: "Historial de campañas",
           description:
-            "Consulta campañas y estados para saber qué acciones se ejecutaron y evitar envíos repetidos.",
+            "Consulta asuntos, destinatarios y fechas de campañas anteriores. Conservar el historial no habilita nuevos envíos ni exige comprar otro plan.",
           side: "top",
           align: "start",
         },
@@ -651,8 +654,8 @@ function getTour(pathname: string): TourDefinition {
 
 function resolveSteps(steps: TourStepSpec[]): DriveStep[] {
   return steps.flatMap((step) => {
-    const selector = step.selectors.find((candidate) => document.querySelector(candidate));
-    return selector ? [{ element: selector, popover: step.popover }] : [];
+    const target = findHelpTarget(step.selectors);
+    return target ? [{ element: target, popover: step.popover }] : [];
   });
 }
 
@@ -664,6 +667,8 @@ export function ContextualHelpButton() {
   };
   const pathname = usePathname();
   const activeTour = useRef<ReturnType<typeof driver> | null>(null);
+  const { activeHelp, openHelp, closeHelp } = useDashboardOverlay();
+  useEffect(() => { if (activeHelp !== "tour") activeTour.current?.destroy(); }, [activeHelp]);
 
   useEffect(() => {
     return () => {
@@ -673,6 +678,8 @@ export function ContextualHelpButton() {
   }, [pathname]);
 
   function startTour() {
+    if (helpOverlayBlocked()) return;
+    if (TUTORIALS.some(t => t.route === pathname) || pathname === "/dashboard/setup") { window.dispatchEvent(new Event("learning:open")); return; }
     activeTour.current?.destroy();
     const tour = getTour(pathname);
     const localizedSteps = tour.steps.map((step) => ({
@@ -687,7 +694,7 @@ export function ContextualHelpButton() {
     const safeSteps = steps.length > 0
       ? steps
       : [{
-          element: "#tutorial-main",
+          element: findHelpTarget(["#tutorial-main"]),
           popover: {
             title: translate(tour.title),
             description: translate("Esta sección aún no tiene controles visibles para explicar."),
@@ -696,10 +703,11 @@ export function ContextualHelpButton() {
           },
         }];
 
+    openHelp("tour");
     const instance = driver({
       animate: !window.matchMedia("(prefers-reduced-motion: reduce)").matches,
       allowClose: true,
-      smoothScroll: true,
+      smoothScroll: !window.matchMedia("(prefers-reduced-motion: reduce)").matches,
       showProgress: true,
       stagePadding: 8,
       stageRadius: 14,
@@ -711,10 +719,11 @@ export function ContextualHelpButton() {
       doneBtnText: translate("Finalizar"),
       progressText: translate("{{current}} de {{total}}"),
       steps: safeSteps,
+      onDestroyed: () => { activeTour.current = null; closeHelp("tour"); },
     });
 
     activeTour.current = instance;
-    instance.drive();
+    startDashboardTour(instance);
   }
 
   return (

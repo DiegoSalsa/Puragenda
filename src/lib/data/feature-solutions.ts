@@ -94,7 +94,7 @@ export const featureSolutions: FeatureSolution[] = [
       { question: "¿Cada profesional puede tener un horario diferente?", answer: "Sí. Cada integrante configura sus días, tramos, descansos, bloqueos y servicios disponibles." },
       { question: "¿Cómo evita Puragenda las reservas duplicadas?", answer: "La disponibilidad se valida antes de confirmar y los horarios ocupados dejan de ofrecerse para ese profesional." },
       { question: "¿Los trabajadores ven toda la agenda?", answer: "Los permisos permiten limitar a un profesional a sus propias reservas, mientras administración y recepción gestionan el conjunto." },
-      { question: "¿Cuántos profesionales incluye el Plan Equipo?", answer: "El Plan Equipo incluye cinco profesionales. Se pueden añadir profesionales adicionales según el precio vigente publicado en la página de planes." },
+      { question: "¿Cuántos profesionales puedo tener en Puragenda?", answer: "Puragenda y Puragenda+ parten con un profesional y permiten sumar más. El selector de la página de precios muestra el total de ambos planes con la escala progresiva vigente." },
     ],
   },
   {

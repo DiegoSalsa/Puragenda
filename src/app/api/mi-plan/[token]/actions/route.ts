@@ -1,153 +1,21 @@
-import { NextResponse } from "next/server";
-import { prisma } from "@/server/db/prisma";
-import {
-  cancelRecurringBookingUnlessDepositApproved,
-  dateOnlyInTimezone,
-  regenerateFromDate,
-  type SelectedTimes,
-} from "@/server/services/recurring.service";
+import { NextRequest, NextResponse } from "next/server";
+import { z } from "zod";
+import { getClientPortalEmailFromRequest, normalizeClientPortalEmail } from "@/server/services/client-portal.service";
+import { managePortalPlan } from "@/server/services/portal-plan.service";
 
 export const dynamic = "force-dynamic";
-
-type ActionType = "pause" | "resume" | "cancel";
-
-/**
- * POST /api/mi-plan/[token]/actions
- * Public API endpoint for clients to perform actions on their recurring booking plan.
- * Validates identity via email in the request body.
- */
-export async function POST(
-  req: Request,
-  { params }: { params: Promise<{ token: string }> }
-) {
+const schema = z.object({ action: z.enum(["pause", "resume", "cancel", "rotate-link", "revoke-link"]), email: z.string().email().optional(), pauseUntil: z.string().max(40).optional() });
+export async function POST(req: NextRequest, { params }: { params: Promise<{ token: string }> }) {
+  const email = await getClientPortalEmailFromRequest(req);
+  if (!email) return NextResponse.json({ error: "No autenticado" }, { status: 401, headers: { "Cache-Control": "no-store" } });
+  const parsed = schema.safeParse(await req.json().catch(() => null));
+  if (!parsed.success) return NextResponse.json({ error: "Solicitud inválida" }, { status: 400 });
+  if (parsed.data.email && normalizeClientPortalEmail(parsed.data.email) !== email) return NextResponse.json({ error: "Plan no encontrado" }, { status: 404 });
   try {
-    const { token } = await params;
-    const body = await req.json();
-    const { email, action, pauseUntil } = body as {
-      email: string;
-      action: ActionType;
-      pauseUntil?: string;
-    };
-
-    if (!email || !action) {
-      return NextResponse.json({ error: "Email y acción requeridos" }, { status: 400 });
-    }
-
-    const booking = await prisma.recurringBooking.findUnique({
-      where: { managementToken: token },
-      include: {
-        business: { select: { name: true, timezone: true } },
-        service: { select: { name: true, duration: true } },
-      },
-    });
-
-    if (!booking) {
-      return NextResponse.json({ error: "Plan no encontrado" }, { status: 404 });
-    }
-
-    if (booking.customerEmail.toLowerCase() !== email.toLowerCase()) {
-      return NextResponse.json({ error: "Email no coincide" }, { status: 403 });
-    }
-
-    switch (action) {
-      case "pause": {
-        if (booking.status !== "ACTIVE") {
-          return NextResponse.json({ error: "Solo puedes pausar un plan activo" }, { status: 400 });
-        }
-        if (!pauseUntil) {
-          return NextResponse.json({ error: "Fecha de pausa requerida" }, { status: 400 });
-        }
-        const pauseUntilDate = new Date(pauseUntil);
-        if (Number.isNaN(pauseUntilDate.getTime())) {
-          return NextResponse.json({ error: "Fecha de pausa invÃ¡lida" }, { status: 400 });
-        }
-        const now = new Date();
-        const cancellation = await cancelRecurringBookingUnlessDepositApproved({
-          recurringBookingId: booking.id,
-          businessId: booking.businessId,
-          fromDate: now,
-          status: "PAUSED",
-          pausedUntil: pauseUntilDate,
-        });
-        if (!cancellation.ok) return NextResponse.json({ error: cancellation.error }, { status: 409 });
-        return NextResponse.json({ ok: true, message: "Plan pausado" });
-      }
-
-      case "resume": {
-        if (booking.status !== "PAUSED") {
-          return NextResponse.json({ error: "Solo puedes reanudar un plan pausado" }, { status: 400 });
-        }
-        const resumeDate = dateOnlyInTimezone(new Date(), booking.business.timezone);
-        // If endDate already passed, mark as completed
-        if (booking.endDate < resumeDate) {
-          await prisma.recurringBooking.update({
-            where: { id: booking.id },
-            data: { status: "COMPLETED", pausedUntil: null },
-          });
-          return NextResponse.json({ error: "El plan ya expiró y se marcó como completado" }, { status: 400 });
-        }
-        // Regenerate future appointments (same as dashboard resume)
-        const selectedTimes = booking.selectedTimes as SelectedTimes;
-        await regenerateFromDate({
-          recurringBookingId: booking.id,
-          fromDate: resumeDate,
-          businessId: booking.businessId,
-          serviceId: booking.serviceId,
-          staffId: booking.staffId,
-          clientId: booking.clientId,
-          customerName: booking.customerName,
-          customerEmail: booking.customerEmail,
-          customerPhone: booking.customerPhone,
-          endDate: booking.endDate,
-          selectedDays: booking.selectedDays,
-          selectedTimes,
-          serviceDurationMinutes: booking.service.duration,
-          timezone: booking.business.timezone,
-        });
-        await prisma.recurringBooking.update({
-          where: { id: booking.id },
-          data: { status: "ACTIVE", pausedUntil: null },
-        });
-        return NextResponse.json({ ok: true, message: "Plan reanudado" });
-      }
-
-      case "cancel": {
-        if (!["ACTIVE", "PAUSED"].includes(booking.status)) {
-          return NextResponse.json({ error: "No puedes cancelar este plan" }, { status: 400 });
-        }
-        const now = new Date();
-        const cancellation = await cancelRecurringBookingUnlessDepositApproved({
-          recurringBookingId: booking.id,
-          businessId: booking.businessId,
-          fromDate: now,
-          status: "CANCELLED",
-        });
-        if (!cancellation.ok) return NextResponse.json({ error: cancellation.error }, { status: 409 });
-
-        // Send cancellation email
-        try {
-          const { sendRecurringBookingCancelledClient } = await import("@/server/email/send");
-          await sendRecurringBookingCancelledClient({
-            customerEmail: booking.customerEmail,
-            customerName: booking.customerName,
-            serviceName: booking.service.name,
-            businessName: booking.business.name,
-          });
-        } catch (emailErr) {
-          console.error("[mi-plan] Error sending cancel email:", emailErr);
-        }
-
-        return NextResponse.json({ ok: true, message: "Plan cancelado" });
-      }
-
-      default:
-        return NextResponse.json({ error: "Acción no válida" }, { status: 400 });
-    }
-  } catch (err) {
-    console.error("[API] mi-plan actions error:", err);
-    return NextResponse.json(
-      { error: "Error interno" },
-      { status: 500 }
-    );
+    const result = await managePortalPlan((await params).token, email, parsed.data);
+    return NextResponse.json(result.status === 200 ? { ok: true, message: "Plan actualizado", ...("url" in result && result.url ? { url: result.url } : {}) } : { error: result.error }, { status: result.status, headers: { "Cache-Control": "no-store" } });
+  } catch (error) {
+    const conflict = error && typeof error === "object" && "code" in error && ["P2034", "P2002", "P2004", "P2010"].includes(String(error.code));
+    return NextResponse.json({ error: conflict ? "El plan o el horario cambió; actualiza e intenta nuevamente" : "No se pudo actualizar el plan" }, { status: conflict ? 409 : 500 });
   }
 }

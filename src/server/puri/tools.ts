@@ -11,6 +11,7 @@ import { prisma } from "@/server/db/prisma";
 import { appointmentScope, hasPermission, requireAgenda, requirePermission } from "./context";
 import { periodWindow, safeDateWindow, type PuriPeriod } from "./dates";
 import { PuriAccessError, type PuriContext } from "./types";
+import { revalidatePuriContext } from "./authorization";
 
 const ACTIVE = ["PENDING", "AWAITING_PAYMENT", "CONFIRMED", "CHECKED_IN", "COMPLETED"];
 const COMPLETED = ["CHECKED_IN", "COMPLETED"];
@@ -276,6 +277,16 @@ export type PuriToolName = "getTodayOverview" | "getAppointments" | "getAvailabi
 export const puriToolNames: PuriToolName[] = ["getTodayOverview", "getAppointments", "getAvailability", "searchClients", "getClientSummary", "getClientActivity", "getRevenueSummary", "comparePeriods", "getServicesSummary", "getStaffSummary", "getLoyaltySummary", "getGiftCardsSummary", "getRecurringSummary", "getStoryInsights"];
 
 export async function executePuriTool(name: string, args: unknown, context: PuriContext) {
+  if (!puriToolNames.includes(name as PuriToolName)) throw new PuriAccessError("UNKNOWN_TOOL");
+  const current = await revalidatePuriContext(context);
+  // These canonical aggregates have no branch filter; a branch assignment
+  // must not silently become business-wide CRM/loyalty access via an assistant.
+  if (["searchClients", "getClientSummary", "getClientActivity", "getLoyaltySummary", "getGiftCardsSummary", "getRecurringSummary", "getStoryInsights"].includes(name) && current.business.ownerId !== current.user.id) throw new PuriAccessError("FORBIDDEN");
+  const result = await dispatchPuriTool(name, args, current);
+  await revalidatePuriContext(current);
+  return result;
+}
+async function dispatchPuriTool(name: string, args: unknown, context: PuriContext) {
   switch (name as PuriToolName) {
     case "getTodayOverview": return getTodayOverview(context);
     case "getAppointments": return getAppointments(context, z.object({ period: periodSchema, status: statusSchema.nullish(), cursor: z.string().min(1).max(100).optional() }).parse(args) as { period: PuriPeriod; status?: string; cursor?: string });

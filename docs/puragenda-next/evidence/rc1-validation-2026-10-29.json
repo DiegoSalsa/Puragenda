@@ -1,0 +1,295 @@
+{
+  "date": "2026-10-29",
+  "branch": "release/puragenda-next-rc1",
+  "validatedCodeCommit": "0eb193da346e51667a7bdc1ff8e4d27218dedda7",
+  "finalCommitLocator": "git log -1 --format=%H -- docs/puragenda-next/29-rc1-integracion-y-staging-2026-10-29.md",
+  "git": {
+    "localMain": "a3d90a652268e7770dd0c53cac2786d6e5bf63e7",
+    "originMain": "e74c92237e47db43425a7d47209520967e51bfb0",
+    "consolidatedFeature": "3231856f424696a463c0bb915c2e341cbd45758b",
+    "mergeCommit": "46d237f425fb862166911cbe61b53c0f704558f2",
+    "mergeParents": [
+      "3231856f424696a463c0bb915c2e341cbd45758b",
+      "e74c92237e47db43425a7d47209520967e51bfb0"
+    ],
+    "mergeTree": "80fcbe5d9e271029f2cd0c2e0f9b077b7f5c5d53",
+    "featureTree": "80fcbe5d9e271029f2cd0c2e0f9b077b7f5c5d53",
+    "unresolvedMergeConflicts": 0,
+    "originalBackportPaths": 19,
+    "overlapPathsReviewed": 3,
+    "behindOriginMain": 0,
+    "newCommitsBeforeClosingDocument": 11,
+    "pushAuthorizedBranchOnly": true,
+    "remoteApplicationResourcesCreated": false
+  },
+  "preservation": {
+    "initialInventory": 148,
+    "currentBackupFilesVerified": 148,
+    "previousBackupFilesVerified": 117,
+    "originalEnvironmentUnchanged": true,
+    "transactionalSourceUnchanged": true,
+    "privateProviderReceiptsIgnored": 12,
+    "backupsDeleted": 0
+  },
+  "suites": {
+    "general": {
+      "passed": 1673,
+      "conditionallySkipped": 413,
+      "filesPassed": 242,
+      "filesSkipped": 16
+    },
+    "commercialPostgres": {
+      "passed": 282,
+      "skipped": 0,
+      "files": 10
+    },
+    "legacyPostgres": {
+      "passed": 85,
+      "skipped": 0,
+      "files": 4
+    },
+    "booking": {
+      "passed": 50,
+      "criticalConditional": 19,
+      "repeatedGeneral": 31
+    },
+    "mcp": {
+      "passed": 53,
+      "criticalConditional": 27,
+      "repeatedGeneral": 26
+    },
+    "conditionalCasesAccountedFor": 413,
+    "uniqueCasesPassed": 2086,
+    "activationPreviewSchedulerFocused": {
+      "passed": 24,
+      "alreadyIncluded": true
+    }
+  },
+  "httpE2E": {
+    "bootstrapChecks": 6,
+    "contactFlowAssertions": 19,
+    "websiteAssertions": 12,
+    "syntheticOnly": true,
+    "externalProviderCalls": 0,
+    "realEmailsSentThisExecution": 0,
+    "visualBrowserCertificationRepeated": false,
+    "scheduler": {
+      "passed": true,
+      "cloudRuntime": false,
+      "cloudResourcesCreated": false,
+      "externalCalls": 0,
+      "httpsVerified": true,
+      "defaultOff": true,
+      "dedicatedBearerVerified": true,
+      "invalidBearerRejected": true,
+      "serverRetryVerified": true
+    }
+  },
+  "checks": {
+    "typegen": true,
+    "typecheck": true,
+    "eslint": {
+      "errors": 0,
+      "warnings": 32
+    },
+    "build": {
+      "build": 0,
+      "bundler": "webpack",
+      "isolated": true,
+      "providerCredentialsPresent": false,
+      "productFilesHashMatched": 1415
+    },
+    "prismaValidate": true,
+    "migrations": {
+      "bootstrap": true,
+      "legacyUpgrade": true,
+      "schemaMatches": true,
+      "legacyDataUnchanged": true,
+      "historyPreserved": true,
+      "repeatedDeployUnchanged": true
+    },
+    "independentStagingBundle": {
+      "passed": true,
+      "localOnly": true,
+      "remoteSqlExecuted": false,
+      "migratedFromEmpty": true,
+      "schemaMatches": true,
+      "migrations": 14
+    },
+    "bundleRejectsMissingConfirmation": true,
+    "bundleRejectsWrongFingerprint": true,
+    "productionAudit": {
+      "info": 0,
+      "low": 0,
+      "moderate": 0,
+      "high": 0,
+      "critical": 0,
+      "total": 0
+    },
+    "developmentAudit": {
+      "info": 0,
+      "low": 3,
+      "moderate": 2,
+      "high": 0,
+      "critical": 0,
+      "total": 5
+    }
+  },
+  "security": {
+    "historyRange": "origin/main..HEAD",
+    "historyBlobsScanned": 576,
+    "headFilesScanned": 2207,
+    "privateValuesCompared": 33,
+    "credentialPatternFindings": 0,
+    "newPrivatePathFindings": 0,
+    "preexistingMainScratchFilesPreserved": [
+      "scratch/fixColors.js",
+      "scratch/script.js",
+      "scratch/script10.js",
+      "scratch/script2.js",
+      "scratch/script3.js",
+      "scratch/script4.js",
+      "scratch/script5.js",
+      "scratch/script6.js",
+      "scratch/script7.js",
+      "scratch/script8.js",
+      "scratch/script9.js",
+      "scratch/test-svg.html"
+    ],
+    "scanAt": "before final documentation commit; full history rescanned after commit before push",
+    "literalPrivateValuesPrinted": false,
+    "privateEvidenceCommitted": false
+  },
+  "activation": {
+    "CONTACT_FLOW_PRODUCTION_ENABLED": "0",
+    "CONTACT_FLOW_EXTERNAL_RELEASE": "false",
+    "validEnablePair": [
+      "1",
+      "true"
+    ],
+    "matrixTested": true,
+    "productionApprovalInstalled": false,
+    "replyRoutingVerified": false,
+    "puriQuotaApproved": false,
+    "mercadoPagoAutomaticSubscriptionWebhookObserved": false,
+    "productionRecoveryEnabled": false,
+    "permanentResendWebhookInstalled": false
+  },
+  "preview": {
+    "gitAutomaticDeployDisabledForExactRc1Branch": true,
+    "buildRejectsRc1Production": true,
+    "previewRequiresIndependentStagingOptIn": true,
+    "previewMigrations": false,
+    "productionConfigurationModified": false
+  },
+  "cleanup": {
+    "ownedStagingStopped": true,
+    "ownedPostgresStopped": true,
+    "otherClients": 0,
+    "databasesAndBackupsPreserved": true
+  },
+  "logs": [
+    {
+      "name": "unit.log",
+      "sha256": "360d513630ca61bc2a2c64c9c1af903212486c1a1e137575ad7f870df5e4922a"
+    },
+    {
+      "name": "commercial-postgres.log",
+      "sha256": "11073f588b22eec21398066e940f1d753ab71a8784da4765a1bad4876e4a7af3"
+    },
+    {
+      "name": "legacy-postgres-final.log",
+      "sha256": "90e8cfe662864000e70747624b458d6d8399db9e78d398e7066127a6f50bc4cb"
+    },
+    {
+      "name": "booking.log",
+      "sha256": "61caed7c568c260fd13ed505b690e1910692982a0823aa4a1071c4ec58e38759"
+    },
+    {
+      "name": "mcp.log",
+      "sha256": "c564861946566b0565685c26abfc86e999827cee089801d8dcee560b90d91a8c"
+    },
+    {
+      "name": "activation-preview-final.log",
+      "sha256": "689afba7b94d7f3d7d5874bad1fd735394e63f7e38556f70c4cf33c40b15c2f5"
+    },
+    {
+      "name": "e2e-bootstrap.log",
+      "sha256": "00f68d3d303a98b58a01b941ffd1f3a5b1e3fcff12e2bff8cfe0fd69ee747a3a"
+    },
+    {
+      "name": "e2e-contact-flow.log",
+      "sha256": "90d99d9b2318ebae2f8b4f298a3bca0eb05b2c36412d8ce160e8bb5d4f5faed2"
+    },
+    {
+      "name": "e2e-websites.log",
+      "sha256": "161526a982043619f58b85f6edae693bf613bdce7da69f799ee401f8ffa3ae92"
+    },
+    {
+      "name": "e2e-scheduler.log",
+      "sha256": "8684adcce172849879f6b9735cc433fb1f5e7f36e226552d026e4a910812cf4d"
+    },
+    {
+      "name": "typecheck.log",
+      "sha256": "e3b0c44298fc1c149afbf4c8996fb92427ae41e4649b934ca495991b7852b855"
+    },
+    {
+      "name": "lint.log",
+      "sha256": "1f165fc193280defc96cd824eba91dd7e0d4287df28d0f8f3a585fe0ae5ab8a8"
+    },
+    {
+      "name": "changed-lint-final.log",
+      "sha256": "e3b0c44298fc1c149afbf4c8996fb92427ae41e4649b934ca495991b7852b855"
+    },
+    {
+      "name": "prisma-validate.log",
+      "sha256": "d25d21ab6f130d6b8d8d7cb0153364adad37244144561e977ccab4c177ba6df0"
+    },
+    {
+      "name": "migrations.log",
+      "sha256": "fa203362cb3d8f01b1ecc6da34189cd45634009d58ce98cf6130c4944634a00c"
+    },
+    {
+      "name": "staging-prepare.log",
+      "sha256": "55e18246ab67a13245a782af00945a5744301a7cc218efc585627c27dc8af575"
+    },
+    {
+      "name": "typegen.log",
+      "sha256": "8b0db89a1e25137a4cb79143a4ea63ae347e6f5f2247f026d984e133255d3084"
+    },
+    {
+      "name": "build.log",
+      "sha256": "761bbf7894faf616c9c9bd4f55689a521deca0896b4c5fa36a81215b7f449767"
+    },
+    {
+      "name": "staging-bundle-migrations.log",
+      "sha256": "f84d92a9355d566acbc0362f3662212162634226c2a0c89f6587bd14dad04295"
+    },
+    {
+      "name": "staging-bundle-negative.log",
+      "sha256": "ed7421699f5cbd3b86ece4cce2f7cc5b641fd32ecb75862bdcefc37a90b6c0d9"
+    },
+    {
+      "name": "staging-bundle-positive.log",
+      "sha256": "5a8180d80c49f668e43e21c5259374e8a4f730f3985b47b528b4afec41dcbf1a"
+    },
+    {
+      "name": "staging-bundle-wrong-fingerprint.log",
+      "sha256": "b8db963970f7404e7876fcc895efd46d993bfe7ce7546306d035e243891d28c7"
+    }
+  ],
+  "pendingStaging": [
+    "Authorization to create independent Vercel project/database/DNS/secrets and deploy",
+    "Verify independent database host/project/role then pin its URL fingerprint",
+    "Migrate through the prepared bootstrap/cutover config, never inherited production variables",
+    "Independent assets/storage and OAuth integrations before remote certification",
+    "Cloudflare local Wrangler test, then authorized staging runtime CPU/cadence test before cron activation"
+  ],
+  "pendingProduction": [
+    "Zoho shared-inbox access and safe business/campaign reply correlation",
+    "Permanent Resend webhook, unsubscribe origin, scoped credentials and approved Free capacity policy",
+    "Explicit Puri quotas/pricing/credentials approval",
+    "Authentic Mercado Pago subscription webhook or explicitly approved supervised canonical fallback",
+    "Compatible commercial hosting, monitoring, rollback rehearsal and final release approval"
+  ]
+}

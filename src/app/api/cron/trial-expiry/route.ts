@@ -1,3 +1,5 @@
+import { expireCommercialTrial } from "@/server/services/commercial-trial.service";
+import { isV2Plan } from "@/server/services/commercial-plan-access";
 import { NextResponse } from "next/server";
 import { prisma } from "@/server/db/prisma";
 import { sendTrialExpiringEmail, sendTrialExpiredEmail } from "@/server/email/send";
@@ -105,7 +107,7 @@ export async function GET(req: Request) {
     for (const sub of expiredTrials) {
       try {
         // Conditional transition prevents a stale cron read from overwriting webhook ACTIVE.
-        const transitioned = await prisma.subscription.updateMany({
+        const transitioned = isV2Plan(sub.plan) ? { count: await expireCommercialTrial(sub.businessId, now) ? 1 : 0 } : await prisma.subscription.updateMany({
           where: { id: sub.id, status: "TRIALING", isTrial: true, trialEndsAt: { lte: now } },
           data: { status: "INACTIVE", isTrial: false },
         });

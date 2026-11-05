@@ -1,6 +1,4 @@
 import { ThemeNeoBrutalism } from "@/components/landing/ThemeNeoBrutalism";
-import { WebsiteCommercialSection } from "@/components/website-commercial-section";
-import { publicWebsiteAcquisitionEnabled } from "@/server/websites/public-acquisition";
 import { JsonLd } from "@/components/json-ld";
 import type { Metadata } from "next";
 import { createPageMetadata } from "@/lib/seo";
@@ -10,9 +8,10 @@ import {
   softwareApplicationNode,
   websiteNode,
 } from "@/lib/json-ld";
+import { PuragendaPlusHomeSection } from "@/components/puragenda-plus-section";
 
 const homeTitle = "Sistema de reservas online en Chile | Puragenda";
-const homeDescription = "Agenda online para negocios en Chile: recibe reservas 24/7, cobra abonos, organiza tu negocio y consulta agenda, cobros y disponibilidad con Puri.";
+const homeDescription = "Agenda online en Chile: reservas 24/7, clientes y Puri. Puragenda+ suma sitio web, inteligencia comercial y Contact Flow. Prueba 30 días sin tarjeta.";
 
 export const metadata: Metadata = {
   ...createPageMetadata({ title: homeTitle, description: homeDescription, path: "/" }),
@@ -25,7 +24,7 @@ export default async function HomePage() {
   return (
     <>
       <JsonLd data={jsonLdGraph([organizationNode(), websiteNode(), softwareApplicationNode(homeDescription)])} />
-      <ThemeNeoBrutalism commercialSection={<WebsiteCommercialSection home enabled={publicWebsiteAcquisitionEnabled()} />} />
+      <ThemeNeoBrutalism commercialSection={<PuragendaPlusHomeSection />} />
     </>
   );
 }

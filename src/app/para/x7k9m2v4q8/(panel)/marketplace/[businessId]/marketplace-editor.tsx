@@ -1,4 +1,5 @@
 "use client";
+import { commercialPlanName } from "@/core/commercial-display";
 
 import { useMemo, useState, useTransition } from "react";
 import { saveMarketplaceListingAction } from "@/server/actions/marketplace-admin.actions";
@@ -163,7 +164,7 @@ export function MarketplaceEditor({
         <h1 className="text-3xl font-black uppercase tracking-tight text-black">{business.name}</h1>
         <p className="font-mono text-sm font-bold text-black/40">/{business.slug}</p>
         <p className="mt-2 text-sm font-bold text-black/60">
-          Cuenta: {business.deleted ? "ELIMINADO" : `${business.plan} · ${business.status}`}
+          Cuenta: {business.deleted ? "ELIMINADO" : `${commercialPlanName(business.plan)} · ${business.status}`}
         </p>
       </div>
 

@@ -7,6 +7,8 @@ export const managedAppointmentSchema = z.object({
   clientId: z.string().trim().min(1).optional(),
   serviceId: z.string().trim().min(1, "Selecciona un servicio"),
   staffId: z.string().trim().min(1, "Selecciona un profesional"),
+  locationId: z.string().trim().min(1).optional(),
+  expectedUpdatedAt: z.string().datetime().optional(),
   selectedOptionAlternativeIds: z.array(z.string().trim().min(1)).max(30).default([]),
   startTime: z.string().datetime("La fecha y hora no son válidas"),
   internalNotes: z.string().trim().max(1000).optional().default(""),

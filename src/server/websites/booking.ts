@@ -32,9 +32,12 @@ export async function websiteAvailability(request: NextRequest) {
 export async function websiteBooking(request: NextRequest) {
   try {
     const limited = limiter.check(request); if (limited) return limited;
+    if (request.nextUrl.searchParams.has("preview")) return bookingJson({ error: "La vista previa no crea reservas" }, 403);
     const origin = request.headers.get("origin");
     const host = (request.headers.get("x-puragenda-website-host") ?? request.headers.get("host"));
-    if (!origin || new URL(origin).host !== host || request.headers.get("sec-fetch-site") === "cross-site") return bookingJson({ error: "Origen no autorizado" }, 403);
+    let originHost: string | undefined;
+    try { const parsed = new URL(origin ?? ""); if (["https:", "http:"].includes(parsed.protocol) && parsed.origin === origin) originHost = parsed.host; } catch { /* Invalid origins are forbidden. */ }
+    if (!originHost || originHost !== host || request.headers.get("sec-fetch-site") === "cross-site") return bookingJson({ error: "Origen no autorizado" }, 403);
     if (Number(request.headers.get("content-length") ?? 0) > 32768) return bookingJson({ error: "Solicitud demasiado grande" }, 413);
     const key = request.headers.get("idempotency-key");
     const site = await resolveWebsiteHost(host ?? "");

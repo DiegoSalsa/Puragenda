@@ -45,7 +45,7 @@ export async function POST(
     }
 
     const services = await prisma.service.findMany({
-      where: { id: { in: serviceIds }, businessId: business.id },
+      where: { isActive: true, id: { in: serviceIds }, businessId: business.id },
       select: { id: true, price: true },
     });
     if (services.length !== serviceIds.length) return Response.json({ error: "Uno o más servicios no son válidos" }, { status: 400 });

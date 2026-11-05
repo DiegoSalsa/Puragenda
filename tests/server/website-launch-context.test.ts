@@ -1,14 +1,16 @@
 import { afterEach, beforeEach, describe, expect, it, vi } from "vitest";
 import { matchdayFixture } from "@/websites/fixtures/matchday";
 
-const mocks = vi.hoisted(() => ({ user: vi.fn(), business: vi.fn(), offer: vi.fn(), addon: vi.fn(), site: vi.fn(), services: vi.fn(), locations: vi.fn(), update: vi.fn(), upsert: vi.fn() }));
+const mocks = vi.hoisted(() => ({ user: vi.fn(), business: vi.fn(), subscription: vi.fn(), offer: vi.fn(), addon: vi.fn(), site: vi.fn(), services: vi.fn(), locations: vi.fn(), update: vi.fn(), upsert: vi.fn(), access: vi.fn() }));
 vi.mock("server-only", () => ({}));
 vi.mock("@/server/auth/user-session", () => ({ getCurrentSessionUser: mocks.user }));
 vi.mock("@/server/services/business.service", () => ({ getBusinessForUser: mocks.business }));
 vi.mock("@/server/websites/service", () => ({ websiteRootDomain: () => "puragenda.cl" }));
+vi.mock("@/server/websites/commercial-access", () => ({ resolveWebsiteCommercialAccess: mocks.access }));
 vi.mock("@/server/db/prisma", () => ({ prisma: {
   websiteOfferEligibility: { findUnique: mocks.offer, update: mocks.update },
   websiteAddon: { findUnique: mocks.addon },
+  subscription: { findUnique: mocks.subscription },
   businessWebsite: { findUnique: mocks.site, upsert: mocks.upsert },
   service: { count: mocks.services },
   businessLocation: { count: mocks.locations },
@@ -22,6 +24,8 @@ describe("personalized website discovery context", () => {
     vi.stubEnv("WEBSITE_CHECKOUT_ENABLED", "1");
     mocks.user.mockResolvedValue({ id: "owner-a", email: "owner@example.test" });
     mocks.business.mockResolvedValue({ id: "business-a", ownerId: "owner-a", name: "Soccerbarber", slug: "soccerbarber", deletedAt: null });
+    mocks.subscription.mockResolvedValue({ plan: "INDIVIDUAL" });
+    mocks.access.mockResolvedValue({ editor: true, source: "LEGACY" });
     mocks.offer.mockResolvedValue({ offerCode: "BETA_FOUNDER", trialConsumedAt: null });
     mocks.addon.mockResolvedValue(null);
     mocks.services.mockResolvedValue(4);
@@ -30,6 +34,11 @@ describe("personalized website discovery context", () => {
   });
   afterEach(() => vi.unstubAllEnvs());
 
+  it("never advertises a standalone website trial to a new V2 business", async () => {
+    mocks.subscription.mockResolvedValue({ plan: "PURAGENDA_PLUS" });
+    expect(await getDashboardWebsiteLaunch()).toBeNull();
+    expect(mocks.offer).not.toHaveBeenCalled(); expect(mocks.upsert).not.toHaveBeenCalled();
+  });
   it("uses only the authenticated owner's website and preserves its chosen template", async () => {
     const context = await getDashboardWebsiteLaunch();
     expect(context?.preview).toMatchObject({ businessName: "Soccerbarber", templateName: "Matchday", address: "soccerbarber.puragenda.cl", ready: true, servicesReady: true, bookingReady: true });
@@ -37,6 +46,11 @@ describe("personalized website discovery context", () => {
     for (const read of [mocks.offer, mocks.addon, mocks.site]) expect(read.mock.calls[0][0].where).toEqual({ businessId: "business-a" });
     expect(mocks.update).not.toHaveBeenCalled();
     expect(mocks.upsert).not.toHaveBeenCalled();
+  });
+  it("does not advertise a website to a normal business without the historical entitlement", async () => {
+    mocks.access.mockResolvedValue({ editor: false, source: "NONE" });
+    expect(await getDashboardWebsiteLaunch()).toBeNull();
+    expect(mocks.site).not.toHaveBeenCalled(); expect(mocks.upsert).not.toHaveBeenCalled();
   });
   it("does not claim an unfinished or missing website is ready to publish", async () => {
     mocks.site.mockResolvedValue(null);

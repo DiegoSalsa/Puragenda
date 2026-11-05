@@ -1,4 +1,6 @@
 "use server";
+import { resolveAppointmentVenue } from "@/server/services/appointment-venue";
+
 
 import { prisma } from "@/server/db/prisma";
 import {
@@ -85,6 +87,7 @@ export async function rescheduleAppointmentAction(
     return { error: "El enlace no es válido, ya fue utilizado o venció" };
   }
   if (appointment.status === "CANCELLED") return { error: "Esta cita ya fue cancelada" };
+  if (appointment.service.isActive === false) return { error: "El servicio fue archivado. Tu reserva se conserva; contacta al negocio para reagendarla." };
   if (appointment.paymentStatus === "APPROVED") {
     return { error: "No puedes reagendar una cita con abono aprobado. Contacta al negocio." };
   }
@@ -320,13 +323,14 @@ export async function rescheduleAppointmentAction(
     return tx.appointment.create({
       data: {
         customerName: appointment.customerName,
-        customerEmail: appointment.customerEmail,
+        customerEmail: appointment.portalOwnerEmail || appointment.customerEmail,
         customerPhone: appointment.customerPhone,
         customerAddress: appointment.customerAddress,
         startTime: newStart,
         endTime: newEnd,
         status: "CONFIRMED",
         businessId: appointment.business.id,
+        locationId: appointment.locationId,
         serviceId: appointment.service.id,
         staffId: appointment.staffId,
         clientId: appointment.clientId,
@@ -371,6 +375,7 @@ export async function rescheduleAppointmentAction(
     await sendConfirmationEmail({
       id: newApt.id,
       businessId: newApt.businessId,
+      locationId: newApt.locationId,
       customerName: newApt.customerName,
       customerEmail: newApt.customerEmail,
       customerPhone: newApt.customerPhone,
@@ -390,7 +395,7 @@ export async function rescheduleAppointmentAction(
         startTime: newApt.startTime,
         endTime: newApt.endTime,
         businessName: newApt.business.name,
-        timezone: newApt.business.timezone,
+        ...await resolveAppointmentVenue(newApt),
       });
     }
   } catch (err) {

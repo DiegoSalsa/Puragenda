@@ -1,0 +1,593 @@
+{
+  "fixtureOnly": true,
+  "now": "2026-10-22T12:00:00.000Z",
+  "reports": [
+    {
+      "fixture": "equipo",
+      "legacyAccess": true,
+      "shadowAccess": true,
+      "seats": 7,
+      "amountClp": 35990,
+      "warnings": [
+        "LEGACY_PRICE_NOT_PROVIDER_RECONCILED"
+      ],
+      "differences": [
+        "INACTIVE_STAFF_HISTORY_PRESENT"
+      ],
+      "preservedTerms": {
+        "source": "legacy_subscription",
+        "plan": "EQUIPO",
+        "status": "ACTIVE",
+        "billingCycle": "MONTHLY",
+        "isTrial": false,
+        "trialEndsAt": null,
+        "extraStaffCount": 2,
+        "staffLimitOverride": null,
+        "paymentMethod": "AUTOMATIC",
+        "customMonthlyPriceClp": null,
+        "pendingDiscountPercentage": null,
+        "hasCountedAsPaidReferral": false,
+        "freeMonthsRemaining": 0,
+        "activePrizeId": null,
+        "promoName": null,
+        "promoFreeMonthsRemaining": 0,
+        "promoDiscountPercentage": null,
+        "promoDiscountMonthsRemaining": 0,
+        "nextBillingOverrideAmount": null,
+        "billingNotesHash": null,
+        "websiteAddon": null,
+        "warnings": [
+          "LEGACY_PRICE_NOT_PROVIDER_RECONCILED"
+        ],
+        "sourceUpdatedAt": "2026-10-22T12:00:00.000Z",
+        "sourceWebsiteUpdatedAt": null,
+        "websiteOffer": null,
+        "providerReferences": {
+          "mp": "anonymous-provider-reference",
+          "paddle": null
+        },
+        "legacyPaymentEvidence": {
+          "verifiedForV2": false,
+          "lastPaymentId": null,
+          "lastPaymentStatus": null,
+          "lastInvoiceId": null,
+          "lastInvoiceStatus": null,
+          "lastPaymentAttemptAt": null,
+          "lastProviderEventAt": null,
+          "lastProviderEventId": null
+        }
+      }
+    },
+    {
+      "fixture": "individual",
+      "legacyAccess": true,
+      "shadowAccess": true,
+      "seats": 1,
+      "amountClp": 12990,
+      "warnings": [
+        "LEGACY_PRICE_NOT_PROVIDER_RECONCILED",
+        "ACTIVE_STAFF_ABOVE_LEGACY_CAPACITY"
+      ],
+      "differences": [
+        "INACTIVE_STAFF_HISTORY_PRESENT"
+      ],
+      "preservedTerms": {
+        "source": "legacy_subscription",
+        "plan": "INDIVIDUAL",
+        "status": "ACTIVE",
+        "billingCycle": "MONTHLY",
+        "isTrial": false,
+        "trialEndsAt": null,
+        "extraStaffCount": 0,
+        "staffLimitOverride": null,
+        "paymentMethod": "AUTOMATIC",
+        "customMonthlyPriceClp": null,
+        "pendingDiscountPercentage": null,
+        "hasCountedAsPaidReferral": false,
+        "freeMonthsRemaining": 0,
+        "activePrizeId": null,
+        "promoName": null,
+        "promoFreeMonthsRemaining": 0,
+        "promoDiscountPercentage": null,
+        "promoDiscountMonthsRemaining": 0,
+        "nextBillingOverrideAmount": null,
+        "billingNotesHash": null,
+        "websiteAddon": null,
+        "warnings": [
+          "LEGACY_PRICE_NOT_PROVIDER_RECONCILED",
+          "ACTIVE_STAFF_ABOVE_LEGACY_CAPACITY"
+        ],
+        "sourceUpdatedAt": "2026-10-22T12:00:00.000Z",
+        "sourceWebsiteUpdatedAt": null,
+        "websiteOffer": null,
+        "providerReferences": {
+          "mp": "anonymous-provider-reference",
+          "paddle": null
+        },
+        "legacyPaymentEvidence": {
+          "verifiedForV2": false,
+          "lastPaymentId": null,
+          "lastPaymentStatus": null,
+          "lastInvoiceId": null,
+          "lastInvoiceStatus": null,
+          "lastPaymentAttemptAt": null,
+          "lastProviderEventAt": null,
+          "lastProviderEventId": null
+        }
+      }
+    },
+    {
+      "fixture": "test",
+      "legacyAccess": true,
+      "shadowAccess": true,
+      "seats": 1,
+      "amountClp": 1000,
+      "warnings": [
+        "LEGACY_PRICE_NOT_PROVIDER_RECONCILED",
+        "ACTIVE_STAFF_ABOVE_LEGACY_CAPACITY"
+      ],
+      "differences": [
+        "INACTIVE_STAFF_HISTORY_PRESENT"
+      ],
+      "preservedTerms": {
+        "source": "legacy_subscription",
+        "plan": "TEST",
+        "status": "ACTIVE",
+        "billingCycle": "MONTHLY",
+        "isTrial": false,
+        "trialEndsAt": null,
+        "extraStaffCount": 0,
+        "staffLimitOverride": null,
+        "paymentMethod": "AUTOMATIC",
+        "customMonthlyPriceClp": null,
+        "pendingDiscountPercentage": null,
+        "hasCountedAsPaidReferral": false,
+        "freeMonthsRemaining": 0,
+        "activePrizeId": null,
+        "promoName": null,
+        "promoFreeMonthsRemaining": 0,
+        "promoDiscountPercentage": null,
+        "promoDiscountMonthsRemaining": 0,
+        "nextBillingOverrideAmount": null,
+        "billingNotesHash": null,
+        "websiteAddon": null,
+        "warnings": [
+          "LEGACY_PRICE_NOT_PROVIDER_RECONCILED",
+          "ACTIVE_STAFF_ABOVE_LEGACY_CAPACITY"
+        ],
+        "sourceUpdatedAt": "2026-10-22T12:00:00.000Z",
+        "sourceWebsiteUpdatedAt": null,
+        "websiteOffer": null,
+        "providerReferences": {
+          "mp": "anonymous-provider-reference",
+          "paddle": null
+        },
+        "legacyPaymentEvidence": {
+          "verifiedForV2": false,
+          "lastPaymentId": null,
+          "lastPaymentStatus": null,
+          "lastInvoiceId": null,
+          "lastInvoiceStatus": null,
+          "lastPaymentAttemptAt": null,
+          "lastProviderEventAt": null,
+          "lastProviderEventId": null
+        }
+      }
+    },
+    {
+      "fixture": "discount",
+      "legacyAccess": true,
+      "shadowAccess": true,
+      "seats": 7,
+      "amountClp": null,
+      "warnings": [
+        "LEGACY_PRICE_NOT_PROVIDER_RECONCILED",
+        "BENEFIT_AMOUNT_REQUIRES_RECONCILIATION"
+      ],
+      "differences": [
+        "INACTIVE_STAFF_HISTORY_PRESENT"
+      ],
+      "preservedTerms": {
+        "source": "legacy_subscription",
+        "plan": "EQUIPO",
+        "status": "ACTIVE",
+        "billingCycle": "MONTHLY",
+        "isTrial": false,
+        "trialEndsAt": null,
+        "extraStaffCount": 2,
+        "staffLimitOverride": null,
+        "paymentMethod": "AUTOMATIC",
+        "customMonthlyPriceClp": null,
+        "pendingDiscountPercentage": 25,
+        "hasCountedAsPaidReferral": false,
+        "freeMonthsRemaining": 0,
+        "activePrizeId": null,
+        "promoName": null,
+        "promoFreeMonthsRemaining": 0,
+        "promoDiscountPercentage": null,
+        "promoDiscountMonthsRemaining": 0,
+        "nextBillingOverrideAmount": null,
+        "billingNotesHash": null,
+        "websiteAddon": null,
+        "warnings": [
+          "LEGACY_PRICE_NOT_PROVIDER_RECONCILED",
+          "BENEFIT_AMOUNT_REQUIRES_RECONCILIATION"
+        ],
+        "sourceUpdatedAt": "2026-10-22T12:00:00.000Z",
+        "sourceWebsiteUpdatedAt": null,
+        "websiteOffer": null,
+        "providerReferences": {
+          "mp": "anonymous-provider-reference",
+          "paddle": null
+        },
+        "legacyPaymentEvidence": {
+          "verifiedForV2": false,
+          "lastPaymentId": null,
+          "lastPaymentStatus": null,
+          "lastInvoiceId": null,
+          "lastInvoiceStatus": null,
+          "lastPaymentAttemptAt": null,
+          "lastProviderEventAt": null,
+          "lastProviderEventId": null
+        }
+      }
+    },
+    {
+      "fixture": "website",
+      "legacyAccess": true,
+      "shadowAccess": true,
+      "seats": 7,
+      "amountClp": 35990,
+      "warnings": [
+        "LEGACY_PRICE_NOT_PROVIDER_RECONCILED",
+        "ACTIVE_WEBSITE_ADDON_PRESERVED_AS_LEGACY_ITEM",
+        "WEBSITE_AMOUNT_UNKNOWN_NOT_ZERO"
+      ],
+      "differences": [
+        "INACTIVE_STAFF_HISTORY_PRESENT"
+      ],
+      "preservedTerms": {
+        "source": "legacy_subscription",
+        "plan": "EQUIPO",
+        "status": "ACTIVE",
+        "billingCycle": "MONTHLY",
+        "isTrial": false,
+        "trialEndsAt": null,
+        "extraStaffCount": 2,
+        "staffLimitOverride": null,
+        "paymentMethod": "AUTOMATIC",
+        "customMonthlyPriceClp": null,
+        "pendingDiscountPercentage": null,
+        "hasCountedAsPaidReferral": false,
+        "freeMonthsRemaining": 0,
+        "activePrizeId": null,
+        "promoName": null,
+        "promoFreeMonthsRemaining": 0,
+        "promoDiscountPercentage": null,
+        "promoDiscountMonthsRemaining": 0,
+        "nextBillingOverrideAmount": null,
+        "billingNotesHash": null,
+        "websiteAddon": {
+          "active": true,
+          "provider": "mercadopago",
+          "validUntil": "2026-11-22T12:00:00.000Z"
+        },
+        "warnings": [
+          "LEGACY_PRICE_NOT_PROVIDER_RECONCILED",
+          "ACTIVE_WEBSITE_ADDON_PRESERVED_AS_LEGACY_ITEM",
+          "WEBSITE_AMOUNT_UNKNOWN_NOT_ZERO"
+        ],
+        "sourceUpdatedAt": "2026-10-22T12:00:00.000Z",
+        "sourceWebsiteUpdatedAt": null,
+        "websiteOffer": null,
+        "providerReferences": {
+          "mp": "anonymous-provider-reference",
+          "paddle": null
+        },
+        "legacyPaymentEvidence": {
+          "verifiedForV2": false,
+          "lastPaymentId": null,
+          "lastPaymentStatus": null,
+          "lastInvoiceId": null,
+          "lastInvoiceStatus": null,
+          "lastPaymentAttemptAt": null,
+          "lastProviderEventAt": null,
+          "lastProviderEventId": null
+        }
+      }
+    },
+    {
+      "fixture": "trial-free-months",
+      "legacyAccess": true,
+      "shadowAccess": true,
+      "seats": 7,
+      "amountClp": null,
+      "warnings": [
+        "LEGACY_PRICE_NOT_PROVIDER_RECONCILED",
+        "BENEFIT_AMOUNT_REQUIRES_RECONCILIATION"
+      ],
+      "differences": [
+        "INACTIVE_STAFF_HISTORY_PRESENT"
+      ],
+      "preservedTerms": {
+        "source": "legacy_subscription",
+        "plan": "EQUIPO",
+        "status": "TRIALING",
+        "billingCycle": "MONTHLY",
+        "isTrial": true,
+        "trialEndsAt": "2026-11-22T12:00:00.000Z",
+        "extraStaffCount": 2,
+        "staffLimitOverride": null,
+        "paymentMethod": "AUTOMATIC",
+        "customMonthlyPriceClp": null,
+        "pendingDiscountPercentage": null,
+        "hasCountedAsPaidReferral": false,
+        "freeMonthsRemaining": 2,
+        "activePrizeId": null,
+        "promoName": null,
+        "promoFreeMonthsRemaining": 0,
+        "promoDiscountPercentage": null,
+        "promoDiscountMonthsRemaining": 0,
+        "nextBillingOverrideAmount": null,
+        "billingNotesHash": null,
+        "websiteAddon": null,
+        "warnings": [
+          "LEGACY_PRICE_NOT_PROVIDER_RECONCILED",
+          "BENEFIT_AMOUNT_REQUIRES_RECONCILIATION"
+        ],
+        "sourceUpdatedAt": "2026-10-22T12:00:00.000Z",
+        "sourceWebsiteUpdatedAt": null,
+        "websiteOffer": null,
+        "providerReferences": {
+          "mp": "anonymous-provider-reference",
+          "paddle": null
+        },
+        "legacyPaymentEvidence": {
+          "verifiedForV2": false,
+          "lastPaymentId": null,
+          "lastPaymentStatus": null,
+          "lastInvoiceId": null,
+          "lastInvoiceStatus": null,
+          "lastPaymentAttemptAt": null,
+          "lastProviderEventAt": null,
+          "lastProviderEventId": null
+        }
+      }
+    },
+    {
+      "fixture": "past-due",
+      "legacyAccess": false,
+      "shadowAccess": false,
+      "seats": 7,
+      "amountClp": 35990,
+      "warnings": [
+        "LEGACY_PRICE_NOT_PROVIDER_RECONCILED",
+        "PAST_DUE_REQUIRES_PROVIDER_RECONCILIATION"
+      ],
+      "differences": [
+        "INACTIVE_STAFF_HISTORY_PRESENT"
+      ],
+      "preservedTerms": {
+        "source": "legacy_subscription",
+        "plan": "EQUIPO",
+        "status": "PAST_DUE",
+        "billingCycle": "MONTHLY",
+        "isTrial": false,
+        "trialEndsAt": null,
+        "extraStaffCount": 2,
+        "staffLimitOverride": null,
+        "paymentMethod": "AUTOMATIC",
+        "customMonthlyPriceClp": null,
+        "pendingDiscountPercentage": null,
+        "hasCountedAsPaidReferral": false,
+        "freeMonthsRemaining": 0,
+        "activePrizeId": null,
+        "promoName": null,
+        "promoFreeMonthsRemaining": 0,
+        "promoDiscountPercentage": null,
+        "promoDiscountMonthsRemaining": 0,
+        "nextBillingOverrideAmount": null,
+        "billingNotesHash": null,
+        "websiteAddon": null,
+        "warnings": [
+          "LEGACY_PRICE_NOT_PROVIDER_RECONCILED",
+          "PAST_DUE_REQUIRES_PROVIDER_RECONCILIATION"
+        ],
+        "sourceUpdatedAt": "2026-10-22T12:00:00.000Z",
+        "sourceWebsiteUpdatedAt": null,
+        "websiteOffer": null,
+        "providerReferences": {
+          "mp": "anonymous-provider-reference",
+          "paddle": null
+        },
+        "legacyPaymentEvidence": {
+          "verifiedForV2": false,
+          "lastPaymentId": null,
+          "lastPaymentStatus": null,
+          "lastInvoiceId": null,
+          "lastInvoiceStatus": null,
+          "lastPaymentAttemptAt": null,
+          "lastProviderEventAt": null,
+          "lastProviderEventId": null
+        }
+      }
+    },
+    {
+      "fixture": "manual-price",
+      "legacyAccess": true,
+      "shadowAccess": true,
+      "seats": 3,
+      "amountClp": 9990,
+      "warnings": [
+        "LEGACY_PRICE_NOT_PROVIDER_RECONCILED",
+        "STAFF_LIMIT_OVERRIDE_PRESERVED",
+        "MANUAL_PRICE_PRESERVED"
+      ],
+      "differences": [
+        "INACTIVE_STAFF_HISTORY_PRESENT",
+        "CUSTOM_PRICE_REQUIRES_EXPLICIT_TERMS_REVIEW"
+      ],
+      "preservedTerms": {
+        "source": "legacy_subscription",
+        "plan": "EQUIPO",
+        "status": "ACTIVE",
+        "billingCycle": "MONTHLY",
+        "isTrial": false,
+        "trialEndsAt": null,
+        "extraStaffCount": 2,
+        "staffLimitOverride": 3,
+        "paymentMethod": "BANK_TRANSFER",
+        "customMonthlyPriceClp": 9990,
+        "pendingDiscountPercentage": null,
+        "hasCountedAsPaidReferral": false,
+        "freeMonthsRemaining": 0,
+        "activePrizeId": null,
+        "promoName": null,
+        "promoFreeMonthsRemaining": 0,
+        "promoDiscountPercentage": null,
+        "promoDiscountMonthsRemaining": 0,
+        "nextBillingOverrideAmount": null,
+        "billingNotesHash": null,
+        "websiteAddon": null,
+        "warnings": [
+          "LEGACY_PRICE_NOT_PROVIDER_RECONCILED",
+          "STAFF_LIMIT_OVERRIDE_PRESERVED",
+          "MANUAL_PRICE_PRESERVED"
+        ],
+        "sourceUpdatedAt": "2026-10-22T12:00:00.000Z",
+        "sourceWebsiteUpdatedAt": null,
+        "websiteOffer": null,
+        "providerReferences": {
+          "mp": "anonymous-provider-reference",
+          "paddle": null
+        },
+        "legacyPaymentEvidence": {
+          "verifiedForV2": false,
+          "lastPaymentId": null,
+          "lastPaymentStatus": null,
+          "lastInvoiceId": null,
+          "lastInvoiceStatus": null,
+          "lastPaymentAttemptAt": null,
+          "lastProviderEventAt": null,
+          "lastProviderEventId": null
+        }
+      }
+    },
+    {
+      "fixture": "incomplete",
+      "legacyAccess": true,
+      "shadowAccess": true,
+      "seats": 7,
+      "amountClp": 35990,
+      "warnings": [
+        "LEGACY_PRICE_NOT_PROVIDER_RECONCILED",
+        "ACTIVE_PERIOD_END_MISSING"
+      ],
+      "differences": [
+        "INACTIVE_STAFF_HISTORY_PRESENT"
+      ],
+      "preservedTerms": {
+        "source": "legacy_subscription",
+        "plan": "EQUIPO",
+        "status": "ACTIVE",
+        "billingCycle": "MONTHLY",
+        "isTrial": false,
+        "trialEndsAt": null,
+        "extraStaffCount": 2,
+        "staffLimitOverride": null,
+        "paymentMethod": "AUTOMATIC",
+        "customMonthlyPriceClp": null,
+        "pendingDiscountPercentage": null,
+        "hasCountedAsPaidReferral": false,
+        "freeMonthsRemaining": 0,
+        "activePrizeId": null,
+        "promoName": null,
+        "promoFreeMonthsRemaining": 0,
+        "promoDiscountPercentage": null,
+        "promoDiscountMonthsRemaining": 0,
+        "nextBillingOverrideAmount": null,
+        "billingNotesHash": null,
+        "websiteAddon": null,
+        "warnings": [
+          "LEGACY_PRICE_NOT_PROVIDER_RECONCILED",
+          "ACTIVE_PERIOD_END_MISSING"
+        ],
+        "sourceUpdatedAt": "2026-10-22T12:00:00.000Z",
+        "sourceWebsiteUpdatedAt": null,
+        "websiteOffer": null,
+        "providerReferences": {
+          "mp": "anonymous-provider-reference",
+          "paddle": null
+        },
+        "legacyPaymentEvidence": {
+          "verifiedForV2": false,
+          "lastPaymentId": null,
+          "lastPaymentStatus": null,
+          "lastInvoiceId": null,
+          "lastInvoiceStatus": null,
+          "lastPaymentAttemptAt": null,
+          "lastProviderEventAt": null,
+          "lastProviderEventId": null
+        }
+      }
+    },
+    {
+      "fixture": "international-unresolved",
+      "legacyAccess": true,
+      "shadowAccess": true,
+      "seats": 7,
+      "amountClp": null,
+      "warnings": [
+        "LEGACY_PRICE_NOT_PROVIDER_RECONCILED",
+        "CURRENCY_NOT_CLP"
+      ],
+      "differences": [
+        "INACTIVE_STAFF_HISTORY_PRESENT"
+      ],
+      "preservedTerms": {
+        "source": "legacy_subscription",
+        "plan": "EQUIPO",
+        "status": "ACTIVE",
+        "billingCycle": "MONTHLY",
+        "isTrial": false,
+        "trialEndsAt": null,
+        "extraStaffCount": 2,
+        "staffLimitOverride": null,
+        "paymentMethod": "AUTOMATIC",
+        "customMonthlyPriceClp": null,
+        "pendingDiscountPercentage": null,
+        "hasCountedAsPaidReferral": false,
+        "freeMonthsRemaining": 0,
+        "activePrizeId": null,
+        "promoName": null,
+        "promoFreeMonthsRemaining": 0,
+        "promoDiscountPercentage": null,
+        "promoDiscountMonthsRemaining": 0,
+        "nextBillingOverrideAmount": null,
+        "billingNotesHash": null,
+        "websiteAddon": null,
+        "warnings": [
+          "LEGACY_PRICE_NOT_PROVIDER_RECONCILED",
+          "CURRENCY_NOT_CLP"
+        ],
+        "sourceUpdatedAt": "2026-10-22T12:00:00.000Z",
+        "sourceWebsiteUpdatedAt": null,
+        "websiteOffer": null,
+        "providerReferences": {
+          "mp": "anonymous-provider-reference",
+          "paddle": null
+        },
+        "legacyPaymentEvidence": {
+          "verifiedForV2": false,
+          "lastPaymentId": null,
+          "lastPaymentStatus": null,
+          "lastInvoiceId": null,
+          "lastInvoiceStatus": null,
+          "lastPaymentAttemptAt": null,
+          "lastProviderEventAt": null,
+          "lastProviderEventId": null
+        }
+      }
+    }
+  ]
+}

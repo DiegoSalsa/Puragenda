@@ -1,7 +1,10 @@
+import { COMMERCIAL_CATALOG_VERSION, quoteCommercialContract } from "@/core/commercial-catalog";
 import { PreApproval } from "mercadopago";
 import { PRICING, EXTRA_STAFF_COST, ANNUAL_MULTIPLIER } from "@/core/constants";
 import { mpClient } from "@/server/lib/mercadopago";
 import { prisma } from "@/server/db/prisma";
+import { isV2Plan } from "./commercial-plan-access";
+import { hasPendingCommercialBenefit } from "./commercial-benefit-hold";
 import { isTrialCurrentlyActive } from "@/core/subscription-access";
 
 export const MIN_MERCADOPAGO_AMOUNT_CLP = 10;
@@ -50,6 +53,7 @@ export type BillingSubscriptionInput = {
   extraStaffCount: number;
   paymentMethod?: "AUTOMATIC" | "BANK_TRANSFER";
   customMonthlyPriceClp?: number | null;
+  recurringPriceOverrideClp?: number | null;
   pendingDiscountPercentage?: number | null;
   freeMonthsRemaining?: number | null;
   promoName?: string | null;
@@ -77,10 +81,15 @@ export function calculateSubscriptionBaseAmount(subscription: {
   extraStaffCount: number;
   paymentMethod?: "AUTOMATIC" | "BANK_TRANSFER";
   customMonthlyPriceClp?: number | null;
+  recurringPriceOverrideClp?: number | null;
 }) {
+  if (subscription.recurringPriceOverrideClp != null) {
+    return subscription.recurringPriceOverrideClp;
+  }
   if (subscription.paymentMethod === "BANK_TRANSFER" && subscription.customMonthlyPriceClp != null) {
     return subscription.customMonthlyPriceClp;
   }
+  if (subscription.plan === "PURAGENDA" || subscription.plan === "PURAGENDA_PLUS") return quoteCommercialContract({ plan: subscription.plan, professionalTotal: 1 + subscription.extraStaffCount, billingCycle: subscription.billingCycle, catalogVersion: COMMERCIAL_CATALOG_VERSION }).cycleTotal;
   const planPricing = PRICING[subscription.plan] ?? PRICING.INDIVIDUAL;
   let monthlyAmount = planPricing.monthly;
 
@@ -217,6 +226,7 @@ export async function syncMercadoPagoSubscriptionAmount(subscriptionId: string) 
   }
 
   const preview = calculateNextBillingPreview(subscription);
+  if (isV2Plan(subscription.plan)) return {success:false as const,error:"V2_BENEFIT_PROVIDER_VALIDATION_REQUIRED",preview};
 
   if (subscription.paymentMethod === "BANK_TRANSFER") {
     return { success: true as const, skipped: true, preview };
@@ -272,43 +282,38 @@ export async function syncMercadoPagoSubscriptionAmount(subscriptionId: string) 
   }
 }
 
-export async function advanceBillingBenefitAfterAuthorized(subscriptionId: string) {
-  const subscription = await prisma.subscription.findUnique({
-    where: { id: subscriptionId },
+/** Consume a legacy benefit only for the persisted canonical approved invoice.
+ * The receipt and balances commit together; retries may safely repeat amount sync. */
+export async function advanceBillingBenefitAfterAuthorized(subscriptionId: string, invoiceId?:string, chargedAmount?:number, paidPeriodStart?:Date) {
+  const initial=await prisma.subscription.findUnique({where:{id:subscriptionId}});
+  if(!initial) return {success:false as const,error:"Suscripcion no encontrada"};
+  if(initial.paymentMethod==="BANK_TRANSFER") return {success:true as const,skipped:true};
+  if(isV2Plan(initial.plan)) return {success:false as const,error:"V2_BENEFIT_PROVIDER_VALIDATION_REQUIRED"};
+  if(!invoiceId) return {success:false as const,error:"CONFIRMED_INVOICE_REQUIRED"};
+  const matched=await prisma.$transaction(async tx=>{
+    await tx.$queryRaw`SELECT "id" FROM "Business" WHERE "id"=${initial.businessId} FOR UPDATE`;
+    const sub=await tx.subscription.findUniqueOrThrow({where:{id:subscriptionId}});
+    if(sub.lastInvoiceId!==invoiceId || sub.lastPaymentStatus!=="approved") throw new Error("CONFIRMED_INVOICE_REQUIRED");
+    const eventId=`${sub.id}:${invoiceId}`;
+    if(await tx.commercialEvent.findUnique({where:{source_eventId:{source:"legacy_billing_benefit",eventId}}})) return true;
+    const expected=calculateNextBillingPreview(sub).mpAmount;
+    const reservation=sub.activePrizeId ? await tx.commercialEvent.findUnique({where:{source_eventId:{source:"legacy_benefit_reservation",eventId:sub.activePrizeId}}}) : null;
+    if(hasPendingCommercialBenefit(sub) && (chargedAmount!==expected || (reservation && (!paidPeriodStart || paidPeriodStart<reservation.occurredAt)))) {
+      await tx.commercialEvent.upsert({where:{source_eventId:{source:"legacy_billing_review",eventId}},update:{},create:{businessId:sub.businessId,source:"legacy_billing_review",eventId,operation:"BENEFIT_PAYMENT_REVIEW",outcome:"RECEIVED",occurredAt:new Date(),details:{invoiceId,expected,charged:chargedAmount ?? null,consumed:false}}});
+      await tx.subscription.update({where:{id:sub.id},data:{lastBillingSyncError:"El importe cobrado requiere revisión antes de consumir el beneficio."}});
+      return false;
+    }
+    const free=Math.max(sub.freeMonthsRemaining-1,0);
+    const promoFree=sub.freeMonthsRemaining>0 ? sub.promoFreeMonthsRemaining : Math.max(sub.promoFreeMonthsRemaining-1,0);
+    const promoDiscount=sub.freeMonthsRemaining<=0 && sub.promoFreeMonthsRemaining<=0 ? Math.max(sub.promoDiscountMonthsRemaining-1,0) : sub.promoDiscountMonthsRemaining;
+    const finishPrize=!!sub.activePrizeId && free===0;
+    if(finishPrize) await tx.prize.update({where:{id:sub.activePrizeId!},data:{status:"USED"}});
+    await tx.subscription.update({where:{id:sub.id},data:{nextBillingOverrideAmount:null,pendingDiscountPercentage:null,freeMonthsRemaining:free,promoFreeMonthsRemaining:promoFree,
+      promoDiscountMonthsRemaining:promoDiscount,promoDiscountPercentage:promoDiscount>0?sub.promoDiscountPercentage:null,promoName:promoFree>0||promoDiscount>0?sub.promoName:null,
+      ...(finishPrize?{activePrizeId:null}:{})}});
+    await tx.commercialEvent.create({data:{businessId:sub.businessId,source:"legacy_billing_benefit",eventId,operation:"APPROVED_INVOICE_BENEFIT",outcome:"APPLIED",occurredAt:new Date(),details:{invoiceId,hadBenefit:hasPendingCommercialBenefit(sub)}}});
+    return true;
   });
-
-  if (!subscription) return { success: false as const, error: "Suscripcion no encontrada" };
-
-  if (subscription.paymentMethod === "BANK_TRANSFER") {
-    return { success: true as const, skipped: true };
-  }
-
-  const nextFreeMonthsRemaining = Math.max((subscription.freeMonthsRemaining ?? 0) - 1, 0);
-  const nextPromoFreeMonthsRemaining = Math.max((subscription.promoFreeMonthsRemaining ?? 0) - 1, 0);
-  const shouldConsumePromoDiscount =
-    (subscription.freeMonthsRemaining ?? 0) <= 0 &&
-    (subscription.promoFreeMonthsRemaining ?? 0) <= 0 &&
-    (subscription.promoDiscountMonthsRemaining ?? 0) > 0;
-
-  const nextPromoDiscountMonthsRemaining = shouldConsumePromoDiscount
-    ? Math.max((subscription.promoDiscountMonthsRemaining ?? 0) - 1, 0)
-    : subscription.promoDiscountMonthsRemaining;
-
-  await prisma.subscription.update({
-    where: { id: subscription.id },
-    data: {
-      nextBillingOverrideAmount: null,
-      pendingDiscountPercentage: null,
-      freeMonthsRemaining: nextFreeMonthsRemaining,
-      promoFreeMonthsRemaining: nextPromoFreeMonthsRemaining,
-      promoDiscountMonthsRemaining: nextPromoDiscountMonthsRemaining,
-      promoDiscountPercentage: nextPromoDiscountMonthsRemaining > 0 ? subscription.promoDiscountPercentage : null,
-      promoName:
-        nextPromoFreeMonthsRemaining > 0 || nextPromoDiscountMonthsRemaining > 0
-          ? subscription.promoName
-          : null,
-    },
-  });
-
-  return syncMercadoPagoSubscriptionAmount(subscription.id);
+  if(!matched) return {success:false as const,error:"LEGACY_BENEFIT_PAYMENT_REVIEW_REQUIRED"};
+  return syncMercadoPagoSubscriptionAmount(subscriptionId);
 }

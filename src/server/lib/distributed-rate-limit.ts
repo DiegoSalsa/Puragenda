@@ -1,12 +1,22 @@
 import { createHash } from "node:crypto";
 import { NextRequest, NextResponse } from "next/server";
 import { prisma } from "@/server/db/prisma";
+import { isIP } from "node:net";
 
 interface Options {
   namespace: string;
   windowMs: number;
   max: number;
   message: string;
+  trustedProxyOnly?: boolean;
+}
+
+export function trustedClientIp(request: NextRequest) {
+  const raw = process.env.VERCEL === "1"
+    ? request.headers.get("x-vercel-forwarded-for") || request.headers.get("x-forwarded-for")
+    : process.env.TRUST_PROXY_HEADERS === "1" ? request.headers.get("x-forwarded-for") : null;
+  const ip = raw?.split(",")[0]?.trim();
+  return ip && isIP(ip) ? ip : "unknown";
 }
 
 function clientIp(request: NextRequest) {
@@ -19,7 +29,7 @@ export function distributedRateLimit(options: Options) {
   return {
     async check(request: NextRequest): Promise<NextResponse | null> {
       const key = createHash("sha256")
-        .update(`${options.namespace}:${clientIp(request)}`)
+        .update(`${options.namespace}:${options.trustedProxyOnly ? trustedClientIp(request) : clientIp(request)}`)
         .digest("hex");
       const resetAt = new Date(Date.now() + options.windowMs);
 
@@ -46,8 +56,8 @@ export function distributedRateLimit(options: Options) {
           { error: options.message, retryAfter },
           { status: 429, headers: { "Retry-After": String(retryAfter) } },
         );
-      } catch (error) {
-        console.error(`[rate-limit/${options.namespace}] persistent limiter unavailable`, error);
+      } catch {
+        console.error(`[rate-limit/${options.namespace}] persistent limiter unavailable`);
         return NextResponse.json(
           { error: "Protección antiabuso temporalmente no disponible" },
           { status: 503, headers: { "Retry-After": "30" } },

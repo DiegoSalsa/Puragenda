@@ -1,7 +1,30 @@
 {
   "$schema": "https://openapi.vercel.sh/vercel.json",
   "buildCommand": "node scripts/vercel-build.mjs",
+  "git": {
+    "deploymentEnabled": {
+      "**": false,
+      "main": true,
+      "release/puragenda-next-rc1": false,
+      "fix/puragenda-next-audit-01-registration": false,
+      "fix/puragenda-next-audit-02-agenda": false,
+      "fix/puragenda-next-audit-03-services-staff": false,
+      "fix/puragenda-next-audit-04-clients-privacy": false,
+      "fix/puragenda-next-audit-05-billing-subscriptions": false,
+      "fix/puragenda-next-audit-06-websites-plus": false,
+      "fix/puragenda-next-audit-07-puri-onboarding": false,
+      "fix/puragenda-next-audit-08-contact-flow": false,
+      "integration/puragenda-next-onboarding-v2": false,
+      "integration/puragenda-next-onboarding-v2-clean": false,
+      "fix/puragenda-next-onboarding-09a-c3": false,
+      "fix/puragenda-next-onboarding-migration-certification": false
+    }
+  },
   "crons": [
+    {
+      "path": "/api/cron/billing-v2-reconciliation",
+      "schedule": "*/15 * * * *"
+    },
     {
       "path": "/api/cron/mcp-cleanup",
       "schedule": "0 4 * * *"

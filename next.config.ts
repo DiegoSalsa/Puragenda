@@ -13,6 +13,11 @@ const upgradeInsecureRequests = process.env.NODE_ENV === "production"
   ? " upgrade-insecure-requests;"
   : "";
 const unsafeEval = process.env.NODE_ENV === "production" ? "" : " 'unsafe-eval'";
+// Each disposable browser run gets its own cache; interrupted QA runs cannot
+// corrupt a later run or share a live development compilation.
+const isolatedQaDist = process.env.NODE_ENV !== "production" && process.env.WEBSITE_QA === "1"
+  && /^[a-f0-9]{12}$/.test(process.env.PURI_QA_RUN_ID ?? "")
+  ? `scratch/puri-plus-qa/next-${process.env.PURI_QA_RUN_ID}` : null;
 
 const noIndexRoutes = [...NOINDEX_HEADER_SOURCES];
 
@@ -37,9 +42,16 @@ const canonicalHostRedirects = [
 const securityPolicy = `default-src 'self'; base-uri 'self'; object-src 'none'; form-action 'self'; script-src 'self' 'unsafe-inline'${unsafeEval} https://sdk.mercadopago.com https://cdn.paddle.com https://*.posthog.com https://www.googletagmanager.com https://*.googletagmanager.com; style-src 'self' 'unsafe-inline'; img-src 'self' data: blob: https://res.cloudinary.com https://www.google-analytics.com https://*.google-analytics.com https://www.googletagmanager.com https://*.googletagmanager.com; font-src 'self' data:; connect-src 'self' https://api.mercadopago.com https://secure-fields.mercadopago.com https://*.paddle.com https://*.posthog.com https://www.google-analytics.com https://*.google-analytics.com https://analytics.google.com https://*.analytics.google.com https://www.googletagmanager.com https://*.googletagmanager.com; worker-src 'self' blob: data:; frame-src 'self' https://*.mercadopago.com https://*.mercadolibre.com https://*.paddle.com; frame-ancestors 'none';${upgradeInsecureRequests}`;
 
 const nextConfig: NextConfig = {
+  typescript: {
+    // Production type-checking covers runtime code only. QA and staging
+    // scripts keep using the complete root tsconfig through `npm run typecheck`.
+    ignoreBuildErrors: false,
+    tsconfigPath: "tsconfig.build.json",
+  },
+  logging: { incomingRequests: { ignore: [/\/contact-flow\//, /[?&]cf_ref=/] } },
   devIndicators: process.env.WEBSITE_PINK_Y2K_PREVIEW === "1" ? false : undefined,
   skipProxyUrlNormalize: true,
-  distDir: process.env.WEBSITE_PINK_Y2K_PREVIEW === "1" && process.env.NODE_ENV !== "production" ? ".next-pink-y2k" : process.env.WEBSITE_BUILD_QA === "1" ? ".next-websites-build" : process.env.WEBSITE_QA === "1" ? ".next-websites-qa" : ".next",
+  distDir: isolatedQaDist ?? (process.env.WEBSITE_PINK_Y2K_PREVIEW === "1" && process.env.NODE_ENV !== "production" ? ".next-pink-y2k" : process.env.WEBSITE_BUILD_QA === "1" ? ".next-websites-build" : process.env.WEBSITE_QA === "1" ? ".next-websites-qa" : ".next"),
   allowedDevOrigins: ["127.0.0.1"],
   env: {
     NEXT_PUBLIC_GA_ID: process.env.NEXT_PUBLIC_GA_ID ?? "",
@@ -114,6 +126,26 @@ const nextConfig: NextConfig = {
           { key: "Referrer-Policy", value: "strict-origin-when-cross-origin" },
           { key: "Permissions-Policy", value: "camera=(), microphone=(), geolocation=()" },
           { key: "Content-Security-Policy", value: "frame-ancestors *" },
+        ],
+      },
+      // These rules must follow the general security headers: Next applies the
+      // last matching value even when a Route Handler sets a stricter policy.
+      {
+        source: "/contact-flow/:path*",
+        headers: [
+          { key: "Referrer-Policy", value: "no-referrer" },
+          { key: "Cache-Control", value: "no-store" },
+          { key: "X-Robots-Tag", value: "noindex, nofollow" },
+          { key: "Content-Security-Policy", value: "default-src 'none'; form-action 'self'; base-uri 'none'; frame-ancestors 'none'" },
+        ],
+      },
+      {
+        source: "/widget/:path*",
+        has: [{ type: "query", key: "cf_ref" }],
+        headers: [
+          { key: "Referrer-Policy", value: "no-referrer" },
+          { key: "Cache-Control", value: "no-store" },
+          { key: "X-Robots-Tag", value: "noindex, nofollow" },
         ],
       },
     ];

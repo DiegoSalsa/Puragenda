@@ -8,18 +8,18 @@ datasource db {
 
 // Public booking keys are scoped by business; hashes contain no customer data.
 model BookingOperation {
-  id            String   @id @default(cuid())
+  id            String    @id @default(cuid())
   businessId    String
   keyHash       String
   payloadHash   String
   ownerToken    String
   leaseUntil    DateTime
   expiresAt     DateTime
-  appointmentId String?  @unique
+  appointmentId String?   @unique
   response      Json?
   httpStatus    Int?
   completedAt   DateTime?
-  createdAt     DateTime @default(now())
+  createdAt     DateTime  @default(now())
 
   business Business @relation(fields: [businessId], references: [id], onDelete: Cascade)
 
@@ -49,118 +49,122 @@ enum DomainRequestStatus {
 }
 
 model BusinessWebsite {
-  id               String        @id @default(cuid())
-  businessId       String        @unique
-  templateKey      String        @default("bella")
-  templateVersion  Int           @default(1)
-  status           WebsiteStatus @default(DRAFT)
-  subdomain        String        @unique
-  draftConfig      Json
-  publishedConfig  Json?
-  templateConfigs  Json          @default("{}")
-  publishedTemplateKey String?
+  id                       String          @id @default(cuid())
+  businessId               String          @unique
+  templateKey              String          @default("bella")
+  templateVersion          Int             @default(1)
+  status                   WebsiteStatus   @default(DRAFT)
+  subdomain                String          @unique
+  draftConfig              Json
+  publishedConfig          Json?
+  templateConfigs          Json            @default("{}")
+  publishedTemplateKey     String?
   publishedTemplateVersion Int?
-  revision         Int           @default(0)
-  publishedRevision Int?
-  publishedAt      DateTime?
-  createdAt        DateTime      @default(now())
-  updatedAt        DateTime      @updatedAt
-  business         Business      @relation(fields: [businessId], references: [id], onDelete: Cascade)
-  domains          WebsiteDomain[]
-  domainRequests   DomainRequest[]
-  media            WebsiteMedia[]
+  revision                 Int             @default(0)
+  publishedRevision        Int?
+  publishedAt              DateTime?
+  createdAt                DateTime        @default(now())
+  updatedAt                DateTime        @updatedAt
+  business                 Business        @relation(fields: [businessId], references: [id], onDelete: Cascade)
+  domains                  WebsiteDomain[]
+  domainRequests           DomainRequest[]
+  media                    WebsiteMedia[]
 }
 
 model WebsiteMedia {
-  id          String   @id @default(cuid())
-  websiteId   String
-  publicId    String   @unique
-  secureUrl   String   @unique
-  width       Int
-  height      Int
-  format      String
-  bytes       Int
-  usage       String
-  provider    String   @default("cloudinary")
-  deletedAt   DateTime?
-  createdAt   DateTime @default(now())
-  website     BusinessWebsite @relation(fields: [websiteId], references: [id], onDelete: Cascade)
+  id        String          @id @default(cuid())
+  websiteId String
+  publicId  String          @unique
+  secureUrl String          @unique
+  width     Int
+  height    Int
+  format    String
+  bytes     Int
+  usage     String
+  provider  String          @default("cloudinary")
+  deletedAt DateTime?
+  createdAt DateTime        @default(now())
+  website   BusinessWebsite @relation(fields: [websiteId], references: [id], onDelete: Cascade)
+
   @@index([websiteId, deletedAt])
 }
 
 model WebsiteDomain {
-  id               String              @id @default(cuid())
-  websiteId        String
-  hostname         String              @unique
-  status           WebsiteDomainStatus @default(PENDING)
+  id                String              @id @default(cuid())
+  websiteId         String
+  hostname          String              @unique
+  status            WebsiteDomainStatus @default(PENDING)
   verificationToken String
-    tenantVerifiedAt DateTime?
-  isPrimary        Boolean             @default(false)
-  verifiedAt       DateTime?
-  activatedAt      DateTime?
-  lastError        String?
-  provider         String              @default("pending")
-  dnsRecords       Json                @default("[]")
-  checkedAt        DateTime?
-  createdAt        DateTime            @default(now())
-  updatedAt        DateTime            @updatedAt
-  website          BusinessWebsite     @relation(fields: [websiteId], references: [id], onDelete: Cascade)
+  tenantVerifiedAt  DateTime?
+  isPrimary         Boolean             @default(false)
+  verifiedAt        DateTime?
+  activatedAt       DateTime?
+  lastError         String?
+  provider          String              @default("pending")
+  dnsRecords        Json                @default("[]")
+  checkedAt         DateTime?
+  createdAt         DateTime            @default(now())
+  updatedAt         DateTime            @updatedAt
+  website           BusinessWebsite     @relation(fields: [websiteId], references: [id], onDelete: Cascade)
+
   @@index([websiteId, status])
 }
 
 model DomainRequest {
-  id          String              @id @default(cuid())
-  websiteId   String
-  hostname    String
-  notes       String              @default("")
-  status      DomainRequestStatus @default(REQUESTED)
-  createdAt   DateTime            @default(now())
-  updatedAt   DateTime            @updatedAt
-  website     BusinessWebsite     @relation(fields: [websiteId], references: [id], onDelete: Cascade)
+  id        String              @id @default(cuid())
+  websiteId String
+  hostname  String
+  notes     String              @default("")
+  status    DomainRequestStatus @default(REQUESTED)
+  createdAt DateTime            @default(now())
+  updatedAt DateTime            @updatedAt
+  website   BusinessWebsite     @relation(fields: [websiteId], references: [id], onDelete: Cascade)
+
   @@index([websiteId, status])
 }
 
 // Independent recurring item: supports Chilean MP base plans and annual base plans
 // without replacing or cancelling any existing subscription.
 model WebsiteAddon {
-  id                    String             @id @default(cuid())
-  businessId            String             @unique
-  status                SubscriptionStatus @default(INACTIVE)
-  provider              String             @default("paddle")
-  paddleSubscriptionId  String?            @unique
+  id                    String                     @id @default(cuid())
+  businessId            String                     @unique
+  status                SubscriptionStatus         @default(INACTIVE)
+  provider              String                     @default("paddle")
+  paddleSubscriptionId  String?                    @unique
   paddleCustomerId      String?
   paddlePriceId         String?
   checkoutTransactionId String?
-  mpSubscriptionId      String?            @unique
+  mpSubscriptionId      String?                    @unique
   mpCustomerId          String?
   checkoutOperations    WebsiteCheckoutOperation[]
   validUntil            DateTime?
   cancelAt              DateTime?
   lastEventAt           DateTime?
   lastEventId           String?
-  createdAt             DateTime           @default(now())
-  updatedAt             DateTime           @updatedAt
-  business              Business           @relation(fields: [businessId], references: [id], onDelete: Cascade)
+  createdAt             DateTime                   @default(now())
+  updatedAt             DateTime                   @updatedAt
+  business              Business                   @relation(fields: [businessId], references: [id], onDelete: Cascade)
 }
 
 // Durable server-created ownership proof. Unknown provider create outcomes are
 // reconciled by reference before retrying; never silently create another agreement.
 model WebsiteCheckoutOperation {
-  id              String @id
-  addonId         String
-  provider        String @default("mercadopago")
-  priceTier       WebsitePriceTier
-  amount          Int
-  currency        String @default("CLP")
-  firstChargeAt   DateTime?
-  state           String @default("CREATING")
-  mpSubscriptionId String? @unique
-  checkoutUrl     String?
-  providerStatus  String?
-  expiresAt       DateTime
-  createdAt       DateTime @default(now())
-  updatedAt       DateTime @updatedAt
-  addon           WebsiteAddon @relation(fields: [addonId], references: [id], onDelete: Cascade)
+  id               String           @id
+  addonId          String
+  provider         String           @default("mercadopago")
+  priceTier        WebsitePriceTier
+  amount           Int
+  currency         String           @default("CLP")
+  firstChargeAt    DateTime?
+  state            String           @default("CREATING")
+  mpSubscriptionId String?          @unique
+  checkoutUrl      String?
+  providerStatus   String?
+  expiresAt        DateTime
+  createdAt        DateTime         @default(now())
+  updatedAt        DateTime         @updatedAt
+  addon            WebsiteAddon     @relation(fields: [addonId], references: [id], onDelete: Cascade)
+
   @@index([addonId, createdAt])
 }
 
@@ -176,35 +180,36 @@ enum WebsitePriceTier {
 
 // Sealed once at launch. Eligibility is never recalculated by the application.
 model WebsiteLaunchSnapshot {
-  id         String   @id
-  launchAt   DateTime @unique
-  capturedAt DateTime
+  id          String                    @id
+  launchAt    DateTime                  @unique
+  capturedAt  DateTime
   memberCount Int
-  members    WebsiteOfferEligibility[]
+  members     WebsiteOfferEligibility[]
 }
 
 // Lifetime commercial promise belongs to businessId, independent of WebsiteAddon.
 // priceTier / grandfathered / betaEligible are derived from offerCode.
 model WebsiteOfferEligibility {
-  businessId      String @id
-  offerCode       WebsitePriceTier @default(BETA_FOUNDER)
+  businessId      String                @id
+  offerCode       WebsitePriceTier      @default(BETA_FOUNDER)
   snapshotId      String
   eligibleAt      DateTime
   trialStartedAt  DateTime?
   trialEndsAt     DateTime?
   trialConsumedAt DateTime?
-  business        Business @relation(fields: [businessId], references: [id], onDelete: Cascade)
+  business        Business              @relation(fields: [businessId], references: [id], onDelete: Cascade)
   snapshot        WebsiteLaunchSnapshot @relation(fields: [snapshotId], references: [id], onDelete: Restrict)
 }
 
 // First-party commercial audit, without email, owner, hostname or payment details.
 model WebsiteCommercialEvent {
-  key        String @id
+  key        String           @id
   businessId String
   event      String
   priceTier  WebsitePriceTier
-  occurredAt DateTime @default(now())
-  business   Business @relation(fields: [businessId], references: [id], onDelete: Cascade)
+  occurredAt DateTime         @default(now())
+  business   Business         @relation(fields: [businessId], references: [id], onDelete: Cascade)
+
   @@index([event, occurredAt])
 }
 
@@ -302,18 +307,19 @@ enum BookingFeedbackRating {
 }
 
 model User {
-  mcpProfiles McpProfile[]
-  id              String    @id @default(cuid())
-  email           String    @unique
+  tutorialProgress TutorialProgress[]
+  mcpProfiles     McpProfile[]
+  id              String       @id @default(cuid())
+  email           String       @unique
   password        String
   name            String
-  role            UserRole  @default(ADMIN)
-  isSuperAdmin    Boolean   @default(false)
+  role            UserRole     @default(ADMIN)
+  isSuperAdmin    Boolean      @default(false)
   trialUsedAt     DateTime?
   registrationIp  String?
-  createdAt       DateTime  @default(now())
-  updatedAt       DateTime  @updatedAt
-  tokenVersion    Int       @default(1)
+  createdAt       DateTime     @default(now())
+  updatedAt       DateTime     @updatedAt
+  tokenVersion    Int          @default(1)
   deletedAt       DateTime?
   termsAcceptedAt DateTime?
 
@@ -357,6 +363,7 @@ model ClientPortalToken {
   consumedAt DateTime?
   purpose    ClientPortalTokenPurpose @default(MAGIC_ACCESS)
   createdAt  DateTime                 @default(now())
+  authenticationIntent Boolean                  @default(false)
 
   @@index([email, createdAt])
   @@index([expiresAt])
@@ -384,6 +391,7 @@ model ClientPortalAccount {
 model ClientPortalSession {
   id         String   @id @default(cuid())
   accountId  String
+  email      String?
   tokenHash  String   @unique
   expiresAt  DateTime
   lastUsedAt DateTime @default(now())
@@ -392,6 +400,19 @@ model ClientPortalSession {
   account ClientPortalAccount @relation(fields: [accountId], references: [id], onDelete: Cascade)
 
   @@index([accountId, expiresAt])
+  @@index([expiresAt])
+  @@index([email])
+}
+
+model ClientPortalIdentity {
+  email               String    @id
+  legacyInvalidBefore DateTime?
+}
+
+model ClientPortalRevocation {
+  tokenHash String   @id
+  expiresAt DateTime
+
   @@index([expiresAt])
 }
 
@@ -448,6 +469,8 @@ model BlacklistedIp {
 // ==========================================
 
 enum SubscriptionPlan {
+  PURAGENDA
+  PURAGENDA_PLUS
   INDIVIDUAL
   EQUIPO
   TEST
@@ -459,6 +482,68 @@ enum SubscriptionStatus {
   PAST_DUE
   INACTIVE
   CANCELLED
+}
+
+// Puragenda Next commercial state is additive to the legacy Subscription
+// enums. It is intentionally kept separate so existing checkout and dunning
+// paths can continue using their current contracts until cutover.
+enum CommercialSubscriptionStatus {
+  DRAFT
+  PENDING_PAYMENT
+  ACTIVE
+  TRIALING
+  PAST_DUE_GRACE
+  PAST_DUE_BLOCKED
+  SCHEDULED_CHANGE
+  INACTIVE
+  CANCELLED
+  UNKNOWN
+}
+
+enum CommercialBillingProvider {
+  NONE
+  MERCADO_PAGO
+  PADDLE
+  BANK_TRANSFER
+  MANUAL
+}
+
+enum CommercialSubscriptionItemKind {
+  BASE_PLAN
+  PROFESSIONAL_SEATS
+  LEGACY_ADDON
+  BENEFIT
+}
+
+enum CommercialEntitlementStatus {
+  ACTIVE
+  SCHEDULED
+  EXPIRED
+  REVOKED
+  UNKNOWN
+}
+
+enum CommercialEventOutcome {
+  RECEIVED
+  APPLIED
+  IGNORED
+  REJECTED
+  UNKNOWN
+}
+
+enum SeatChangeRequestStatus {
+  DRAFT
+  PENDING_PAYMENT
+  SCHEDULED
+  APPLIED
+  CANCELLED
+  REJECTED
+  UNKNOWN
+}
+
+enum SeatChangeKind {
+  INCREASE
+  DECREASE
 }
 
 enum SubscriptionPaymentNotificationStatus {
@@ -502,37 +587,40 @@ enum BookingDiscountType {
 }
 
 model Subscription {
-  id                           String             @id @default(cuid())
-  plan                         SubscriptionPlan   @default(INDIVIDUAL)
-  status                       SubscriptionStatus @default(ACTIVE)
-  billingCycle                 BillingCycle       @default(MONTHLY)
-  isTrial                      Boolean            @default(false)
+  id                           String                    @id @default(cuid())
+  plan                         SubscriptionPlan          @default(INDIVIDUAL)
+  status                       SubscriptionStatus        @default(ACTIVE)
+  billingCycle                 BillingCycle              @default(MONTHLY)
+  isTrial                      Boolean                   @default(false)
   trialEndsAt                  DateTime?
-  extraStaffCount              Int                @default(0)
+  extraStaffCount              Int                       @default(0)
   // Absolute active-professional cap; purchased extras do not increase it.
   staffLimitOverride           Int?
   paymentMethod                SubscriptionPaymentMethod @default(AUTOMATIC)
   // Agreed manual monthly price in CLP, VAT included; never sent to a provider.
   customMonthlyPriceClp        Int?
+  // Explicit recurring CLP override for an automatic legacy subscription.
+  // It is synchronized to the linked provider by the operator flow.
+  recurringPriceOverrideClp    Int?
   pendingDiscountPercentage    Int?
-  hasCountedAsPaidReferral     Boolean            @default(false)
-  trialWarningEmailSent        Boolean            @default(false)
-  freeMonthsRemaining          Int                @default(0)
+  hasCountedAsPaidReferral     Boolean                   @default(false)
+  trialWarningEmailSent        Boolean                   @default(false)
+  freeMonthsRemaining          Int                       @default(0)
   activePrizeId                String?
   promoName                    String?
-  promoFreeMonthsRemaining     Int                @default(0)
+  promoFreeMonthsRemaining     Int                       @default(0)
   promoDiscountPercentage      Int?
-  promoDiscountMonthsRemaining Int                @default(0)
+  promoDiscountMonthsRemaining Int                       @default(0)
   nextBillingOverrideAmount    Int?
   billingNotes                 String?
   lastBillingSyncAt            DateTime?
   lastBillingSyncError         String?
-  businessId                   String             @unique
+  businessId                   String                    @unique
   mpCustomerId                 String?
   mpSubscriptionId             String?
-  paddleCustomerId             String?            @unique
-  paddleSubscriptionId         String?            @unique
-  paddlePriceIds               String[]           @default([])
+  paddleCustomerId             String?                   @unique
+  paddleSubscriptionId         String?                   @unique
+  paddlePriceIds               String[]                  @default([])
   paddleLastEventAt            DateTime?
   paddleLastEventId            String?
   currentPeriodEnd             DateTime?
@@ -545,31 +633,32 @@ model Subscription {
   lastPaymentStatus            String?
   lastPaymentStatusDetail      String?
   lastPaymentAttemptAt         DateTime?
-  paymentRetryCount            Int                @default(0)
+  paymentRetryCount            Int                       @default(0)
   dunningEmailSentAt           DateTime?
   graceExpiryWarningSentAt     DateTime?
-  createdAt                    DateTime           @default(now())
-  updatedAt                    DateTime           @updatedAt
+  createdAt                    DateTime                  @default(now())
+  updatedAt                    DateTime                  @updatedAt
 
-  business                    Business                     @relation(fields: [businessId], references: [id], onDelete: Cascade)
+  business                    Business                          @relation(fields: [businessId], references: [id], onDelete: Cascade)
   platformDiscountRedemptions PlatformDiscountRedemption[]
-  paymentNotifications       SubscriptionPaymentNotification[]
+  paymentNotifications        SubscriptionPaymentNotification[]
+  commercialSnapshots         CommercialSubscription[]          @relation("LegacyCommercialSubscription")
 
   @@index([status, gracePeriodEndsAt])
 }
 
 model SubscriptionPaymentNotification {
-  id             String                                  @id @default(cuid())
+  id             String                                @id @default(cuid())
   subscriptionId String
   provider       String
   paymentId      String
   invoiceId      String?
-  status         SubscriptionPaymentNotificationStatus   @default(PENDING)
-  claimedAt      DateTime                                @default(now())
+  status         SubscriptionPaymentNotificationStatus @default(PENDING)
+  claimedAt      DateTime                              @default(now())
   sentAt         DateTime?
   failedAt       DateTime?
-  createdAt      DateTime                                @default(now())
-  updatedAt      DateTime                                @updatedAt
+  createdAt      DateTime                              @default(now())
+  updatedAt      DateTime                              @updatedAt
 
   subscription Subscription @relation(fields: [subscriptionId], references: [id], onDelete: Cascade)
 
@@ -578,25 +667,192 @@ model SubscriptionPaymentNotification {
   @@index([status, failedAt])
 }
 
+// Current commercial contract snapshot. This is deliberately additive to
+// Subscription: legacy billing remains the operational source until a later
+// migration and cutover explicitly changes it.
+model CommercialSubscription {
+  id                     String                       @id @default(cuid())
+  businessId             String                       @unique
+  legacySubscriptionId   String?                      @unique
+  catalogVersion         String
+  planCode               String
+  legacyPlanCode         String?
+  currencyCode           String                       @default("CLP")
+  billingCycle           BillingCycle
+  status                 CommercialSubscriptionStatus @default(DRAFT)
+  provider               CommercialBillingProvider    @default(NONE)
+  externalCustomerId     String?
+  externalSubscriptionId String?
+  externalReference      String?
+  periodStart            DateTime?
+  periodEnd              DateTime?
+  renewalAt              DateTime?
+  renewalCancellationStatus String?
+  renewalCancellationRequestedAt DateTime?
+  renewalCancelledAt     DateTime?
+  trialStart             DateTime?
+  trialEnd               DateTime?
+  gracePeriodEndsAt      DateTime?
+  basePriceClp           Int?
+  professionalTotal      Int
+  totalPriceClp          Int?
+  termsSnapshot          Json?
+  snapshotHash           String
+  lastReconciledAt        DateTime?
+  lastReconciledEventId   String?
+  lastPaymentAt          DateTime?
+  lastPaymentEventId     String?
+  lastPaymentStatus      String?
+  createdAt              DateTime                     @default(now())
+  updatedAt              DateTime                     @updatedAt
+
+  business           Business                     @relation(fields: [businessId], references: [id], onDelete: Cascade)
+  legacySubscription Subscription?                @relation("LegacyCommercialSubscription", fields: [legacySubscriptionId], references: [id], onDelete: SetNull)
+  items              CommercialSubscriptionItem[]
+  entitlements       CommercialEntitlement[]
+  events             CommercialEvent[]
+  seatChangeRequests SeatChangeRequest[]
+  billingOperations CommercialBillingOperation[]
+  migrationProposals CommercialMigrationProposal[]
+
+  @@unique([id, businessId])
+  @@index([status, renewalAt])
+  @@index([planCode, status])
+  @@index([externalSubscriptionId])
+}
+
+model CommercialSubscriptionItem {
+  id              String                         @id @default(cuid())
+  subscriptionId  String
+  kind            CommercialSubscriptionItemKind
+  code            String
+  description     String?
+  quantity        Int
+  unitAmountClp   Int?
+  amountClp       Int?
+  currencyCode    String                         @default("CLP")
+  catalogVersion  String
+  effectiveFrom   DateTime
+  effectiveTo     DateTime?
+  pricingSnapshot Json?
+  createdAt       DateTime                       @default(now())
+  updatedAt       DateTime                       @updatedAt
+
+  subscription CommercialSubscription @relation(fields: [subscriptionId], references: [id], onDelete: Cascade)
+
+  @@unique([subscriptionId, code, effectiveFrom])
+  @@index([subscriptionId, kind, effectiveFrom])
+  @@index([subscriptionId, effectiveTo])
+}
+
+model CommercialEntitlement {
+  id             String                      @id @default(cuid())
+  businessId     String
+  subscriptionId String
+  capability     String
+  status         CommercialEntitlementStatus @default(UNKNOWN)
+  quantity       Int?
+  source         String
+  validFrom      DateTime
+  validTo        DateTime?
+  reason         String?
+  metadata       Json?
+  dedupeKey      String                      @unique
+  createdAt      DateTime                    @default(now())
+  updatedAt      DateTime                    @updatedAt
+
+  business     Business               @relation(fields: [businessId], references: [id], onDelete: Cascade)
+  subscription CommercialSubscription @relation(fields: [subscriptionId, businessId], references: [id, businessId], onDelete: Cascade)
+
+  @@index([businessId, capability, status])
+  @@index([subscriptionId, validFrom, validTo])
+}
+
+model CommercialEvent {
+  id                String                 @id @default(cuid())
+  businessId        String
+  subscriptionId    String?
+  source            String
+  eventId           String
+  operation         String
+  occurredAt        DateTime
+  receivedAt        DateTime               @default(now())
+  outcome           CommercialEventOutcome @default(RECEIVED)
+  providerReference String?
+  correlationId     String?
+  payloadHash       String?
+  details           Json?
+
+  business     Business                @relation(fields: [businessId], references: [id], onDelete: Cascade)
+  subscription CommercialSubscription? @relation(fields: [subscriptionId, businessId], references: [id, businessId], onDelete: NoAction, map: "CommercialEvent_tenant_fkey")
+  appliedSeatChange SeatChangeRequest? @relation("AppliedSeatPayment")
+
+  @@unique([source, eventId])
+  @@index([businessId, occurredAt])
+  @@index([subscriptionId, outcome])
+}
+
+model SeatChangeRequest {
+  id                           String                  @id @default(cuid())
+  businessId                   String
+  subscriptionId               String
+  kind                         SeatChangeKind
+  status                       SeatChangeRequestStatus @default(DRAFT)
+  previousProfessionalTotal    Int
+  requestedProfessionalTotal   Int
+  activeProfessionalsAtRequest Int
+  quotedAmountClp              Int
+  currencyCode                 String                  @default("CLP")
+  catalogVersion               String
+  requestedAt                  DateTime                @default(now())
+  effectiveAt                  DateTime
+  idempotencyKey               String                  @unique
+  providerReference            String?
+  paymentEvidence              Json?
+  quoteSnapshot                Json
+  paymentEventId               String?                 @unique
+  billingOperation             CommercialBillingOperation?
+  paymentEvent                 CommercialEvent?        @relation("AppliedSeatPayment", fields: [paymentEventId], references: [id], onDelete: NoAction)
+  conflictReason               String?
+  appliedAt                    DateTime?
+  cancelledAt                  DateTime?
+  createdAt                    DateTime                @default(now())
+  updatedAt                    DateTime                @updatedAt
+
+  business     Business               @relation(fields: [businessId], references: [id], onDelete: Cascade)
+  subscription CommercialSubscription @relation(fields: [subscriptionId, businessId], references: [id, businessId], onDelete: Cascade)
+
+  @@index([businessId, status, effectiveAt])
+  @@index([subscriptionId, status])
+}
+
 // ==========================================
 // BUSINESS & SERVICES
 // ==========================================
 
 model WebsitePurchaseIntent {
-  businessId        String   @id
-  selectedAt        DateTime @default(now())
-  baseOperationKey  String?  @unique
-  baseState         String   @default("NONE")
-  baseCheckoutUrl   String?
-  baseProviderId    String?
-  baseActivatedAt   DateTime?
-  business          Business @relation(fields: [businessId], references: [id], onDelete: Cascade)
+  businessId       String    @id
+  selectedAt       DateTime  @default(now())
+  baseOperationKey String?   @unique
+  baseState        String    @default("NONE")
+  baseCheckoutUrl  String?
+  baseProviderId   String?
+  baseActivatedAt  DateTime?
+  business         Business  @relation(fields: [businessId], references: [id], onDelete: Cascade)
 }
 
 model Business {
-  mcpPublicDiscovery Boolean @default(false)
-  mcpProfiles McpProfile[]
-  mcpOperations McpOperation[]
+  setup BusinessSetup?
+  setupOperations SetupOperation[]
+  tutorialProgress TutorialProgress[]
+  contactFlowAudits                            CfAudit[]
+  contactFlowCampaigns                         CfCampaign[]
+  contactFlowPolicies                          CfPolicy[]
+  contactFlowConsents                          CfConsent[]
+  contactFlowSuppressions                      CfSuppression[]
+  mcpPublicDiscovery                           Boolean            @default(false)
+  mcpProfiles                                  McpProfile[]
+  mcpOperations                                McpOperation[]
   id                                           String             @id @default(cuid())
   name                                         String
   slug                                         String             @unique
@@ -665,6 +921,17 @@ model Business {
   appointments                Appointment[]
   clients                     Client[]
   subscription                Subscription?
+  commercialBillingOperations CommercialBillingOperation[]
+  commercialMigrationProposals CommercialMigrationProposal[]
+  puriGrowthRuns              PuriGrowthRun[]
+  puriGrowthPolicies          PuriGrowthPolicy?
+  puriBudgetBuckets           PuriBudgetBucket[]
+  puriUsageReservations       PuriUsageReservation[]
+  puriGrowthAudits             PuriGrowthAudit[]
+  commercialSubscription      CommercialSubscription?
+  commercialEntitlements      CommercialEntitlement[]
+  commercialEvents            CommercialEvent[]
+  seatChangeRequests          SeatChangeRequest[]
   bookingOperations           BookingOperation[]
   website                     BusinessWebsite?
   websiteAddon                WebsiteAddon?
@@ -705,6 +972,8 @@ model Business {
 // appointments happen. Keeping them separate lets one account share its
 // catalogue and subscription while operating independent calendars.
 model BusinessLocation {
+  contactFlowCampaigns CfCampaign[]
+  @@unique([id, businessId])
   id         String   @id @default(cuid())
   businessId String
   name       String
@@ -1057,6 +1326,8 @@ model BlockedDate {
 }
 
 model Staff {
+  contactFlowCampaigns CfCampaign[]
+  @@unique([id, businessId])
   id              String   @id @default(cuid())
   name            String
   email           String?
@@ -1145,6 +1416,10 @@ model ScheduleBlock {
 }
 
 model Service {
+  isActive                 Boolean @default(true)
+  catalogVersion           Int     @default(0)
+  contactFlowVersions      CfVersion[]
+  @@unique([id, businessId])
   id                       String                  @id @default(cuid())
   name                     String
   position                 Int                     @default(0)
@@ -1188,6 +1463,7 @@ model Service {
   @@index([businessId])
   @@index([categoryId])
   @@index([businessId, position])
+  @@index([businessId, isActive])
 }
 
 model ServiceCategory {
@@ -1277,6 +1553,7 @@ model ProductionOrder {
 }
 
 model ServiceOptionCategory {
+  isActive      Boolean @default(true)
   id            String   @id @default(cuid())
   name          String
   isRequired    Boolean  @default(false)
@@ -1294,6 +1571,7 @@ model ServiceOptionCategory {
 }
 
 model ServiceOptionAlternative {
+  isActive      Boolean @default(true)
   id            String   @id @default(cuid())
   name          String
   priceDelta    Float    @default(0)
@@ -1357,6 +1635,7 @@ model RecurringBooking {
   clientId              String?
   customerName          String
   customerEmail         String
+  portalOwnerEmail         String?
   customerPhone         String?
   customerAddress       String?
   customerRut           String?
@@ -1372,6 +1651,9 @@ model RecurringBooking {
   healthAnswers         Json? // Respuestas a healthQuestions
   healthFreeText        String? // Texto libre del cliente
   healthAccepted        Boolean         @default(false) // Acepto que pueden rechazar
+  healthAcceptedAt         DateTime?
+  healthConsentVersion     String?
+  healthConsentSnapshot    Json?
   // Estado de pausa
   pausedUntil           DateTime?
   // Notas internas del negocio (solo lo ve el negocio)
@@ -1381,6 +1663,9 @@ model RecurringBooking {
   renewalOffered        Boolean         @default(false)
   // Token para el link de gestion del cliente (/mi-plan/[token])
   managementToken       String?         @unique
+  managementTokenHash      String?         @unique
+  managementTokenExpiresAt DateTime?
+  managementTokenRevokedAt DateTime?
   createdAt             DateTime        @default(now())
   updatedAt             DateTime        @updatedAt
 
@@ -1394,6 +1679,7 @@ model RecurringBooking {
   sessionOverrides RecurringSessionOverride[]
 
   @@index([businessId])
+  @@index([portalOwnerEmail])
   @@index([serviceId])
   @@index([staffId])
   @@index([clientId])
@@ -1469,6 +1755,8 @@ enum PosPaymentStatus {
 }
 
 model Appointment {
+  portalOwnerEmail             String?
+  contactFlowAttribution       CfAttribution?
   id                           String               @id @default(cuid())
   customerName                 String
   customerEmail                String
@@ -1548,6 +1836,7 @@ model Appointment {
   settledByUser          User?                   @relation("AppointmentSettledBy", fields: [settledByUserId], references: [id], onDelete: SetNull)
   bookingFeedback        BookingFeedback?
 
+  @@unique([id, businessId])
   @@index([businessId])
   @@index([serviceId])
   @@index([staffId, startTime, endTime])
@@ -1560,22 +1849,23 @@ model Appointment {
   @@index([locationId, startTime, endTime])
   @@index([businessId, status, paymentHoldExpiresAt])
   @@index([settledByUserId])
+  @@index([portalOwnerEmail])
 }
 
 /// Internal product feedback collected after a widget booking. Superadmin-only.
 model BookingFeedback {
-  id                    String                 @id @default(cuid())
-  appointmentId         String                 @unique
+  id                    String                @id @default(cuid())
+  appointmentId         String                @unique
   businessId            String
   rating                BookingFeedbackRating
   comment               String?
   googleReviewClickedAt DateTime?
   clientPortalAccountId String?
-  authenticated         Boolean                @default(false)
+  authenticated         Boolean               @default(false)
   deviceType            String?
   locale                String?
-  createdAt             DateTime               @default(now())
-  updatedAt             DateTime               @updatedAt
+  createdAt             DateTime              @default(now())
+  updatedAt             DateTime              @updatedAt
 
   appointment         Appointment          @relation(fields: [appointmentId], references: [id], onDelete: Cascade)
   business            Business             @relation(fields: [businessId], references: [id], onDelete: Cascade)
@@ -1721,10 +2011,10 @@ model GoogleCalendarConnection {
   createdAt               DateTime  @default(now())
   updatedAt               DateTime  @updatedAt
 
-  business Business              @relation(fields: [businessId], references: [id], onDelete: Cascade)
-  staff    Staff?                @relation(fields: [staffId], references: [id], onDelete: Cascade)
-  user     User                  @relation(fields: [userId], references: [id], onDelete: Cascade)
-  events   GoogleCalendarEvent[]
+  business      Business                      @relation(fields: [businessId], references: [id], onDelete: Cascade)
+  staff         Staff?                        @relation(fields: [staffId], references: [id], onDelete: Cascade)
+  user          User                          @relation(fields: [userId], references: [id], onDelete: Cascade)
+  events        GoogleCalendarEvent[]
   readCalendars GoogleCalendarReadSelection[]
 
   @@unique([businessId, scopeKey])
@@ -1775,6 +2065,10 @@ model GoogleCalendarEvent {
 // ==========================================
 
 model Client {
+  portalOwnerEmail        String?
+  contactFlowConsents     CfConsent[]
+  contactFlowSuppressions CfSuppression[]
+  contactFlowEnrollments  CfEnrollment[]
   id               String   @id @default(cuid())
   name             String
   email            String
@@ -1796,8 +2090,10 @@ model Client {
   recurringBookings  RecurringBooking[]
   productionOrders   ProductionOrder[]
 
+  @@unique([id, businessId])
   @@unique([businessId, email])
   @@index([businessId])
+  @@index([portalOwnerEmail])
 }
 
 // ==========================================
@@ -2146,27 +2442,28 @@ model SystemError {
 // Operational Puri telemetry. Never store prompts, tool arguments, tool results,
 // response text, or clinical/customer data here.
 model PuriRequest {
-  id                String   @id @default(cuid())
-  sessionId         String
-  businessId        String
+  id                 String         @id @default(cuid())
+  sessionId          String
+  businessId         String
   businessLocationId String?
-  userId            String
-  role              String
-  model             String?
-  intent            String   @default("unknown")
-  status            String   @default("PENDING")
-  errorCode         String?
-  totalDurationMs   Int?
-  modelDurationMs   Int?
-  toolsDurationMs   Int?
-  promptTokens      Int      @default(0)
-  completionTokens  Int      @default(0)
-  cachedTokens      Int      @default(0)
-  estimatedCostUsd  Float?
-  createdAt         DateTime @default(now())
-  completedAt       DateTime?
-  toolCalls         PuriToolCall[]
-  feedback          PuriFeedback?
+  userId             String
+  role               String
+  model              String?
+  capabilityTier     String         @default("PURI_STANDARD")
+  intent             String         @default("unknown")
+  status             String         @default("PENDING")
+  errorCode          String?
+  totalDurationMs    Int?
+  modelDurationMs    Int?
+  toolsDurationMs    Int?
+  promptTokens       Int            @default(0)
+  completionTokens   Int            @default(0)
+  cachedTokens       Int            @default(0)
+  estimatedCostUsd   Float?
+  createdAt          DateTime       @default(now())
+  completedAt        DateTime?
+  toolCalls          PuriToolCall[]
+  feedback           PuriFeedback?
 
   @@index([createdAt])
   @@index([businessId, createdAt])
@@ -2177,7 +2474,7 @@ model PuriRequest {
 }
 
 model PuriToolCall {
-  id          String   @id @default(cuid())
+  id          String      @id @default(cuid())
   requestId   String
   businessId  String
   userId      String
@@ -2186,7 +2483,7 @@ model PuriToolCall {
   errorCode   String?
   resultCount Int?
   durationMs  Int
-  createdAt   DateTime @default(now())
+  createdAt   DateTime    @default(now())
   request     PuriRequest @relation(fields: [requestId], references: [id], onDelete: Cascade)
 
   @@index([toolName, requestId])
@@ -2194,13 +2491,13 @@ model PuriToolCall {
 }
 
 model PuriFeedback {
-  id         String   @id @default(cuid())
-  requestId  String   @unique
+  id         String      @id @default(cuid())
+  requestId  String      @unique
   businessId String
   userId     String
   rating     String
   reason     String?
-  createdAt  DateTime @default(now())
+  createdAt  DateTime    @default(now())
   request    PuriRequest @relation(fields: [requestId], references: [id], onDelete: Cascade)
 
   @@index([createdAt])
@@ -2438,113 +2735,817 @@ model MarketplaceListingCategory {
 
 // MCP credentials are random opaque values; only SHA-256 digests are stored.
 model McpRolloutState {
-  id                    String   @id
-  businessAccessEnabled Boolean  @default(false)
+  id                    String    @id
+  businessAccessEnabled Boolean   @default(false)
   approvalReference     String?
   approvedAt            DateTime?
-  version               Int      @default(0)
-  updatedAt             DateTime @updatedAt
+  version               Int       @default(0)
+  updatedAt             DateTime  @updatedAt
 }
 
 model McpOAuthClient {
-  id String @id @default(uuid())
-  name String
+  id           String            @id @default(uuid())
+  name         String
   redirectUris String[]
-  createdAt DateTime @default(now())
-  requests McpOAuthRequest[]
-  connections McpConnection[]
+  createdAt    DateTime          @default(now())
+  requests     McpOAuthRequest[]
+  connections  McpConnection[]
 }
 
 model McpOAuthRequest {
-  id String @id @default(uuid())
-  clientId String
+  id          String         @id @default(uuid())
+  clientId    String
   redirectUri String
-  scopes String[]
-  state String
-  challenge String
-  resource String
-  csrfHash String
-  expiresAt DateTime
-  consumedAt DateTime?
-  client McpOAuthClient @relation(fields: [clientId], references: [id], onDelete: Cascade)
+  scopes      String[]
+  state       String
+  challenge   String
+  resource    String
+  csrfHash    String
+  expiresAt   DateTime
+  consumedAt  DateTime?
+  client      McpOAuthClient @relation(fields: [clientId], references: [id], onDelete: Cascade)
+
   @@index([expiresAt])
   @@index([clientId])
 }
 
 model McpProfile {
-  id String @id @default(uuid())
-  userId String
-  businessId String
-  user User @relation(fields: [userId], references: [id], onDelete: Cascade)
-  business Business @relation(fields: [businessId], references: [id], onDelete: Cascade)
+  id          String          @id @default(uuid())
+  userId      String
+  businessId  String
+  user        User            @relation(fields: [userId], references: [id], onDelete: Cascade)
+  business    Business        @relation(fields: [businessId], references: [id], onDelete: Cascade)
   connections McpConnection[]
+
   @@unique([userId, businessId])
   @@index([businessId])
 }
 
 model McpConnection {
-  id String @id @default(uuid())
-  profileId String
-  clientId String
-  scopes String[]
+  id           String          @id @default(uuid())
+  profileId    String
+  clientId     String
+  scopes       String[]
   tokenVersion Int
-  createdAt DateTime @default(now())
-  expiresAt DateTime
-  revokedAt DateTime?
-  profile McpProfile @relation(fields: [profileId], references: [id], onDelete: Cascade)
-  client McpOAuthClient @relation(fields: [clientId], references: [id], onDelete: Cascade)
-  codes McpOAuthCode[]
-  tokens McpOAuthToken[]
-  operations McpOperation[]
+  createdAt    DateTime        @default(now())
+  expiresAt    DateTime
+  revokedAt    DateTime?
+  profile      McpProfile      @relation(fields: [profileId], references: [id], onDelete: Cascade)
+  client       McpOAuthClient  @relation(fields: [clientId], references: [id], onDelete: Cascade)
+  codes        McpOAuthCode[]
+  tokens       McpOAuthToken[]
+  operations   McpOperation[]
+
   @@index([profileId, revokedAt])
   @@index([clientId])
   @@index([expiresAt])
 }
 
 model McpOAuthCode {
-  hash String @id
+  hash         String        @id
   connectionId String
-  redirectUri String
-  challenge String
-  expiresAt DateTime
-  consumedAt DateTime?
-  connection McpConnection @relation(fields: [connectionId], references: [id], onDelete: Cascade)
+  redirectUri  String
+  challenge    String
+  expiresAt    DateTime
+  consumedAt   DateTime?
+  connection   McpConnection @relation(fields: [connectionId], references: [id], onDelete: Cascade)
+
   @@index([expiresAt])
   @@index([connectionId])
 }
 
 model McpOAuthToken {
-  id String @id @default(uuid())
-  connectionId String
-  accessHash String @unique
-  refreshHash String @unique
-  issuer String
-  resource String
-  scopes String[]
-  accessExpiresAt DateTime
+  id               String        @id @default(uuid())
+  connectionId     String
+  accessHash       String        @unique
+  refreshHash      String        @unique
+  issuer           String
+  resource         String
+  scopes           String[]
+  accessExpiresAt  DateTime
   refreshExpiresAt DateTime
-  refreshUsedAt DateTime?
-  connection McpConnection @relation(fields: [connectionId], references: [id], onDelete: Cascade)
+  refreshUsedAt    DateTime?
+  connection       McpConnection @relation(fields: [connectionId], references: [id], onDelete: Cascade)
+
   @@index([connectionId])
 }
 
 model McpOperation {
-  id String @id @default(uuid())
-  requestKey String @unique
-  tokenHash String @unique
-  connectionId String?
-  businessId String
-  kind String
+  id               String         @id @default(uuid())
+  requestKey       String         @unique
+  tokenHash        String         @unique
+  connectionId     String?
+  businessId       String
+  kind             String
   encryptedPayload String
-  snapshotHash String
-  state String @default("PREPARED")
-  result Json?
-  expiresAt DateTime
-  createdAt DateTime @default(now())
-  approvedAt DateTime?
-  connection McpConnection? @relation(fields: [connectionId], references: [id], onDelete: Cascade)
-  business Business @relation(fields: [businessId], references: [id], onDelete: Cascade)
+  snapshotHash     String
+  state            String         @default("PREPARED")
+  result           Json?
+  expiresAt        DateTime
+  createdAt        DateTime       @default(now())
+  approvedAt       DateTime?
+  connection       McpConnection? @relation(fields: [connectionId], references: [id], onDelete: Cascade)
+  business         Business       @relation(fields: [businessId], references: [id], onDelete: Cascade)
+
   @@index([expiresAt])
   @@index([connectionId])
   @@index([businessId])
+}
+
+// Sandbox-only external operations. Intent, provider response and payment are
+// separate records; an accepted HTTP request never grants entitlements.
+model CommercialBillingOperation {
+  id                       String @id @default(cuid())
+  businessId               String
+  subscriptionId           String
+  seatChangeRequestId      String? @unique
+  provider                 CommercialBillingProvider
+  environment              String @default("SANDBOX")
+  kind                     String
+  strategy                 String
+  status                   String @default("PREPARED")
+  idempotencyKey           String @unique
+  inputHash                String
+  previousContractHash     String
+  targetPlanCode           String
+  targetProfessionalTotal  Int
+  quoteSnapshot            Json
+  providerPreview          Json?
+  recurringAmountMinor     Int
+  expectedPaymentMinor     Int?
+  taxAmountMinor           Int?
+  currencyCode             String @default("CLP")
+  effectiveAt              DateTime
+  providerSubscriptionId   String?
+  providerOperationId      String?
+  executionStartedAt       DateTime?
+  appliedAt                DateTime?
+  failureCode              String?
+  createdAt                DateTime @default(now())
+  updatedAt                DateTime @updatedAt
+
+  business Business @relation(fields: [businessId], references: [id], onDelete: Cascade)
+  subscription CommercialSubscription @relation(fields: [subscriptionId, businessId], references: [id, businessId], onDelete: Cascade)
+  seatChangeRequest SeatChangeRequest? @relation(fields: [seatChangeRequestId], references: [id], onDelete: NoAction)
+  payments CommercialPaymentEvidence[]
+
+  @@unique([id, businessId])
+  @@index([businessId, status, effectiveAt])
+  @@index([provider, providerSubscriptionId])
+  @@index([provider, environment, updatedAt, id], map: "CommercialBillingOperation_recovery_idx")
+}
+
+model CommercialPaymentEvidence {
+  id                      String @id @default(cuid())
+  businessId              String
+  operationId             String
+  provider                CommercialBillingProvider
+  paymentId               String
+  status                  String
+  origin                  String
+  amountMinor             Int
+  currencyCode            String
+  periodStart             DateTime
+  periodEnd               DateTime
+  occurredAt              DateTime
+  providerSubscriptionId  String
+  eventId                 String
+  createdAt               DateTime @default(now())
+  updatedAt               DateTime @updatedAt
+  operation CommercialBillingOperation @relation(fields: [operationId, businessId], references: [id, businessId], onDelete: Cascade)
+
+  @@unique([provider, paymentId])
+  @@index([operationId, status])
+}
+
+// Immutable proposal payload; mutable workflow and verified evidence are separate.
+// These records have no production writer or public Data API policy.
+model CommercialMigrationProposal {
+  id                String @id @default(cuid())
+  businessId        String
+  subscriptionId    String
+  createdById       String
+  idempotencyKey    String @unique
+  inputHash         String
+  sourceFingerprint String
+  previewHash       String
+  preview           Json
+  targetPlanCode    String
+  professionalTotal Int
+  provider          CommercialBillingProvider
+  effectiveAt       DateTime
+  expiresAt         DateTime
+  status            String @default("AWAITING_APPROVAL")
+  approvedById      String?
+  approvedAt        DateTime?
+  appliedAt         DateTime?
+  reason            String?
+  createdAt         DateTime @default(now())
+  updatedAt         DateTime @updatedAt
+  business          Business @relation(fields: [businessId], references: [id], onDelete: Cascade)
+  subscription      CommercialSubscription @relation(fields: [subscriptionId, businessId], references: [id, businessId], onDelete: Cascade)
+  websiteTransition CommercialWebsiteTransition?
+  evidence          CommercialMigrationEvidence[]
+
+  @@unique([id, businessId])
+  @@index([subscriptionId, businessId])
+  @@index([businessId, status, effectiveAt])
+}
+
+model CommercialWebsiteTransition {
+  id                    String @id @default(cuid())
+  proposalId            String @unique
+  businessId            String
+  addonId               String?
+  provider              String?
+  externalSubscriptionId String?
+  status                String
+  paidUntil             DateTime?
+  cancellationObservedAt DateTime?
+  lastResourceAt        DateTime?
+  origin                String?
+  createdAt             DateTime @default(now())
+  updatedAt             DateTime @updatedAt
+  proposal              CommercialMigrationProposal @relation(fields: [proposalId, businessId], references: [id, businessId], onDelete: Cascade)
+
+  @@unique([proposalId, businessId])
+  @@index([businessId, status])
+}
+
+model CommercialMigrationEvidence {
+  id                     String @id @default(cuid())
+  proposalId             String
+  businessId             String
+  provider               CommercialBillingProvider
+  eventId                String
+  payloadHash            String
+  origin                 String
+  state                  String
+  paymentId              String?
+  amountMinor            Int?
+  currencyCode           String
+  providerSubscriptionId String
+  periodStart            DateTime?
+  periodEnd              DateTime?
+  resourceUpdatedAt      DateTime
+  createdAt              DateTime @default(now())
+  proposal               CommercialMigrationProposal @relation(fields: [proposalId, businessId], references: [id, businessId], onDelete: Cascade)
+
+  @@unique([provider, eventId])
+  @@unique([provider, paymentId])
+  @@index([proposalId, businessId, state])
+}
+
+// Puri+ remains local-only. Evidence is aggregate data, never customer lists or prompts.
+// Contact Flow is private server-only infrastructure. Public SQL roles have no grants.
+model CfPolicy {
+  key          String    @id
+  businessId   String?
+  killed       Boolean   @default(true)
+  emailEnabled Boolean   @default(false)
+  dailyLimit   Int
+  monthlyLimit Int
+  contactDays  Int
+  senderEmail  String
+  updatedAt    DateTime  @updatedAt
+  business     Business? @relation(fields: [businessId], references: [id], onDelete: Cascade)
+}
+
+model CfCampaign {
+  staff Staff? @relation(fields: [staffId,businessId],references:[id,businessId],onDelete:Restrict)
+  id               String                   @id @default(cuid())
+  businessId       String
+  scopeKey         String
+  locationId       String?
+  staffId          String?
+  recommendationId String
+  currentVersion   Int                      @default(1)
+  status           String                   @default("DRAFT")
+  createdById      String
+  createdAt        DateTime                 @default(now())
+  updatedAt        DateTime                 @updatedAt
+  business         Business                 @relation(fields: [businessId], references: [id], onDelete: Cascade)
+  location         BusinessLocation?        @relation(fields: [locationId, businessId], references: [id, businessId], onDelete: Restrict)
+  recommendation   PuriGrowthRecommendation @relation(fields: [recommendationId, businessId, scopeKey], references: [id, businessId, scopeKey], onDelete: Restrict)
+  versions         CfVersion[]
+  audits           CfAudit[]
+
+  @@unique([id, businessId])
+  @@unique([businessId, scopeKey, recommendationId])
+  @@index([businessId, scopeKey, status, createdAt])
+}
+
+model CfVersion {
+  timezone String
+  businessAddress String
+  senderEmail String
+  id                    String            @id @default(cuid())
+  campaignId            String
+  businessId            String
+  version               Int
+  recommendationVersion Int
+  recommendationHash    String
+  evidenceHash          String
+  evidence              Json
+  rules                 Json
+  objective             String
+  channel               String            @default("EMAIL")
+  purpose               String            @default("COMMERCIAL")
+  template              String
+  serviceId             String
+  serviceName           String
+  servicePrice          Float
+  businessName          String
+  businessSlug          String
+  currencyCode          String
+  subject               String
+  body                  String
+  cohortHash            String
+  contentHash           String
+  startsAt              DateTime
+  expiresAt             DateTime
+  maxContacts           Int
+  dailyLimit            Int
+  createdAt             DateTime          @default(now())
+  campaign              CfCampaign        @relation(fields: [campaignId, businessId], references: [id, businessId], onDelete: Cascade)
+  service               Service           @relation(fields: [serviceId, businessId], references: [id, businessId], onDelete: Restrict)
+  authorizations        CfAuthorization[]
+  enrollments           CfEnrollment[]
+
+  @@unique([id, businessId])
+  @@unique([campaignId, version])
+  @@index([businessId, expiresAt])
+}
+
+model CfAuthorization {
+  id          String    @id @default(cuid())
+  businessId  String
+  versionId   String
+  actorId     String
+  contentHash String
+  createdAt   DateTime  @default(now())
+  expiresAt   DateTime
+  revokedAt   DateTime?
+  version     CfVersion @relation(fields: [versionId, businessId], references: [id, businessId], onDelete: Cascade)
+
+  @@index([businessId, versionId, revokedAt])
+}
+
+model CfConsent {
+  acceptedText String
+  evidenceSignature String
+  recordedById String
+  id           String         @id @default(cuid())
+  businessId   String
+  clientId     String
+  addressHash  String
+  purpose      String         @default("COMMERCIAL")
+  channel      String         @default("EMAIL")
+  source       String
+  textVersion  String
+  evidenceRef  String
+  evidenceHash String
+  grantedAt    DateTime
+  state        String         @default("GRANTED")
+  revokedAt    DateTime?
+  createdAt    DateTime       @default(now())
+  business     Business       @relation(fields: [businessId], references: [id], onDelete: Cascade)
+  client       Client         @relation(fields: [clientId, businessId], references: [id, businessId], onDelete: Restrict)
+  enrollments  CfEnrollment[]
+
+  @@unique([id, businessId])
+  @@unique([businessId, evidenceRef])
+  @@index([businessId, clientId, channel, purpose, state])
+}
+
+model CfSuppression {
+  id          String   @id @default(cuid())
+  businessId  String
+  clientId    String
+  addressHash String
+  purpose     String
+  channel     String
+  reason      String
+  sourceRef   String
+  createdAt   DateTime @default(now())
+  business    Business @relation(fields: [businessId], references: [id], onDelete: Cascade)
+  client      Client   @relation(fields: [clientId, businessId], references: [id, businessId], onDelete: Restrict)
+
+  @@unique([businessId, sourceRef])
+  @@index([businessId, clientId, channel, purpose])
+  @@index([businessId, addressHash, channel, purpose])
+}
+
+model CfEnrollment {
+  id          String         @id @default(cuid())
+  businessId  String
+  versionId   String
+  clientId    String
+  addressHash String
+  consentId   String?
+  eligible    Boolean
+  exclusion   String?
+  createdAt   DateTime       @default(now())
+  version     CfVersion      @relation(fields: [versionId, businessId], references: [id, businessId], onDelete: Cascade)
+  client      Client         @relation(fields: [clientId, businessId], references: [id, businessId], onDelete: Restrict)
+  consent     CfConsent?     @relation(fields: [consentId, businessId], references: [id, businessId], onDelete: Restrict)
+  message     CfMessage?
+  tokens      CfToken[]
+  attribution CfAttribution?
+
+  @@unique([id, businessId])
+  @@unique([versionId, clientId])
+  @@index([businessId, clientId, createdAt])
+}
+
+model CfMessage {
+  id             String              @id @default(cuid())
+  businessId     String
+  enrollmentId   String              @unique
+  idempotencyKey String              @unique
+  state          String              @default("QUEUED")
+  provider       String              @default("SIMULATED")
+  providerId     String?             @unique
+  simulation     String              @default("SUCCESS")
+  expiresAt      DateTime
+  acceptedAt     DateTime?
+  createdAt      DateTime            @default(now())
+  enrollment     CfEnrollment        @relation(fields: [enrollmentId, businessId], references: [id, businessId], onDelete: Cascade)
+  outbox         CfOutbox?
+  attempts       CfAttempt[]
+  events         CfProviderEvent[]
+  reservation    CfQuotaReservation?
+  receipt        CfSimulatedReceipt?
+
+  @@unique([enrollmentId, businessId])
+  @@unique([id, businessId])
+  @@index([businessId, state, createdAt])
+}
+
+model CfOutbox {
+  id             String    @id @default(cuid())
+  businessId     String
+  messageId      String    @unique
+  state          String    @default("PENDING")
+  nextAttemptAt  DateTime  @default(now())
+  leaseUntil     DateTime?
+  leaseOwner     String?
+  fence          Int       @default(0)
+  attempts       Int       @default(0)
+  firstAttemptAt DateTime?
+  lastError      String?
+  message        CfMessage @relation(fields: [messageId, businessId], references: [id, businessId], onDelete: Cascade)
+
+  @@unique([messageId, businessId])
+  @@index([state, nextAttemptAt, leaseUntil])
+  @@index([businessId, state])
+}
+
+model CfAttempt {
+  id         String    @id @default(cuid())
+  businessId String
+  messageId  String
+  number     Int
+  fence      Int
+  outcome    String
+  code       String?
+  createdAt  DateTime  @default(now())
+  message    CfMessage @relation(fields: [messageId, businessId], references: [id, businessId], onDelete: Cascade)
+
+  @@unique([messageId, number])
+  @@index([businessId, createdAt])
+}
+
+model CfSimulatedReceipt {
+  id             String    @id @default(cuid())
+  businessId     String
+  messageId      String    @unique
+  idempotencyKey String    @unique
+  providerId     String    @unique
+  createdAt      DateTime  @default(now())
+  message        CfMessage @relation(fields: [messageId, businessId], references: [id, businessId], onDelete: Cascade)
+
+  @@unique([messageId, businessId])
+}
+
+model CfProviderEvent {
+  id          String    @id
+  businessId  String
+  messageId   String
+  provider    String
+  providerId  String
+  kind        String
+  payloadHash String
+  occurredAt  DateTime
+  receivedAt  DateTime  @default(now())
+  message     CfMessage @relation(fields: [messageId, businessId], references: [id, businessId], onDelete: Cascade)
+
+  @@index([businessId, messageId, occurredAt])
+}
+
+model CfQuotaBucket {
+  key         String              @id
+  businessId  String?
+  kind        String
+  period      String
+  limit       Int
+  reserved    Int                 @default(0)
+  consumed    Int                 @default(0)
+  allocations CfQuotaAllocation[]
+}
+
+model CfQuotaReservation {
+  id          String              @id @default(cuid())
+  businessId  String
+  messageId   String              @unique
+  state       String              @default("RESERVED")
+  createdAt   DateTime            @default(now())
+  settledAt   DateTime?
+  message     CfMessage           @relation(fields: [messageId, businessId], references: [id, businessId], onDelete: Cascade)
+  allocations CfQuotaAllocation[]
+
+  @@unique([messageId, businessId])
+}
+
+model CfQuotaAllocation {
+  reservationId String
+  bucketKey     String
+  reservation   CfQuotaReservation @relation(fields: [reservationId], references: [id], onDelete: Cascade)
+  bucket        CfQuotaBucket      @relation(fields: [bucketKey], references: [key], onDelete: Restrict)
+
+  @@id([reservationId, bucketKey])
+}
+
+model CfToken {
+  id           String       @id
+  businessId   String
+  enrollmentId String
+  kind         String
+  expiresAt    DateTime
+  usedAt       DateTime?
+  enrollment   CfEnrollment @relation(fields: [enrollmentId, businessId], references: [id, businessId], onDelete: Cascade)
+
+  @@unique([enrollmentId, kind])
+  @@index([expiresAt])
+}
+
+model CfAttribution {
+  id            String       @id @default(cuid())
+  businessId    String
+  enrollmentId  String       @unique
+  appointmentId String       @unique
+  tokenHash     String
+  createdAt     DateTime     @default(now())
+  enrollment    CfEnrollment @relation(fields: [enrollmentId, businessId], references: [id, businessId], onDelete: Restrict)
+  appointment   Appointment  @relation(fields: [appointmentId, businessId], references: [id, businessId], onDelete: Restrict)
+
+  @@unique([enrollmentId, businessId])
+  @@unique([appointmentId, businessId])
+  @@index([businessId, createdAt])
+}
+
+model CfAudit {
+  id         String      @id @default(cuid())
+  businessId String
+  campaignId String?
+  actorId    String?
+  event      String
+  key        String      @unique
+  details    Json?
+  createdAt  DateTime    @default(now())
+  campaign   CfCampaign? @relation(fields: [campaignId, businessId], references: [id, businessId], onDelete: Cascade)
+  business   Business    @relation(fields: [businessId], references: [id], onDelete: Cascade)
+
+  @@index([businessId, createdAt])
+}
+
+model PuriGrowthPolicy {
+  businessId        String @id
+  proactiveEnabled  Boolean @default(false)
+  everyHours        Int @default(24)
+  rules             Json
+  updatedAt         DateTime @updatedAt
+  business          Business @relation(fields: [businessId], references: [id], onDelete: Cascade)
+}
+
+model PuriGrowthRun {
+  id              String @id @default(cuid())
+  businessId      String
+  scopeKey        String
+  locationId      String?
+  staffId         String?
+  analysisKey     String @unique
+  kind            String
+  ruleVersion     String
+  periodStart     DateTime
+  periodEnd       DateTime
+  status          String @default("RUNNING")
+  leaseToken      String
+  leaseUntil      DateTime
+  attempts        Int @default(1)
+  evidence        Json?
+  evidenceHash    String?
+  durationMs      Int?
+  cacheHits       Int @default(0)
+  proactiveCheckedAt DateTime?
+  errorCode       String?
+  createdAt       DateTime @default(now())
+  completedAt     DateTime?
+  expiresAt       DateTime
+  business        Business @relation(fields: [businessId], references: [id], onDelete: Cascade)
+  signals         PuriGrowthSignal[]
+
+  @@unique([id, businessId, scopeKey])
+  @@index([businessId, scopeKey, status, periodEnd])
+  @@index([status, leaseUntil])
+  @@index([businessId, scopeKey, proactiveCheckedAt])
+  @@index([expiresAt])
+}
+
+model PuriGrowthSignal {
+  id              String @id @default(cuid())
+  businessId      String
+  scopeKey        String
+  runId           String
+  kind            String
+  ruleVersion     String
+  evidenceHash    String
+  materialHash    String
+  dedupeKey       String @unique
+  evidence        Json
+  confidence      String
+  priority        Int
+  status          String @default("DETECTED")
+  suppressedUntil DateTime?
+  createdAt       DateTime @default(now())
+  expiresAt       DateTime
+  run             PuriGrowthRun @relation(fields: [runId, businessId, scopeKey], references: [id, businessId, scopeKey], onDelete: Cascade)
+  recommendations PuriGrowthRecommendation[]
+
+  @@unique([id, businessId, scopeKey])
+  @@index([businessId, scopeKey, kind, materialHash])
+  @@index([businessId, scopeKey, status, expiresAt])
+  @@index([runId, businessId, scopeKey])
+  @@index([expiresAt])
+}
+
+model PuriGrowthRecommendation {
+  contactFlowCampaigns CfCampaign[]
+  id                  String @id @default(cuid())
+  businessId          String
+  scopeKey            String
+  signalId            String
+  version             Int @default(1)
+  status              String @default("DRAFT")
+  dedupeKey           String @unique
+  title               String
+  explanation         String
+  evidenceHash        String
+  evidence            Json
+  strategy            Json?
+  contentHash         String
+  ruleVersion         String
+  model               String?
+  inputTokens         Int?
+  outputTokens        Int?
+  cachedTokens        Int?
+  costMicros          Int?
+  costKnown           Boolean @default(false)
+  generation          String @default("DETERMINISTIC")
+  approvedById        String?
+  approvedAt          DateTime?
+  approvedContentHash String?
+  rejectedById        String?
+  rejectedAt          DateTime?
+  executable          Boolean @default(false)
+  createdAt           DateTime @default(now())
+  expiresAt           DateTime
+  signal              PuriGrowthSignal @relation(fields: [signalId, businessId, scopeKey], references: [id, businessId, scopeKey], onDelete: Cascade)
+  audits              PuriGrowthAudit[]
+
+  @@unique([id, businessId, scopeKey])
+  @@index([businessId, scopeKey, status, createdAt])
+  @@index([signalId, businessId, scopeKey])
+  @@index([expiresAt])
+}
+
+model PuriBudgetBucket {
+  key             String @id
+  businessId      String?
+  category        String
+  periodStart     DateTime @db.Date
+  limitMicros     Int
+  limitUnits      Int
+  reservedMicros  Int @default(0)
+  spentMicros     Int @default(0)
+  reservedUnits   Int @default(0)
+  spentUnits      Int @default(0)
+  unknownCost     Boolean @default(false)
+  alertLevel      Int @default(0)
+  updatedAt       DateTime @updatedAt
+  business        Business? @relation(fields: [businessId], references: [id], onDelete: Cascade)
+
+  @@index([businessId, category, periodStart])
+  @@index([periodStart])
+}
+
+model PuriUsageReservation {
+  id               String @id @default(cuid())
+  businessId       String
+  idempotencyKey   String @unique
+  inputHash        String
+  category         String
+  bucketKeys       String[]
+  reservedMicros   Int
+  reservedUnits    Int
+  actualMicros     Int?
+  inputTokens      Int?
+  outputTokens     Int?
+  cachedTokens     Int?
+  cacheWriteTokens Int?
+  model            String?
+  state            String @default("RESERVED")
+  errorCode        String?
+  createdAt        DateTime @default(now())
+  settledAt        DateTime?
+  business         Business @relation(fields: [businessId], references: [id], onDelete: Cascade)
+
+  @@index([businessId, category, createdAt])
+  @@index([state, createdAt])
+}
+
+model PuriGrowthAudit {
+  id               String @id @default(cuid())
+  businessId       String
+  scopeKey         String
+  recommendationId String?
+  event            String
+  actorId          String?
+  dedupeKey        String @unique
+  details          Json?
+  createdAt        DateTime @default(now())
+  business         Business @relation(fields: [businessId], references: [id], onDelete: Cascade)
+  recommendation   PuriGrowthRecommendation? @relation(fields: [recommendationId, businessId, scopeKey], references: [id, businessId, scopeKey], onDelete: Cascade)
+
+  @@index([businessId, event, createdAt])
+  @@index([recommendationId, businessId, scopeKey])
+  @@index([createdAt])
+}
+
+// Global scheduler lease/cursor. Contains counts and error codes, never payloads.
+model CommercialWorkerState {
+  key           String   @id
+  leaseOwner    String?
+  leaseUntil    DateTime?
+  fence         Int      @default(0)
+  cursor        String   @default("")
+  lastStartedAt DateTime?
+  lastSuccessAt DateTime?
+  lastError     String?
+  summary       Json?
+  updatedAt     DateTime @updatedAt
+}
+
+// Business activation is derived from the live booking catalog, never a stored percentage.
+model BusinessSetup {
+  businessId String @id
+  version Int @default(2)
+  revision Int @default(0)
+  mode String?
+  industry String?
+  currentStep String @default("business")
+  draft Json @default("{}")
+  startedAt DateTime @default(now())
+  pausedAt DateTime?
+  verifiedAt DateTime?
+  verification Json?
+  completedAt DateTime?
+  sharedAt DateTime?
+  dismissedAt DateTime?
+  updatedAt DateTime @updatedAt
+  business Business @relation(fields: [businessId], references: [id], onDelete: Cascade)
+}
+model SetupOperation {
+  businessId String
+  key String
+  payloadHash String
+  result Json
+  createdAt DateTime @default(now())
+  business Business @relation(fields: [businessId], references: [id], onDelete: Cascade)
+  @@id([businessId, key])
+  @@index([createdAt])
+}
+model TutorialProgress {
+  businessId String
+  userId String
+  tutorialId String
+  version Int
+  step Int @default(0)
+  revision Int @default(0)
+  status String @default("active")
+  updatedAt DateTime @updatedAt
+  business Business @relation(fields: [businessId], references: [id], onDelete: Cascade)
+  user User @relation(fields: [userId], references: [id], onDelete: Cascade)
+  @@id([businessId, userId, tutorialId, version])
+  @@index([userId, businessId])
 }

@@ -1,0 +1,174 @@
+{
+  "status": "STAGING_READY_PROTECTED_CERTIFICATION_PARTIAL_CI_BLOCKED",
+  "date": "2026-11-03",
+  "vercelProduction": {
+    "page": "https://vercel.com/purocode-projects/puragenda/settings/build-and-deployment",
+    "field": "Ignored Build Step",
+    "from": "Automatic",
+    "to": "Only build production",
+    "productionBranch": "main",
+    "effect": "Keep Production builds; cancel Preview builds, including old branches without the new allowlist",
+    "limitation": "Canceled deployment records and quota usage remain possible; administrators can manually skip this step",
+    "rollback": "Restore Automatic only with owner authorization",
+    "applied": true,
+    "persistedAfterReload": true
+  },
+  "github": {
+    "page": "https://github.com/DiegoSalsa/Puragenda/settings/rules",
+    "historyRuleset": {
+      "name": "Puragenda main y RC1 - preservar historial",
+      "enforcement": "active",
+      "branches": [
+        "refs/heads/main",
+        "refs/heads/release/puragenda-next-rc1"
+      ],
+      "rules": [
+        "deletion",
+        "non_fast_forward"
+      ],
+      "bypassActors": [],
+      "id": 26426317
+    },
+    "reviewRuleset": {
+      "name": "Puragenda main - revision de socio",
+      "enforcement": "active",
+      "branches": [
+        "refs/heads/main"
+      ],
+      "requiredApprovals": 1,
+      "dismissStaleApprovals": true,
+      "requireConversationResolution": true,
+      "requireCodeOwnerReview": false,
+      "requireLastPushApproval": false,
+      "emergencyBypass": {
+        "actor": "Repository admin",
+        "mode": "pull_request"
+      },
+      "requiredStatusChecksInitially": [],
+      "requiredStatusChecksGate": "Restore Actions billing, successfully run corrected baseline with its disposable PostgreSQL and isolated build, then authorize requiring its actual check name",
+      "id": 26426379
+    },
+    "effect": "No force push or deletion; main changes through reviewed PR; RC1 remains fast-forward capable; no role or account-access changes",
+    "adminRecovery": "Administrators retain ruleset management; emergency bypass only via PR and never bypasses the separate history ruleset",
+    "applied": true,
+    "verified": "Active in dashboard; history also read via REST; review settings read after reload"
+  },
+  "staging": {
+    "vercelTeam": "purocode-projects",
+    "vercelProject": "puragenda-next-staging",
+    "databaseOrganization": "PuroCode",
+    "databaseProvider": "Neon",
+    "databaseProject": "puragenda-next-staging",
+    "postgresMajor": 17,
+    "databasePlan": "Free; no upgrade or payment method",
+    "region": "AWS US East 2 (Ohio)",
+    "reuseOtherApplicationResources": false,
+    "data": "synthetic only",
+    "domain": "Vercel-generated temporary domain; no custom domain or DNS",
+    "deploymentProtection": "Vercel Authentication before the application is accessible",
+    "gitAutomaticDeployment": false,
+    "firstDeployment": "Separately authorized Preview, never Production; prepare project without import-and-Deploy",
+    "artifactOnlyVercelOverride": {
+      "git": {
+        "deploymentEnabled": false
+      },
+      "crons": [],
+      "outputDirectory": ".next-websites-qa",
+      "installCommand": "node .staging/preview-install.mjs",
+      "buildCommand": "node .staging/preview-build.mjs"
+    },
+    "installCommand": "Artifact-only guarded npm ci",
+    "buildCommand": "Artifact-only guarded preview wrapper then scripts/vercel-build.mjs",
+    "migrationProcedure": "scripts/prepare-rc1-staging-release.mjs bootstrap/cutover bundle; verify new project and endpoint identity plus URL fingerprint; run against new staging only before build",
+    "newSecretNames": [
+      "DATABASE_URL",
+      "DIRECT_URL",
+      "AUTH_SECRET",
+      "CONTACT_FLOW_TOKEN_SECRET"
+    ],
+    "environment": {
+      "PURAGENDA_NEXT_ENABLED": "1",
+      "PURAGENDA_RC1_STAGING_BUILD": "1",
+      "COMMERCIAL_V2_PREVIEW_ENABLED": "1",
+      "COMMERCIAL_V2_PREVIEW_DATABASE_SHA256": "SET_FROM_VERIFIED_NEW_DATABASE_URL_OUTSIDE_GIT",
+      "COMMERCIAL_V2_INTERNAL_WRITES": "1",
+      "COMMERCIAL_V2_SANDBOX_WRITES": "0",
+      "COMMERCIAL_V2_SANDBOX_WEBHOOKS": "0",
+      "COMMERCIAL_V2_MIGRATION_WRITES": "0",
+      "COMMERCIAL_V2_WEBSITE_GATES": "1",
+      "APP_URL": "https://project-8xjzo.vercel.app",
+      "NEXT_PUBLIC_APP_URL": "https://project-8xjzo.vercel.app",
+      "PURI_PLUS_INTERNAL_ENABLED": "1",
+      "PURI_PLUS_AI_ENABLED": "0",
+      "PURI_PLUS_PROACTIVE_ENABLED": "0",
+      "MCP_ENABLED": "false",
+      "MCP_PUBLIC_BOOKING_ENABLED": "false",
+      "CONTACT_FLOW_LAB_ENABLED": "1",
+      "CONTACT_FLOW_PUBLIC_CONSENT_ENABLED": "1",
+      "CONTACT_FLOW_DELIVERY_MODE": "simulation",
+      "CONTACT_FLOW_RESEND_TEST_ENABLED": "0",
+      "CONTACT_FLOW_PRODUCTION_ENABLED": "0",
+      "CONTACT_FLOW_EXTERNAL_RELEASE": "false",
+      "COMMERCIAL_WORKER_ENABLED": "0",
+      "COMMERCIAL_WORKER_KILLED": "1",
+      "PURAGENDA_MP_V2_ENABLED": "0",
+      "PURAGENDA_MP_V2_ENVIRONMENT": "sandbox",
+      "PURAGENDA_MP_V2_PRODUCTION_WRITES": "0",
+      "PURAGENDA_MP_V2_RECOVERY_ENABLED": "0",
+      "PURAGENDA_MP_V2_PRODUCTION_RECOVERY_ENABLED": "0",
+      "WEBSITE_QA": "1",
+      "WEBSITE_ROOT_DOMAIN": "SET_TO_NEW_STAGING_DOMAIN_ONLY",
+      "WEBSITE_MEDIA_MOCK": "1",
+      "WEBSITE_DOMAIN_PROVIDER": "mock",
+      "WEBSITE_VERCEL_WRITES_ENABLED": "0",
+      "WEBSITE_CHECKOUT_ENABLED": "0",
+      "WEBSITE_LAUNCH_ENABLED": "0"
+    },
+    "forbiddenCredentials": [
+      "OPENAI_API_KEY",
+      "RESEND_API_KEY",
+      "GOOGLE_CLIENT_ID",
+      "GOOGLE_CLIENT_SECRET",
+      "MERCADOPAGO_ACCESS_TOKEN",
+      "MERCADOPAGO_WEBHOOK_SECRET",
+      "CLOUDINARY_API_SECRET",
+      "VERCEL_TOKEN",
+      "production DATABASE_URL or AUTH_SECRET"
+    ],
+    "costBoundary": "Owner accepted three builds and up to 1000 certification requests total; no fourth build; alerts are not effective spend caps",
+    "authorizationStages": [
+      "Create isolated resources and configure protection without deployment",
+      "Authorize first protected Preview after identity, secrets, no-cron and database isolation review"
+    ],
+    "created": true,
+    "deployed": true,
+    "vercelProjectId": "prj_ma5nkDSDzQGBCFMhroTTzsGi07YD",
+    "databaseProjectId": "divine-glade-04170205",
+    "databaseBranchId": "br-quiet-fog-bebr4tlj",
+    "databaseName": "puragenda_next_staging",
+    "environmentApplied": true,
+    "projectVariables": 50,
+    "sharedVariablesLinked": 0,
+    "credentialsRetrieved": true,
+    "migrationsExecuted": true,
+    "runtimeCertified": "login, individual and team onboarding; remaining flows documented",
+    "observedProtection": "Vercel Authentication All Deployments; anonymous checks redirect to Vercel SSO",
+    "url": "https://project-8xjzo.vercel.app",
+    "deploymentId": "dpl_BkxGsTrcMTeQ1oWrLiRgf5RtYpz8",
+    "artifactSourceSha": "40b455b095dce882967e308c8839e23c1611f840",
+    "deploymentTarget": "staging",
+    "runtimeVercelEnv": "preview",
+    "buildMachine": "basic fixed",
+    "nodeVersion": "24.x",
+    "migrations": 17,
+    "newMigrations": 0,
+    "backupRestore": "actual Neon to owned disposable loopback clone passed; no owner/ACL restore"
+  },
+  "calendar": {
+    "productionConfigurationChanged": false,
+    "disableRequested": false,
+    "testAccountAvailable": false,
+    "procedure": "Use separately authorized synthetic account and secondary calendar; preserve current integration"
+  },
+  "primaryReport": "docs/operations/PURAGENDA-NEXT-LAUNCH-READY.md"
+}

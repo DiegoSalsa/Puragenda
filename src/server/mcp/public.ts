@@ -1,19 +1,21 @@
-import { hasOperationalSubscriptionAccess } from "@/core/subscription-access";
+import { getCommercialPlanAccess } from "@/server/services/commercial-plan-access";
+import type { Prisma } from "@prisma/client";
 import { prisma } from "@/server/db/prisma";
 import { loadBookingContext, toBookingCatalog, getBookingAvailability, type AvailabilityQuery } from "@/server/booking/read.service";
 import { McpError, limit } from "./security";
 import { publicBookingEnabled } from "./config";
 import { mcpBusinessFilter } from "./rollout";
 
-export async function publicBusiness(slug: string) {
-  const business = await prisma.business.findFirst({ where: { ...await mcpBusinessFilter(), slug, mcpPublicDiscovery: true }, include: { subscription: true } });
-  if (!business || !hasOperationalSubscriptionAccess(business.subscription)) throw new McpError("BUSINESS_NOT_FOUND", 404);
+export async function publicBusiness(slug: string, db: Prisma.TransactionClient = prisma) {
+  const business = await db.business.findFirst({ where: { ...await mcpBusinessFilter(db), slug, mcpPublicDiscovery: true }, include: { subscription: true } });
+  if (!business || !(await getCommercialPlanAccess(business.id, new Date(), db)).allowed) throw new McpError("BUSINESS_NOT_FOUND", 404);
   return business;
 }
 export async function searchPublicBusinesses(query: string, cursor?: string) {
   const rows = await prisma.business.findMany({ where: { AND: [await mcpBusinessFilter(), ...(cursor ? [{ id: { gt: cursor } }] : [])], mcpPublicDiscovery: true, name: { contains: query, mode: "insensitive" } },
-    select: { id: true, slug: true, name: true, timezone: true, currencyCode: true, subscription: { select: { status: true, isTrial: true, trialEndsAt: true, gracePeriodEndsAt: true } } }, orderBy: { id: "asc" }, take: 21 });
-  return { businesses: rows.slice(0, 20).filter((row) => hasOperationalSubscriptionAccess(row.subscription)).map(({ id, slug, name, timezone, currencyCode }) => ({ id, slug, name, timezone, currencyCode })),
+    select: { id: true, slug: true, name: true, timezone: true, currencyCode: true, subscription: { select: { plan: true, currentPeriodEnd: true, status: true, isTrial: true, trialEndsAt: true, gracePeriodEndsAt: true } } }, orderBy: { id: "asc" }, take: 21 });
+  const visible = await Promise.all(rows.slice(0, 20).map(async row => (await getCommercialPlanAccess(row.id)).allowed ? row : null));
+  return { businesses: visible.filter(row => row !== null).map(({ id, slug, name, timezone, currencyCode }) => ({ id, slug, name, timezone, currencyCode })),
     nextCursor: rows.length > 20 ? rows[19].id : null };
 }
 export async function publicCatalog(slug: string) {

@@ -79,11 +79,12 @@ export async function createGiftCardPurchase(input: {
 }) {
   const template = await prisma.giftCardTemplate.findFirst({
     where: { id: input.templateId, businessId: input.businessId, isActive: true },
-    include: { services: { include: { service: { select: { id: true, name: true, price: true, businessId: true } } } } },
+    include: { services: { include: { service: { select: { id: true, name: true, price: true, businessId: true, isActive: true } } } } },
   });
   if (!template) throw new Error("Gift Card no disponible");
   if (template.type === "SERVICE" && template.services.length === 0) throw new Error("La Gift Card no tiene servicios configurados");
   if (template.services.some((item) => item.service.businessId !== input.businessId)) throw new Error("Servicio de otro negocio");
+  if (template.services.some(item => item.service.isActive === false)) throw new Error("La Gift Card contiene un servicio archivado");
   const snapshot = snapshotGiftCardTemplate(template);
   return prisma.giftCardPurchase.create({
     data: {
@@ -178,11 +179,12 @@ export async function issueManualGiftCard(input: Parameters<typeof createGiftCar
 async function createGiftCardPurchaseWithClient(tx: Prisma.TransactionClient, input: Parameters<typeof createGiftCardPurchase>[0]) {
   const template = await tx.giftCardTemplate.findFirst({
     where: { id: input.templateId, businessId: input.businessId, isActive: true },
-    include: { services: { include: { service: { select: { id: true, name: true, price: true, businessId: true } } } } },
+    include: { services: { include: { service: { select: { id: true, name: true, price: true, businessId: true, isActive: true } } } } },
   });
   if (!template) throw new Error("Gift Card no disponible");
   if (template.type === "SERVICE" && template.services.length === 0) throw new Error("La Gift Card no tiene servicios configurados");
   if (template.services.some((item) => item.service.businessId !== input.businessId)) throw new Error("Servicio de otro negocio");
+  if (template.services.some(item => item.service.isActive === false)) throw new Error("La Gift Card contiene un servicio archivado");
   const snapshot = snapshotGiftCardTemplate(template);
   return tx.giftCardPurchase.create({ data: {
     businessId: input.businessId, templateId: template.id, type: template.type,

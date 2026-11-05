@@ -115,6 +115,8 @@ localSuite("commercial subscriptions with real local PostgreSQL", () => {
     const inactive = await db.staff.create({ data: { businessId: prefix, name: "Inactive", isActive: false } });
     expect(await actions.createStaffAction(createInput("second"))).toEqual({ success: true });
     expect(await actions.toggleStaffActiveAction(inactive.id)).toMatchObject({ error: expect.stringContaining("2 profesional") });
+    expect(await actions.toggleStaffActiveAction(initialStaffId)).toMatchObject({ error: expect.stringContaining("1 reserva(s) futura(s)") });
+    await db.appointment.updateMany({ where: { businessId: prefix, staffId: initialStaffId }, data: { status: "CANCELLED" } });
     expect(await actions.toggleStaffActiveAction(initialStaffId)).toEqual({ success: true });
     expect(await actions.toggleStaffActiveAction(inactive.id)).toEqual({ success: true });
     expect(await db.staff.count({ where: { businessId: prefix, isActive: true } })).toBe(2);

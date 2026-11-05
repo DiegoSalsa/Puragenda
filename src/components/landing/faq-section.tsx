@@ -6,6 +6,7 @@ import { useState } from "react";
 import { Plus, Minus } from "@/components/icons/hover-icons";
 import { serializeJsonLd } from "@/lib/seo";
 import { faqPageNode } from "@/lib/json-ld";
+import { PLUS_GROWTH_SUMMARY, PUBLIC_ANNUAL_NOTE, PUBLIC_PLANS_PRICE_SUMMARY, PUBLIC_TRIAL_NOTE } from "@/lib/public-plans";
 
 const faqs = [
   {
@@ -16,22 +17,22 @@ const faqs = [
   {
     category: "Precios y planes",
     question: "¿Puragenda tiene prueba gratuita?",
-    answer: "Sí. Ambos planes incluyen 30 días de prueba gratuita, sin tarjeta de crédito. Al finalizar puedes activar tu suscripción o tu cuenta quedará inactiva.",
+    answer: PUBLIC_TRIAL_NOTE,
   },
   {
     category: "Precios y planes",
     question: "¿Cuánto cuesta Puragenda?",
-    answer: "El Plan Individual cuesta $12.990 CLP/mes y el Plan Equipo $29.990 CLP/mes. Sin comisiones ni costos ocultos. Ambos incluyen citas ilimitadas, widget de reservas y marketing win-back.",
+    answer: PUBLIC_PLANS_PRICE_SUMMARY,
   },
   {
     category: "Precios y planes",
-    question: "¿Cuál es la diferencia entre el Plan Individual y el Plan Equipo?",
-    answer: "El Plan Individual es para profesionales que trabajan solos. El Plan Equipo permite hasta 5 profesionales con agendas separadas y roles (Admin/Staff), más adicionales desde el sexto profesional por $3.000 CLP/mes cada uno.",
+    question: "¿Cuál es la diferencia entre Puragenda y Puragenda+?",
+    answer: `Ambos incluyen reservas, clientes, profesionales y Puri. Puragenda+ suma el sitio web personalizable con editor, hosting y reservas integradas. ${PLUS_GROWTH_SUMMARY}`,
   },
   {
     category: "Precios y planes",
     question: "¿Existe descuento por pagar anualmente?",
-    answer: "Sí. Con el plan anual pagas 10 meses y obtienes 12, un ahorro equivalente a 2 meses gratis. Aplica para ambos planes.",
+    answer: PUBLIC_ANNUAL_NOTE,
   },
   {
     category: "Funcionalidades",
@@ -46,7 +47,7 @@ const faqs = [
   {
     category: "Funcionalidades",
     question: "¿Qué es el Marketing Win-Back?",
-    answer: "Es una herramienta integrada para enviar campañas por email a clientes inactivos. El Plan Individual permite 50 correos por campaña y el Equipo hasta 100.",
+    answer: "Es una herramienta para preparar campañas por email a clientes inactivos. Puragenda+ añade Contact Flow para automatizar su recuperación y reactivación, con consentimiento de los clientes, autorización del negocio y límites de uso.",
   },
   {
     category: "Funcionalidades",

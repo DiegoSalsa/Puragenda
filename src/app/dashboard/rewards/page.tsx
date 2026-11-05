@@ -9,6 +9,7 @@ import { RewardsClient } from "./rewards-client";
 import { PageTutorial } from "@/components/dashboard/page-tutorial";
 import { DASHBOARD_PERMISSIONS } from "@/core/permissions";
 import { hasBusinessPermission } from "@/server/services/permissions.service";
+import { isV2Plan } from "@/server/services/commercial-plan-access";
 
 export const dynamic = "force-dynamic";
 
@@ -41,6 +42,7 @@ export default async function RewardsPage() {
         </div>
       </div>
       <RewardsClient
+        reservationOnly={isV2Plan(subscription?.plan)}
         tokenBalance={tokenBalance}
         hasActiveDiscount={hasActiveDiscount}
         discountPercentage={subscription?.pendingDiscountPercentage || 0}

@@ -16,6 +16,8 @@ import {
 import { APPOINTMENT_STATUS_COLORS as STATUS_COLORS, AppointmentDetailDialog } from "./appointment-detail-dialog";
 
 interface CalendarAppointment {
+  updatedAt?: string;
+  locationId?: string | null;
   id: string; customerName: string; customerEmail: string;
   startTime: string; endTime: string; status: string;
   paymentStatus: string; depositAmount: number | null; depositPaymentUrl: string | null;
@@ -115,6 +117,8 @@ export function WeeklyCalendar({
   weekStartISO,
   todayKey,
   locationSlug,
+  locationId,
+  locationName,
   agendaMode,
   businessHours = [],
   services = [],
@@ -123,6 +127,7 @@ export function WeeklyCalendar({
   currencyCode,
   timeZone,
   canManageAppointments = false,
+  canViewInternalNotes = false,
   posEnabled = false,
 }: {
   appointments: CalendarAppointment[];
@@ -130,6 +135,8 @@ export function WeeklyCalendar({
   weekStartISO: string;
   todayKey?: string;
   locationSlug?: string;
+  locationId?: string;
+  locationName?: string;
   agendaMode?: "mine";
   businessHours?: CalendarBusinessHour[];
   services?: AppointmentEditorService[];
@@ -138,6 +145,7 @@ export function WeeklyCalendar({
   currencyCode: string;
   timeZone?: string;
   canManageAppointments?: boolean;
+  canViewInternalNotes?: boolean;
   posEnabled?: boolean;
 }) {
   const t = useTranslations("dashboard.calendar");
@@ -237,6 +245,7 @@ export function WeeklyCalendar({
 
   function openNewAppointment(start?: Date, preferredStaffId?: string) {
     if (!canManageAppointments) return;
+    window.dispatchEvent(new CustomEvent("learning:action", { detail: "appointment-form-opened" }));
     const suggested = start ? new Date(start) : new Date(Date.now() + 60 * 60 * 1000);
     if (!start) suggested.setMinutes(0, 0, 0);
     if (suggested <= new Date()) suggested.setHours(suggested.getHours() + 1);
@@ -261,7 +270,7 @@ export function WeeklyCalendar({
 
   return (
     <>
-      <div className="rounded-2xl border border-border bg-card overflow-hidden">
+      <div data-tour="appointments-calendar" className="rounded-2xl border border-border bg-card overflow-hidden">
         {/* Header */}
         <div className="border-b border-border px-4 sm:px-6 py-3 sm:py-4 space-y-2">
           <div className="flex flex-wrap items-center justify-between gap-2">
@@ -277,6 +286,7 @@ export function WeeklyCalendar({
               {canManageAppointments && (
                 <button
                   type="button"
+                  data-tour="appointment-create"
                   onClick={() => openNewAppointment()}
                   className="inline-flex min-w-0 flex-1 items-center justify-center gap-1.5 rounded-xl bg-[#7C3AED] px-3 py-2 text-xs font-semibold text-white transition-colors hover:bg-[#6D28D9] sm:flex-none"
                 >
@@ -499,6 +509,9 @@ export function WeeklyCalendar({
 
       {selected && (
         <AppointmentDetailDialog
+          canViewInternalNotes={canViewInternalNotes}
+          locationId={locationId}
+          locationName={locationName}
           appointment={selected}
           onClose={() => setSelected(null)}
           canManageAppointments={canManageAppointments}
@@ -512,6 +525,9 @@ export function WeeklyCalendar({
       )}
       {editor && (
         <AppointmentEditor
+          canViewInternalNotes={canViewInternalNotes}
+          locationId={locationId}
+          locationName={locationName}
           initialStart={editor.initialStart}
           initialStaffId={editor.initialStaffId}
           timeZone={timeZone}

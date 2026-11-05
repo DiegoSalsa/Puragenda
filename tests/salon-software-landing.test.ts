@@ -3,7 +3,8 @@ import { join } from "node:path";
 import { describe, expect, it } from "vitest";
 import { GET as llmsGet } from "@/app/llms.txt/route";
 import sitemap from "@/app/sitemap";
-import { EXTRA_STAFF_COST, PRICING, STAFF_LIMITS, TRIAL_DURATION_DAYS } from "@/core/constants";
+import { TRIAL_DURATION_DAYS } from "@/core/constants";
+import { COMMERCIAL_PLAN_METADATA as PLANS } from "@/core/commercial-catalog";
 import { toGoogleAnalyticsPagePath } from "@/lib/analytics/path";
 import { industriesData } from "@/lib/data/industries";
 import { barbershopSoftwareCopy, barbershopSoftwareMetadata } from "@/lib/data/barbershop-software-landing";
@@ -58,12 +59,12 @@ describe("SEO-007 salon software landing", () => {
     expect(barberPageSource).not.toContain("Software de agenda para peluquerías y salones");
   });
 
-  it("reuses PRICING and does not invent a salon testimonial", () => {
+  it("uses the commercial catalog and does not invent a salon testimonial", () => {
     const priceFaq = salonSoftwareFaqs().find((item) => item.question.includes("Cuánto cuesta"));
-    expect(priceFaq?.answer).toContain(formatLandingClp(PRICING.INDIVIDUAL.monthly));
-    expect(priceFaq?.answer).toContain(formatLandingClp(PRICING.EQUIPO.monthly));
-    expect(priceFaq?.answer).toContain(String(STAFF_LIMITS.EQUIPO));
-    expect(priceFaq?.answer).toContain(formatLandingClp(EXTRA_STAFF_COST.EQUIPO));
+    expect(priceFaq?.answer).toContain(formatLandingClp(PLANS.PURAGENDA.baseMonthly));
+    expect(priceFaq?.answer).toContain(formatLandingClp(PLANS.PURAGENDA_PLUS.baseMonthly));
+    expect(priceFaq?.answer).toContain("un profesional");
+    expect(priceFaq?.answer).toContain("escala progresiva");
     expect(priceFaq?.answer).toContain(String(TRIAL_DURATION_DAYS));
     expect(pageSource).not.toContain("Soccerbarber");
     expect(pageSource).not.toContain("Lotty Skin");

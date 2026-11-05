@@ -5,7 +5,7 @@ import { getClientPortalAppUrl, registerClientPortalAccount } from "@/server/ser
 import { sendClientPortalVerificationEmail } from "@/server/email/send";
 
 export async function POST(request: NextRequest) {
-  const limited = clientPortalAccountEmailLimiter.check(request);
+  const limited = await clientPortalAccountEmailLimiter.check(request);
   if (limited) return limited;
   const parsed = clientPortalRegisterSchema.safeParse(await request.json().catch(() => null));
   if (!parsed.success) return Response.json({ error: parsed.error.issues[0]?.message }, { status: 400 });

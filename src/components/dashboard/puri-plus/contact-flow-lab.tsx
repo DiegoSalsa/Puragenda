@@ -1,0 +1,593 @@
+"use client";
+import { useCallback, useState } from "react";
+import { commercialUsageMessage } from "@/core/commercial-usage";
+type Recommendation = {
+  id: string;
+  title: string;
+  status: string;
+  contentHash: string;
+  version: number;
+  expiresAt: string;
+};
+type Campaign = {
+  id: string;
+  status: string;
+  recommendationId: string;
+  eligible: number;
+  excluded: number;
+  exclusions: Record<string, number>;
+  states: Record<string, number>;
+  errors: Record<string, number>;
+  version: {
+    id: string;
+    version: number;
+    contentHash: string;
+    objective: string;
+    subject: string;
+    senderEmail: string;
+    timezone?: string;
+    body: string;
+    serviceName: string;
+    servicePrice: number;
+    maxContacts: number;
+    dailyLimit: number;
+    startsAt: string;
+    expiresAt: string;
+    authorizations: { createdAt: string; contentHash: string }[];
+  };
+};
+export type ContactFlowSnapshot = {
+  mode?: "SIMULATED_ONLY" | "CONTROLLED_RESEND_TEST" | "PRODUCTION_RESEND";
+  campaigns: Campaign[];
+  policy: {
+    killed: boolean;
+    emailEnabled: boolean;
+    dailyLimit: number;
+    monthlyLimit: number;
+    contactDays: number;
+  } | null;
+  global: { killed: boolean; emailEnabled: boolean } | null;
+  quotas: {
+    kind: string;
+    period: string;
+    limit: number;
+    reserved: number;
+    consumed: number;
+  }[];
+  services: { id: string; name: string; price: number }[];
+};
+const button =
+  "rounded-xl border-2 border-black bg-white px-4 py-2 text-sm font-bold shadow-[2px_2px_0_#171717] focus-visible:outline-2 focus-visible:outline-offset-4 focus-visible:outline-purple-700 disabled:opacity-50";
+const input = "w-full min-w-0 rounded-xl border-2 border-black bg-white p-2";
+const state: Record<string, string> = {
+  DRAFT: "Pendiente de autorización",
+  READY: "Lista para simulación",
+  RUNNING: "Simulación en curso",
+  PAUSED: "Pausada",
+  CANCELLED: "Cancelada",
+  COMPLETED: "Ejecución terminada",
+};
+const reasons: Record<string, string> = {
+  NO_VERIFIED_CONSENT: "Sin consentimiento verificable",
+  SUPPRESSED: "Baja o supresión",
+  RECENT_CONTACT: "Contacto reciente",
+  CAMPAIGN_LIMIT: "Límite de campaña",
+  INVALID_ADDRESS: "Dirección no sintética o inválida",
+};
+const deliveries: Record<string, string> = {
+  QUEUED: "En cola",
+  ACCEPTED: "Aceptados por simulador",
+  DELIVERED: "Entregas simuladas confirmadas",
+  BOUNCED: "Rebotes simulados",
+  COMPLAINED: "Denuncias simuladas",
+  FAILED: "Fallidos",
+  EXCLUDED: "Excluidos antes del intento",
+  UNKNOWN: "Resultado desconocido",
+  EXPIRED: "Vencidos",
+};
+const quotaLabels: Record<string, string> = { BUSINESS_DAY: "Correos del día", BUSINESS_MONTH: "Correos del mes", BUSINESS_TRIAL: "Correos de la prueba", BUSINESS_CAMPAIGNS: "Campañas del periodo", CAMPAIGN: "Correos de la campaña", CAMPAIGN_DAY: "Correos diarios de la campaña", CONTACT_DAY: "Límite diario por contacto" };
+function localDate(date: Date) {
+  return new Date(+date - date.getTimezoneOffset() * 60000)
+    .toISOString()
+    .slice(0, 16);
+}
+function displayDate(value: string, timezone = "America/Santiago") {
+  const parts = new Intl.DateTimeFormat("en-CA", { timeZone: timezone, year: "numeric", month: "2-digit", day: "2-digit", hour: "2-digit", minute: "2-digit", hourCycle: "h23" }).formatToParts(new Date(value));
+  const get = (type: string) => parts.find(p => p.type === type)?.value ?? "";
+  return `${get("day")}-${get("month")}-${get("year")} ${get("hour")}:${get("minute")}`;
+}
+export function ContactFlowLab({
+  recommendations,
+  locationSlug,
+  owner,
+  initialSnapshot, dashboard = false,
+}: {
+  recommendations: Recommendation[];
+  locationSlug?: string;
+  owner: boolean;
+  initialSnapshot?: ContactFlowSnapshot;
+  dashboard?: boolean;
+}) {
+  const [data, setData] = useState<ContactFlowSnapshot | null>(
+      initialSnapshot ?? null,
+    ),
+    [busy, setBusy] = useState(false),
+    [error, setError] = useState(""),
+    [checked, setChecked] = useState<string | null>(null),
+    [results, setResults] = useState<Record<string, unknown> | null>(null),
+    [notice, setNotice] = useState("");
+  const [recipientReview, setRecipientReview] = useState<Record<string, { recipients: { id: string; name: string; email: string; eligible: boolean; exclusion: string | null }[]; nextCursor: string | null }>>({});
+  const [recId, setRecId] = useState(""),
+    [serviceId, setServiceId] = useState(""),
+    [start, setStart] = useState(""),
+    [end, setEnd] = useState(""),
+    [maximum, setMaximum] = useState(5),
+    [daily, setDaily] = useState(5);
+  const act = useCallback(
+    async (action: string, extra: Record<string, unknown> = {}) => {
+      setBusy(true);
+      setError("");
+      setNotice("");
+      try {
+        const response = await fetch(dashboard ? "/api/dashboard/contact-flow" : "/api/internal/contact-flow", {
+          method: "POST",
+          headers: { "Content-Type": "application/json" },
+          body: JSON.stringify({ action, locationSlug, ...extra }),
+        });
+        const body = await response.json();
+        if (!response.ok)
+          throw new Error(body.code ?? "CONTACT_FLOW_UNAVAILABLE");
+        setData(body);
+        if (!["LOAD", "RECIPIENTS", "RESULTS"].includes(action)) window.dispatchEvent(new Event("commercial:usage-changed"));
+        if (action === "RESULTS") setResults(body.result);
+        if (action === "RECIPIENTS") setRecipientReview(previous => ({ ...previous, [body.result.campaignId]: { recipients: extra.after ? [...(previous[body.result.campaignId]?.recipients ?? []), ...body.result.recipients] : body.result.recipients, nextCursor: body.result.nextCursor } }));
+        if (action !== "LOAD")
+          setNotice(
+            body.mode === "PRODUCTION_RESEND" ? "Operación registrada. Solo se procesan campañas autorizadas dentro de sus límites." : body.mode === "CONTROLLED_RESEND_TEST" ? "Operación registrada en la prueba controlada de Resend. Sólo se admiten los destinatarios técnicos autorizados." : "Operación registrada en el laboratorio. Los mensajes son simulados.",
+          );
+        setChecked(null);
+      } catch (e) {
+        setError(e instanceof Error ? commercialUsageMessage(e.message) ?? e.message : "No pudimos completar la operación.");
+      } finally {
+        setBusy(false);
+      }
+    },
+    [locationSlug, dashboard],
+  );
+  const approved = recommendations.filter((r) => r.status === "APPROVED"),
+    selected = approved.find((r) => r.id === (recId || approved[0]?.id));
+  const effectiveEnd =
+    end || (selected ? localDate(new Date(selected.expiresAt)) : "");
+  const draft = data?.campaigns.find(
+    (c) => c.recommendationId === selected?.id && c.status === "DRAFT",
+  );
+  const confirmAction = (
+    action: string,
+    extra: Record<string, unknown> = {},
+  ) => {
+    if (
+      window.confirm(
+        action === "RUN"
+          ? data?.mode === "PRODUCTION_RESEND" ? "¿Procesar hasta cinco envíos de campañas que autorizaste? Se comprobarán consentimiento, bajas y cupos." : data?.mode === "CONTROLLED_RESEND_TEST" ? "¿Ejecutar hasta cinco trabajos de prueba? Resend puede enviar correos reales a los destinatarios técnicos autorizados." : "¿Ejecutar hasta cinco trabajos con el proveedor simulado? No se enviarán correos reales."
+          : "¿Confirmar esta acción de Contact Flow?",
+      )
+    )
+      void act(action, { ...extra, explicit: true });
+  };
+  return (
+    <section
+      aria-labelledby="contact-flow-title"
+      className="space-y-5 rounded-3xl border-2 border-black bg-[#F2E9FF] p-4 sm:p-6"
+    >
+      <div className="flex flex-wrap items-center justify-between gap-3">
+        <h2 id="contact-flow-title" className="text-2xl font-black">
+          Contact Flow
+        </h2>
+        <button
+          className={button}
+          disabled={busy}
+          onClick={() => void act("LOAD")}
+        >
+          Actualizar campañas
+        </button>
+      </div>
+      <p className="text-sm font-bold">
+        {data?.mode === "PRODUCTION_RESEND" ? "Envíos autorizados · consentimiento y límites verificados en cada intento. La entrega depende de la capacidad disponible; si falta margen, la campaña permanece en cola." : data?.mode === "CONTROLLED_RESEND_TEST" ? "Prueba controlada de Resend · destinatarios técnicos autorizados · producción desactivada" : "Prueba sin envíos a clientes · las campañas se ejecutan con mensajes simulados"}
+      </p>
+      <p className="text-sm">
+        Aprobar una propuesta de Puri+ y autorizar su campaña son decisiones
+        distintas. Cada intento comprueba consentimiento, bajas y límites.
+      </p>
+      <p role="status" aria-live="polite" className="text-sm">
+        {busy ? "Verificando Contact Flow…" : notice}
+      </p>
+      {error && (
+        <p
+          role="alert"
+          className="rounded-xl border-2 border-black bg-[#FFF5BA] p-3"
+        >
+          No se completó la operación: {error}. Actualiza y revisa permisos,
+          evidencia, fechas o límites.
+        </p>
+      )}
+      {!data && !busy && <p>No hay información de Contact Flow disponible.</p>}
+      {data && (
+        <>
+          <div className="rounded-xl border border-black bg-white p-3 text-sm">
+            <p>
+              Pausa de envíos de la plataforma:{" "}
+              {data.global?.killed !== false ? "activo" : "inactivo"} · negocio:{" "}
+              {data.policy?.killed !== false ? "activo" : "inactivo"}
+            </p>
+            <p>
+              Cupo configurado: {data.policy?.dailyLimit ?? "sin configurar"} al
+              día · {data.policy?.monthlyLimit ?? "sin configurar"} al mes ·
+              frecuencia mínima {data.policy?.contactDays ?? "sin configurar"}{" "}
+              días. Correo:{" "}
+              {data.policy?.emailEnabled
+                ? data.mode === "PRODUCTION_RESEND" ? "habilitado para campañas autorizadas" : "habilitado para pruebas"
+                : "bloqueado"}
+              .
+            </p>
+            {owner && data.policy && (
+              <button
+                className={button + " mt-3"}
+                disabled={busy}
+                onClick={() =>
+                  confirmAction("KILL", { killed: !data.policy?.killed })
+                }
+              >
+                {data.policy.killed
+                  ? "Desbloquear simulación del negocio"
+                  : "Bloquear simulación del negocio"}
+              </button>
+            )}
+          </div>
+          <form
+            className="space-y-3"
+            onSubmit={(e) => {
+              e.preventDefault();
+              if (!selected) return;
+              void act(draft ? "REVISE" : "PREPARE", {
+                id: draft?.id,
+                campaign: {
+                  recommendationId: selected.id,
+                  recommendationHash: selected.contentHash,
+                  recommendationVersion: selected.version,
+                  serviceId: serviceId || data.services[0]?.id,
+                  startsAt: start
+                    ? new Date(start).toISOString()
+                    : new Date().toISOString(),
+                  expiresAt: new Date(effectiveEnd).toISOString(),
+                  maxContacts: maximum,
+                  dailyLimit: daily,
+                },
+              });
+            }}
+          >
+            <h3 className="text-lg font-black">
+              Preparar desde una propuesta aprobada
+            </h3>
+            {!approved.length ? (
+              <p className="text-sm">
+                Primero revisa y aprueba una propuesta en las oportunidades de
+                Puri+.
+              </p>
+            ) : (
+              <>
+                <label className="block text-sm font-bold">
+                  Propuesta
+                  <select
+                    aria-label="Propuesta aprobada"
+                    className={input}
+                    value={recId || approved[0]?.id}
+                    onChange={(e) => setRecId(e.target.value)}
+                  >
+                    {approved.map((r) => (
+                      <option key={r.id} value={r.id}>
+                        {r.title} · v{r.version}
+                      </option>
+                    ))}
+                  </select>
+                </label>
+                <label className="block text-sm font-bold">
+                  Servicio real
+                  <select
+                    aria-label="Servicio de campaña"
+                    className={input}
+                    value={serviceId || data.services[0]?.id}
+                    onChange={(e) => setServiceId(e.target.value)}
+                  >
+                    {data.services.map((s) => (
+                      <option key={s.id} value={s.id}>
+                        {s.name} · {s.price}
+                      </option>
+                    ))}
+                  </select>
+                </label>
+                <div className="grid gap-3 sm:grid-cols-2">
+                  <label className="block text-sm">
+                    Inicio opcional (hora del dispositivo)
+                    <input
+                      className={input}
+                      type="datetime-local"
+                      value={start}
+                      onChange={(e) => setStart(e.target.value)}
+                    />
+                  </label>
+                  <label className="block text-sm">
+                    Vencimiento (hora del dispositivo)
+                    <input
+                      className={input}
+                      required
+                      type="datetime-local"
+                      value={effectiveEnd}
+                      onChange={(e) => setEnd(e.target.value)}
+                    />
+                  </label>
+                  <label className="block text-sm">
+                    Máximo de contactos
+                    <input
+                      aria-label="Máximo de contactos"
+                      className={input}
+                      type="number"
+                      min={1}
+                      max={50}
+                      value={maximum}
+                      onChange={(e) => setMaximum(Number(e.target.value))}
+                    />
+                  </label>
+                  <label className="block text-sm">
+                    Máximo diario
+                    <input
+                      aria-label="Máximo diario"
+                      className={input}
+                      type="number"
+                      min={1}
+                      max={5}
+                      value={daily}
+                      onChange={(e) => setDaily(Number(e.target.value))}
+                    />
+                  </label>
+                </div>
+                <p className="text-xs">
+                  Canal: correo · finalidad: comercial · cohorte determinada en
+                  servidor desde la regla aprobada. Sin descuentos ni horarios
+                  garantizados.
+                </p>
+                <button
+                  className={button + " bg-[#FFD84D]"}
+                  disabled={busy || !data.services.length}
+                >
+                  {draft ? "Guardar nueva versión" : "Preparar campaña"}
+                </button>
+              </>
+            )}
+          </form>
+          {!data.campaigns.length && (
+            <p className="text-sm">
+              Aún no hay campañas preparadas en esta sucursal.
+            </p>
+          )}
+          {data.campaigns.map((c) => (
+            <article
+              key={c.id}
+              className="space-y-3 rounded-2xl border-2 border-black bg-white p-4"
+            >
+              <h3 className="font-black">
+                {c.version.subject} · versión {c.version.version}
+              </h3>
+              <p className="text-sm font-bold">{data.mode !== "SIMULATED_ONLY" && c.status === "READY" ? "Lista para envío autorizado" : data.mode !== "SIMULATED_ONLY" && c.status === "RUNNING" ? "Envío en curso" : state[c.status] ?? c.status}</p>
+              <p className="text-sm">
+                {c.eligible} destinatarios elegibles · {c.excluded} excluidos.
+                Máximo {c.version.maxContacts} contactos y{" "}
+                {c.version.dailyLimit} al día.
+              </p>
+              <p className="text-sm">
+                Ventana: {displayDate(c.version.startsAt, c.version.timezone)}{" "}
+                a {displayDate(c.version.expiresAt, c.version.timezone)}.
+              </p>
+              {!!Object.keys(c.exclusions).length && (
+                <ul className="list-inside list-disc text-sm">
+                  {Object.entries(c.exclusions).map(([r, n]) => (
+                    <li key={r}>
+                      {reasons[r] ?? r}: {n}
+                    </li>
+                  ))}
+                </ul>
+              )}
+              <details>
+                <summary className="cursor-pointer font-bold">
+                  Vista previa del correo
+                </summary>
+                <div className="mt-3 whitespace-pre-wrap rounded-xl border bg-neutral-50 p-4 text-sm">
+                  <p className="font-bold">Asunto: {c.version.subject}</p>
+                  <p>De: {c.version.senderEmail}</p>
+                  <p className="mt-3">{c.version.body}</p>
+                  <p className="mt-3 underline">
+                    Consultar horarios y reservar (enlace firmado por
+                    destinatario)
+                  </p>
+                  <p className="mt-3 underline">
+                    Darme de baja comercial (sin iniciar sesión)
+                  </p>
+                  <p className="mt-2 text-xs">
+                    La baja no desactiva los recordatorios de reservas. Esta
+                    vista previa no modifica preferencias.
+                  </p>
+                </div>
+              </details>
+              <details>
+                <summary className="cursor-pointer text-sm">
+                  Versión y evidencia de autorización
+                </summary>
+                <p className="mt-2 break-all text-xs">
+                  Hash: {c.version.contentHash}
+                </p>
+                <p className="text-sm">
+                  {c.version.authorizations.length
+                    ? "Autorización expresa registrada para esta versión."
+                    : "Esta versión aún no tiene autorización de ejecución."}
+                </p>
+              </details>
+              {owner && c.status === "DRAFT" && (
+                <div className="space-y-3">
+                  <button className={button} disabled={busy} onClick={() => void act("RECIPIENTS", { id: c.id })}>Revisar destinatarios</button>
+                  {recipientReview[c.id] && <div className="space-y-2 rounded-xl border border-black bg-white p-3">
+                    <p className="font-bold">Destinatarios de esta versión</p>
+                    <ul className="space-y-2 text-sm">{recipientReview[c.id].recipients.map(recipient => <li key={recipient.id} className="break-words"><strong>{recipient.name}</strong> · {recipient.email}<br />{recipient.eligible ? "Incluido · consentimiento verificado" : reasons[recipient.exclusion ?? ""] ?? "Excluido"}</li>)}</ul>
+                    {recipientReview[c.id].nextCursor && <button className={button} disabled={busy} onClick={() => void act("RECIPIENTS", { id: c.id, after: recipientReview[c.id].nextCursor })}>Ver más destinatarios</button>}
+                  </div>}
+                  <label className="flex items-start gap-2 text-sm">
+                    <input
+                      aria-label={data?.mode === "PRODUCTION_RESEND" ? "Autorizo el envío de esta campaña" : data?.mode === "CONTROLLED_RESEND_TEST" ? "Autorizo ejecución de prueba con Resend" : "Autorizo ejecución simulada"}
+                      type="checkbox"
+                      className="mt-1"
+                      checked={checked === c.version.contentHash}
+                      onChange={(e) =>
+                        setChecked(
+                          e.target.checked ? c.version.contentHash : null,
+                        )
+                      }
+                    />
+                    Revisé el correo, los destinatarios, las exclusiones y los límites. Autorizo
+                    expresamente esta versión para {data?.mode === "PRODUCTION_RESEND" ? "el envío de la campaña" : data?.mode === "CONTROLLED_RESEND_TEST" ? "una prueba controlada con Resend" : "ejecución simulada"}.
+                  </label>
+                  <button
+                    className={button + " bg-[#FFD84D]"}
+                    disabled={
+                      busy || checked !== c.version.contentHash || !c.eligible
+                    }
+                    onClick={() =>
+                      void act("AUTHORIZE", {
+                        id: c.id,
+                        hash: c.version.contentHash,
+                        version: c.version.version,
+                        explicit: true,
+                      })
+                    }
+                  >
+                    {data?.mode === "PRODUCTION_RESEND" ? "Autorizar envío de campaña" : data?.mode === "CONTROLLED_RESEND_TEST" ? "Autorizar prueba de Resend" : "Autorizar ejecución simulada"}
+                  </button>
+                </div>
+              )}
+              <div className="flex flex-wrap gap-3">
+                {owner && ["READY", "RUNNING"].includes(c.status) && (
+                  <button
+                    className={button}
+                    disabled={busy}
+                    onClick={() => confirmAction("PAUSE", { id: c.id })}
+                  >
+                    Pausar campaña
+                  </button>
+                )}
+                {owner && c.status === "PAUSED" && (
+                  <button
+                    className={button}
+                    disabled={busy}
+                    onClick={() => confirmAction("RESUME", { id: c.id })}
+                  >
+                    Reanudar campaña
+                  </button>
+                )}
+                {owner && !["CANCELLED", "COMPLETED"].includes(c.status) && (
+                  <button
+                    className={button}
+                    disabled={busy}
+                    onClick={() => confirmAction("CANCEL", { id: c.id })}
+                  >
+                    Cancelar campaña
+                  </button>
+                )}
+                <button
+                  className={button}
+                  disabled={busy}
+                  onClick={() => void act("RESULTS", { id: c.id })}
+                >
+                  Ver resultados verificables
+                </button>
+              </div>
+              <ul className="list-inside list-disc text-sm">
+                {Object.entries(c.states).map(([s, n]) => (
+                  <li key={s}>
+                    {data.mode !== "SIMULATED_ONLY" ? ({ ACCEPTED: "Aceptados por el proveedor", DELIVERED: "Entregas confirmadas", BOUNCED: "Rebotes", COMPLAINED: "Denuncias" } as Record<string, string>)[s] ?? deliveries[s] ?? s : deliveries[s] ?? s}: {n}
+                  </li>
+                ))}
+              </ul>
+              {!!Object.keys(c.errors).length && (
+                <p className="break-words text-sm">
+                  Observaciones:{" "}
+                  {Object.entries(c.errors)
+                    .map(([code, n]) => `${code} (${n})`)
+                    .join(", ")}
+                </p>
+              )}
+            </article>
+          ))}
+          {owner && (
+            <div className="flex flex-wrap gap-3">
+              <button
+                className={button}
+                disabled={busy}
+                onClick={() => confirmAction("RUN")}
+              >
+                {data?.mode === "PRODUCTION_RESEND" ? "Procesar envíos autorizados" : data?.mode === "CONTROLLED_RESEND_TEST" ? "Ejecutar prueba de Resend" : "Ejecutar laboratorio"}
+              </button>
+              <button
+                className={button}
+                disabled={busy}
+                onClick={() => confirmAction("RECONCILE")}
+              >
+                {data?.mode !== "SIMULATED_ONLY" ? "Conciliar con Resend" : "Reconciliar entregas simuladas"}
+              </button>
+            </div>
+          )}
+          {results && (
+            <div
+              aria-live="polite"
+              className="rounded-xl border border-black bg-white p-4 text-sm"
+            >
+              <p className="font-bold">Atribución técnica verificable</p>
+              <p>
+                Reservas asociadas: {String(results.reservations)} ·
+                completadas: {String(results.completed)} · canceladas:{" "}
+                {String(results.cancelled)} · con devolución:{" "}
+                {String(results.refunded)}.
+              </p>
+              <p>
+                Ingresos registrados:{" "}
+                {results.recordedRevenue === null
+                  ? "importe total desconocido"
+                  : String(
+                      results.recordedRevenue ?? "sin permiso financiero",
+                    )}{" "}
+                · parte conocida:{" "}
+                {String(results.knownRevenue ?? "sin permiso")} · importes
+                desconocidos: {String(results.unknownAmounts ?? "sin permiso")}.
+              </p>
+              <p>{String(results.note)}</p>
+              <p>
+                No se puede asegurar cuántas reservas adicionales generó la campaña. {data.mode === "SIMULATED_ONLY" ? "Las entregas mostradas son simuladas." : "Las entregas mostradas corresponden a resultados del proveedor."}
+              </p>
+            </div>
+          )}
+          {data.quotas.length > 0 && (
+            <details>
+              <summary className="cursor-pointer text-sm font-bold">
+                Consumo y reservas de cuota
+              </summary>
+              <ul className="mt-2 list-inside list-disc text-sm">
+                {data.quotas.filter(q => !dashboard || q.kind.startsWith("BUSINESS_")).map((q, i) => (
+                  <li key={i}>
+                    {quotaLabels[q.kind] ?? q.kind} ({q.period.startsWith("trial-") ? "prueba" : q.period}): {q.consumed} utilizados +{" "}
+                    {q.reserved} reservados / {q.limit}.
+                  </li>
+                ))}
+              </ul>
+            </details>
+          )}
+        </>
+      )}
+    </section>
+  );
+}

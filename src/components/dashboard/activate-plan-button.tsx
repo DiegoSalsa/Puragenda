@@ -39,7 +39,7 @@ export function ActivatePlanButton({
   const [error, setError] = useState<string | null>(null);
   const [discountCode, setDiscountCode] = useState("");
 
-  const planLabel = plan === "EQUIPO" ? "Equipo" : "Individual";
+  const planLabel = "Puragenda";
 
   async function handleActivate() {
     setLoading(true);

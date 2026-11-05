@@ -3,7 +3,7 @@ import { useTranslations } from "next-intl";
 
 import { LocalizedText } from "@/components/i18n/localized-text";
 
-import { useState } from "react";
+import { useEffect, useRef, useState } from "react";
 import { Check, Coffee, Copy, Loader2, Save, Sparkles } from "@/components/icons/hover-icons";
 import { saveBusinessHoursAction } from "@/server/actions/dashboard.actions";
 import { getDefaultBreakRange, isValidTimeRange } from "@/lib/time";
@@ -21,7 +21,7 @@ interface HourEntry {
   breakEnd?: string | null;
 }
 
-export function BusinessHoursEditor({ initialHours, locations = [] }: { initialHours: HourEntry[]; locations?: { id: string; name: string; hours: HourEntry[] }[] }) {
+export function BusinessHoursEditor({ initialHours, locations = [], onSave, onDraft }: { initialHours: HourEntry[]; locations?: { id: string; name: string; hours: HourEntry[] }[]; onSave?: (hours: HourEntry[]) => Promise<{ success?: boolean; error?: string }>; onDraft?: (hours: HourEntry[]) => void }) {
   const legacy = useTranslations("legacy");
   const [hours, setHours] = useState<HourEntry[]>(initialHours);
   const [locationId, setLocationId] = useState(locations[0]?.id || "");
@@ -29,7 +29,10 @@ export function BusinessHoursEditor({ initialHours, locations = [] }: { initialH
   const [saved, setSaved] = useState(false);
   const [error, setError] = useState("");
 
+  const edited = useRef(false);
+  useEffect(() => { if (edited.current) onDraft?.(hours); }, [hours, onDraft]);
   function update(dayOfWeek: number, field: keyof HourEntry, value: string | boolean | null) {
+    edited.current = true;
     setHours((current) =>
       current.map((entry) => entry.dayOfWeek === dayOfWeek ? { ...entry, [field]: value } : entry)
     );
@@ -49,6 +52,7 @@ export function BusinessHoursEditor({ initialHours, locations = [] }: { initialH
     const source = hours.find((entry) => entry.isOpen && entry.dayOfWeek >= 1 && entry.dayOfWeek <= 5);
     if (!source) return;
 
+    edited.current = true;
     setHours((current) =>
       current.map((entry) =>
         entry.dayOfWeek >= 1 && entry.dayOfWeek <= 5
@@ -67,6 +71,7 @@ export function BusinessHoursEditor({ initialHours, locations = [] }: { initialH
   }
 
   function closeWeekend() {
+    edited.current = true;
     setHours((current) =>
       current.map((entry) =>
         entry.dayOfWeek === 0 || entry.dayOfWeek === 6
@@ -97,12 +102,15 @@ export function BusinessHoursEditor({ initialHours, locations = [] }: { initialH
     }
 
     setSaving(true);
-    const result = await saveBusinessHoursAction(hours, locationId || undefined);
+    let result: { success?: boolean; error?: string };
+    try { result = onSave ? await onSave(hours) : await saveBusinessHoursAction(hours, locationId || undefined); }
+    catch { result = { error: "No se pudieron guardar los horarios. Intenta nuevamente." }; }
     setSaving(false);
 
     if (result.success) {
       track("dashboard_availability_configured", { scope: locationId ? "location" : "business" });
       setSaved(true);
+      window.dispatchEvent(new CustomEvent("learning:action", { detail: "hours-saved" }));
       setError("");
     } else {
       setError(result.error || legacy("NLtLjHhnx_OX"));
@@ -277,6 +285,7 @@ export function BusinessHoursEditor({ initialHours, locations = [] }: { initialH
       {error && <p role="alert" className="text-sm font-medium text-red-500">{error}</p>}
       <button
         type="button"
+        data-tour="hours-save"
         onClick={handleSave}
         disabled={saving}
         className="flex h-11 items-center gap-2 rounded-xl bg-[#7C3AED] px-5 text-sm font-bold text-white transition-colors hover:bg-[#6D28D9] disabled:opacity-50"

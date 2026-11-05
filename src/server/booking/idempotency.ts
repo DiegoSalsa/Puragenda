@@ -13,7 +13,7 @@ export const bookingContractContext = new AsyncLocalStorage<boolean>();
 export const bookingReviewContext = new AsyncLocalStorage<boolean>();
 // Trusted server adapters may bind a user-approved quote. Never populated from
 // an HTTP body. The canonical writer verifies it again inside the capacity lock.
-export const bookingExpectedQuoteContext = new AsyncLocalStorage<{ price: number; duration: number; forbidDeposit: boolean; requirePublicParticipation?: boolean }>();
+export const bookingExpectedQuoteContext = new AsyncLocalStorage<{ price: number; duration: number; forbidDeposit: boolean; requirePublicParticipation?: boolean; authorize?: (db: Prisma.TransactionClient) => Promise<void> }>();
 const hash = (value: string) => createHash("sha256").update(value).digest("hex");
 
 function stable(value: unknown): string {

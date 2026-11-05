@@ -2,8 +2,8 @@
 import { WebsiteError } from "@/server/websites/errors";
 import { revalidatePath } from "next/cache";
 import { prisma } from "@/server/db/prisma";
-import { hasWebsiteEntitlement, validSubdomain } from "@/websites/policy";
-import { hasOperationalSubscriptionAccess } from "@/core/subscription-access";
+import { validSubdomain } from "@/websites/policy";
+import { resolveWebsiteCommercialAccess } from "@/server/websites/commercial-access";
 import { requireWebsiteManager, ensureWebsite } from "@/server/websites/service";
 import { addWebsiteDomain, customHostname, verifyWebsiteDomain, refreshWebsiteDomain, removeWebsiteDomain } from "@/server/websites/domains";
 import { startWebsiteCheckout, changeWebsiteBilling, recoverWebsitePayment, startWebsiteTrial } from "@/server/websites/checkout";
@@ -16,6 +16,7 @@ import { storedMediaUrls } from "@/websites/stored-media";
 import { websiteAssetSchema } from "@/websites/media";
 import { websitePriceTier } from "@/websites/offers";
 import type { WebsitePublicationOptions } from "@/websites/publishing";
+import { websiteDomainOwnership } from "@/server/websites/domain-ownership";
 
 async function uploadWebsiteImageImpl(formData: FormData) {
   return storeWebsiteImage(formData);
@@ -24,11 +25,14 @@ async function uploadWebsiteImageImpl(formData: FormData) {
 async function saveWebsiteDraftImpl(input: unknown, revision: number, subdomain: string, templateKey?: string) {
   const { business } = await requireWebsiteManager();
   if (!Number.isSafeInteger(revision) || revision < 0 || !validSubdomain(subdomain)) throw new WebsiteError("Configuración inválida");
-  const site = await ensureWebsite(business.id, business.slug);
-  if (templateKey && templateKey !== site.templateKey) throw new WebsiteError("El diseño cambió en otra sesión. Recarga antes de guardar.");
-  const config = resolveTemplate(site.templateKey ?? "bella", site.templateVersion ?? 1).parseDraft(input);
+  await ensureWebsite(business.id, business.slug);
   const result = await prisma.$transaction(async tx => {
     await tx.$queryRaw`SELECT id FROM "Business" WHERE id = ${business.id} FOR UPDATE`;
+    if (!(await resolveWebsiteCommercialAccess(business.id, new Date(), tx)).editor) throw new WebsiteError("Necesitas acceso vigente al sitio web para guardar");
+    const site = await tx.businessWebsite.findUniqueOrThrow({ where: { businessId: business.id } });
+    if (site.revision !== revision) throw new WebsiteError("El borrador cambió en otra sesión. Recarga antes de guardar.");
+    if (templateKey && templateKey !== site.templateKey) throw new WebsiteError("El diseño cambió en otra sesión. Recarga antes de guardar.");
+    const config = resolveTemplate(site.templateKey, site.templateVersion).parseDraft(input);
     await validateWebsiteAssets(tx, site.id, config, site.draftConfig);
     return tx.businessWebsite.updateMany({ where: { id: site.id, businessId: business.id, revision }, data: { draftConfig: config, templateConfigs: { ...storedTemplateConfigs(site.templateConfigs), [templateSnapshotKey(site.templateKey ?? "bella", site.templateVersion ?? 1)]: config } as Prisma.InputJsonObject, subdomain, revision: { increment: 1 } } });
   });
@@ -40,7 +44,7 @@ async function publishWebsiteImpl(revision: number, options?: WebsitePublication
   const result = await prisma.$transaction(async tx => {
     await tx.$queryRaw`SELECT id FROM "Business" WHERE id = ${business.id} FOR UPDATE`;
     const current = await tx.business.findUniqueOrThrow({ where: { id: business.id }, include: { subscription: true, websiteAddon: true, websiteOfferEligibility: true, website: true } });
-    if (current.deletedAt || !hasWebsiteEntitlement(current.websiteAddon, new Date(), current.websiteOfferEligibility) || !hasOperationalSubscriptionAccess(current.subscription)) throw new WebsiteError("Activa el add-on y regulariza tu suscripción para publicar");
+    if (current.deletedAt || !(await resolveWebsiteCommercialAccess(business.id, new Date(), tx)).publish) throw new WebsiteError("Necesitas una suscripción vigente con sitio web incluido para publicar");
     const site = current.website;
     if (!site || site.revision !== revision) throw new WebsiteError("Recarga el borrador antes de publicar");
     const template = resolveTemplate(site.templateKey, site.templateVersion);
@@ -60,8 +64,11 @@ async function publishWebsiteImpl(revision: number, options?: WebsitePublication
   revalidatePath("/dashboard/website");
 }
 async function suspendWebsiteImpl() {
-  const { business } = await requireWebsiteManager();
-  await prisma.businessWebsite.updateMany({ where: { businessId: business.id }, data: { status: "SUSPENDED" } });
+  const { business } = await requireWebsiteManager(false, false);
+  await prisma.$transaction(async tx => {
+    await tx.$queryRaw`SELECT id FROM "Business" WHERE id = ${business.id} FOR UPDATE`;
+    await tx.businessWebsite.updateMany({ where: { businessId: business.id }, data: { status: "SUSPENDED" } });
+  });
   revalidatePath("/dashboard/website");
 }
 async function connectWebsiteDomainImpl(hostname: string) {
@@ -71,19 +78,25 @@ async function checkWebsiteDomainImpl(id: string) {
   const message = await verifyWebsiteDomain(id); revalidatePath("/dashboard/website"); return message;
 }
 async function requestWebsiteDomainImpl(raw: string, notes: string) {
-  const { business } = await requireWebsiteManager(true);
-  const site = await prisma.businessWebsite.findUniqueOrThrow({ where: { businessId: business.id } });
+  const { business } = await requireWebsiteManager(true, true);
   if (notes.length > 1000) throw new WebsiteError("Mensaje demasiado largo");
-  if (await prisma.domainRequest.count({ where: { websiteId: site.id, status: { in: ["REQUESTED", "REVIEWING", "QUOTED"] } } }) >= 3) throw new WebsiteError("Ya tienes solicitudes pendientes");
-  await prisma.domainRequest.create({ data: { websiteId: site.id, hostname: customHostname(raw), notes: notes.trim() } });
+  const hostname = customHostname(raw);
+  await prisma.$transaction(async tx => {
+    await tx.$queryRaw`SELECT id FROM "Business" WHERE id = ${business.id} FOR UPDATE`;
+    if (!(await resolveWebsiteCommercialAccess(business.id, new Date(), tx)).domains) throw new WebsiteError("Necesitas acceso vigente al sitio web para gestionar dominios");
+    const site = await tx.businessWebsite.findUniqueOrThrow({ where: { businessId: business.id } });
+    if (await tx.domainRequest.count({ where: { websiteId: site.id, status: { in: ["REQUESTED", "REVIEWING", "QUOTED"] } } }) >= 3) throw new WebsiteError("Ya tienes solicitudes pendientes");
+    await tx.domainRequest.create({ data: { websiteId: site.id, hostname, notes: notes.trim() } });
+  });
   revalidatePath("/dashboard/website");
 }
 async function setPrimaryWebsiteDomainImpl(id: string) {
-  const { business } = await requireWebsiteManager(true);
+  const { business } = await requireWebsiteManager(true, true);
   await prisma.$transaction(async tx => {
     await tx.$queryRaw`SELECT id FROM "Business" WHERE id = ${business.id} FOR UPDATE`;
+    if (!(await resolveWebsiteCommercialAccess(business.id, new Date(), tx)).domains) throw new WebsiteError("Necesitas acceso vigente al sitio web para gestionar dominios");
     const domain = await tx.websiteDomain.findFirst({ where: { id, status: "ACTIVE", tenantVerifiedAt: { not: null }, website: { businessId: business.id } } });
-    if (!domain) throw new WebsiteError("Dominio no activo");
+    if (!domain || !await websiteDomainOwnership(domain)) throw new WebsiteError("Dominio no activo");
     await tx.websiteDomain.updateMany({ where: { websiteId: domain.websiteId }, data: { isPrimary: false } });
     await tx.websiteDomain.update({ where: { id: domain.id }, data: { isPrimary: true } });
   });
@@ -113,6 +126,7 @@ export async function switchWebsiteTemplate(key: string, version: number, revisi
     resolveTemplate(key, version);
     await prisma.$transaction(async tx => {
       await tx.$queryRaw`SELECT id FROM "Business" WHERE id = ${business.id} FOR UPDATE`;
+      if (!(await resolveWebsiteCommercialAccess(business.id, new Date(), tx)).editor) throw new WebsiteError("Necesitas acceso vigente al sitio web para cambiar el diseño");
       const site = await tx.businessWebsite.findUniqueOrThrow({ where: { businessId: business.id } });
       if (site.revision !== revision) throw new WebsiteError("El borrador cambió en otra sesión. Recarga antes de cambiar el diseño.");
       const { config, snapshots } = templateSwitchDraft(site, key, version);

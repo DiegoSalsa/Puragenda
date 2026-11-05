@@ -1,0 +1,717 @@
+{
+  "sourceCommit": "e471373",
+  "cutoverMigration": "20261021120000_commercial_infrastructure_v2",
+  "historicalMigrations": [
+    {
+      "name": "20260424200148_v4_plans_calendar_whitelabel",
+      "sha256": "bb64dd5b521d929a65761174d7accac051c2d9da818fae43e7163406d8be86c0"
+    },
+    {
+      "name": "20260424202523_v5_staff_schedule_appearance",
+      "sha256": "dc18618385592ab757d4eff2840bfab10505d1cde414f903cd72ba96bd414342"
+    },
+    {
+      "name": "20260426014616_v6_multiservice_affiliates",
+      "sha256": "a0947811f653f40c996703165d27b0f874b83638925661268637876db6ecc126"
+    },
+    {
+      "name": "20260430_rename_roles",
+      "sha256": "3324aaf6a572408af6a41c242b58a45977e1086469f00fc60dbc591d7a7311e8"
+    },
+    {
+      "name": "20260430_staff_services_m2m",
+      "sha256": "0bb7288116de8b5647d7d5909466ce366cd7e4ca45b16f96212c051582e34363"
+    },
+    {
+      "name": "20260504_pivot_plans_equipo",
+      "sha256": "73673218fa90504bbe314c966adf1edc4f13f2a88862cdaf3047e54cab8a0f62"
+    },
+    {
+      "name": "20260504_reminder_sent",
+      "sha256": "56d51fbc291f19a2ba52645b6f0a8451482aacc189c538dfd72ebcac117272d0"
+    },
+    {
+      "name": "20260505_add_marketing_campaigns",
+      "sha256": "5ca8046d6933e735f7eb51fed05fef282444b87271ee3ccd7e2cf2da9e45742c"
+    },
+    {
+      "name": "20260515_move_deposit_to_service",
+      "sha256": "ed8816a9ddb9e70f5c9cf143cc3f2962ff29d249aa1b1697f5be5fe5f43be95a"
+    },
+    {
+      "name": "20260515_recurring_bookings_crm",
+      "sha256": "d05994481dc6ed391329b03b8fab365244a816f0bcba450f46b466c1c5e33090"
+    },
+    {
+      "name": "20260516_add_service_deposit_amount",
+      "sha256": "24070ef5b34a624e356ef11987f6a8c1b7749cffbb6804e76d0ad7a4e079a780"
+    },
+    {
+      "name": "20260630190000_add_last_seen_changelog_version",
+      "sha256": "e2011d141f65dcc06d36e32b7a2bd4e80d129b9293a57f6787b250ddbe5b13dd"
+    },
+    {
+      "name": "20260701120000_platform_discount_codes",
+      "sha256": "870828f9492fa3b03b43aae1007b996febeed2c08a68c2315af48ed53406e039"
+    },
+    {
+      "name": "20260701130000_admin_interactive_emails",
+      "sha256": "5c605e9ad72622aeeffe0ec45cb06b891b8b79f3656115aebbc345a87ab08958"
+    },
+    {
+      "name": "20260716000000_service_options",
+      "sha256": "e0e0f98e10cfbb36e308e0578e14952553b008acf7f73d942e29d19a554b0cfc"
+    },
+    {
+      "name": "20260716010000_staff_service_images",
+      "sha256": "917244eeee85da2d876cbb071363dd5c955ca84a1f95c5007ff04f98d180bddc"
+    },
+    {
+      "name": "20260716030000_subscription_benefits",
+      "sha256": "ab6defe3f0767963c2687a074accae8c711185106b47e79ef4f5ac1da1340865"
+    },
+    {
+      "name": "20260718212244_home_services",
+      "sha256": "3a58b312e3523d1479db988e889c818308a35a828a96f06b8f1cb8c91dc19aa5"
+    },
+    {
+      "name": "20260719002943_option_category_max_selections",
+      "sha256": "36e8f422780b718b1916c0ae5679442dde8a17b67d78cd02a9585b9b04337908"
+    },
+    {
+      "name": "20260719183024_admin_login_codes",
+      "sha256": "45564a8b3ede5a6c9b67bf5edf17fb687282e5ec19e2a51e5e9b488dd175b62f"
+    },
+    {
+      "name": "20260722203000_widget_studio_access_profiles",
+      "sha256": "67465b39752d464bb2631d89626ee274308da0c5ee3f9ad2f61c54d4930f2fc4"
+    },
+    {
+      "name": "20260723223050_production_order_services",
+      "sha256": "6b7fe809b2c688ef2a0b3ebc95339b2a053c02f2808fa6221ca36bd1fe18267a"
+    },
+    {
+      "name": "20260723224151_production_order_mercadopago",
+      "sha256": "6bcb169796b62d15f571caa971374852f4ac983205440a73f549905e384fa60d"
+    },
+    {
+      "name": "20260723231107_configurable_production_windows",
+      "sha256": "975dd5b0834ab61d0386571f92b66aa16a080103c132b26b0a432c45f76e6397"
+    },
+    {
+      "name": "20260724020934_enable_production_order_rls",
+      "sha256": "5c709af46bfe733563b2a31c99b5c7d3550b3f51f1f57c5db703350b93524299"
+    },
+    {
+      "name": "20260725150000_service_categories",
+      "sha256": "61a00584ede48b28f5172239fb553f251eb99e7f3cc2ee2b662090f8a731d739"
+    },
+    {
+      "name": "20260726202429_secure_widget_studio_tables",
+      "sha256": "c0fbb6be4e3ba7fd85792d4e74e69e0fb3f0e3f97c939c043802c6a43cc798b5"
+    },
+    {
+      "name": "20260726223029_widget_promo_real_discounts",
+      "sha256": "9969a7fddcf05a97bf32571d9e63595268986e3f8fa8d3434ae7a0966681fa68"
+    },
+    {
+      "name": "20260728021839_appointment_management_and_customer_email_actions",
+      "sha256": "326485313ebdacbeea330b4c0b4093c6d12b4ec775ddd56edce634f954e62668"
+    },
+    {
+      "name": "20260728035500_priority_schedule_blocks",
+      "sha256": "15fe8d8dd7def9a51508a7cc1405c2e1c4662a2fb87736da946d365e0e398af2"
+    },
+    {
+      "name": "20260730190000_subscription_dunning",
+      "sha256": "1c318ab5066189bd224ae2faa9a1398ddbdf2f6efb9cba9274aab5c3c9badd77"
+    },
+    {
+      "name": "20260801151540_feedback_customization",
+      "sha256": "d10fe83ec2a343f8dc398539d868b837802a37d6b551f1b2edbbb50bdd3d30a9"
+    },
+    {
+      "name": "20260801162002_google_calendar_integration",
+      "sha256": "902d279daa1c3364ed0733cf54409dfb7f9db77ab70d5132d2b5b0e6eadbd99d"
+    },
+    {
+      "name": "20260801203000_client_portal_magic_access",
+      "sha256": "172576605fdca80a2f028e1518d8650a13c022870af545833c89e998c3a4001a"
+    },
+    {
+      "name": "20260801213000_secure_google_calendar_tables",
+      "sha256": "bedb077f56fe77caec19f3a2aea08295eb82bb1357d10e3933ba5c0b75337139"
+    },
+    {
+      "name": "20260803223000_business_country_currency",
+      "sha256": "34a1e2a0b59b451725be8199fa27ffe232b15d46fd2ca21b979a04a71f2838d3"
+    },
+    {
+      "name": "20260804162000_add_paddle_subscription_fields",
+      "sha256": "4eac880443bd681b0e01bd1f990385a65c996e7d17e8fa7b5939363ee7a71389"
+    },
+    {
+      "name": "20260805143000_add_business_locations",
+      "sha256": "d2bae122c98812ae9d43370a8ccb5532e375fd2da85ce71515a2bed0ac75d44b"
+    },
+    {
+      "name": "20260806124500_add_business_locale",
+      "sha256": "8f5cf0d854de124f7e6bea795de47053552ff744ebe8a4f269655fdd6085b1fe"
+    },
+    {
+      "name": "20260808185003_story_campaign_tracking",
+      "sha256": "8fc966ff8cd2e203f7f0d9651aa6870271fbddc2c71db3596873d89ec7668e45"
+    },
+    {
+      "name": "20260808210919_story_studio_growth",
+      "sha256": "34b4753d687f4e398cce264b7b72cdb19d3eafdf197fbc811d46edf88dc4dd8e"
+    },
+    {
+      "name": "20260809204313_secure_remaining_public_tables",
+      "sha256": "b822d3424a79bd8da2e4410085805e8b6f97f6d610e3c076c0c4565ae1ce594e"
+    },
+    {
+      "name": "20260813002754_manual_deposit_payment_links",
+      "sha256": "958ba7f37a1cb4de1700f2d6014cf3fad01b0c6a94658d84d4e1ad95abfcb365"
+    },
+    {
+      "name": "20260813014500_deposit_receipt_upload",
+      "sha256": "a91d3c16a5785cb0dcc063363b9bf361614ae48ffe0759e793b101d213710bbe"
+    },
+    {
+      "name": "20260815160027_add_pos_qr_payments",
+      "sha256": "43e73358cfdc3ac734214e6eca7013a0a5d9595f578bdf964f3c6226e812b2b7"
+    },
+    {
+      "name": "20260817000000_booking_discount_codes",
+      "sha256": "84d0cfec6d4c62020f492661420df6dbb412aeec0aa0e563fc651e6c8a421161"
+    },
+    {
+      "name": "20260820120000_client_accounts_special_services_and_session_settlement",
+      "sha256": "4b929671d7896b25a4b73cf9fb68f194c9aa772f5bb31efb148d4dc33e7f35e4"
+    },
+    {
+      "name": "20260820144405_client_portal_persistent_sessions",
+      "sha256": "8c9e242e0136c8ded592689db04813b0ac53231d8f1ce7420ba2ba6956856e79"
+    },
+    {
+      "name": "20260828003000_deposit_payment_deliveries",
+      "sha256": "dd03266b897a6dafc6c8c51a86acb985e47357c59137abda71ddeddd44d63acc"
+    },
+    {
+      "name": "20260828013000_split_deposit_payment_email_deliveries",
+      "sha256": "9069d7535cb25af155c091416a29dd42a87d66d9fbad82af5e8ebb372ce3bc4e"
+    },
+    {
+      "name": "20260829010000_add_deposit_delivery_lease",
+      "sha256": "58b4bd425bc6aed5720720334316f7dbe0d5477d0f0fe4f56f92f2a1e875dd66"
+    },
+    {
+      "name": "20260829020000_add_tracking_events",
+      "sha256": "7fb96915eba443931a6d29f5bdb091e31123df9e1b904d00a76ebb9a6c612a7f"
+    },
+    {
+      "name": "20260829040000_add_privacy_compliance",
+      "sha256": "7054d3414e7f523d362509033a99496b74f4e8e7a5de07ad1dd227a67444f889"
+    },
+    {
+      "name": "20260829050000_add_privacy_request_extension_evidence",
+      "sha256": "964471593d3cef343b5930d7bae0042cbeb053515b77cc0c34aec15afbace435"
+    },
+    {
+      "name": "20260829060000_harden_tracking_privacy",
+      "sha256": "831c0698e21899d29ade38af81dc2ce783d86f4783b6e54d970c908bb9b50001"
+    },
+    {
+      "name": "20260831180000_platform_discount_trial_window",
+      "sha256": "4ae45cd96cb2cf3da5467fa17d715e1328a3dc07d0d8bb5027efe02c143c1a98"
+    },
+    {
+      "name": "20260903230000_marketplace_curated_inventory",
+      "sha256": "6c87b15cd77f4deb9047d4582b4cd1ab2efdc4e611b656cb3d3f082840c5b1ba"
+    },
+    {
+      "name": "20260904013000_marketplace_category_classification",
+      "sha256": "8fa8af37df99020722097ed2d053d8718defd671979e2e9e5ec294fc187074be"
+    },
+    {
+      "name": "20260906120000_marketplace_registration_onboarding",
+      "sha256": "b819f4270a922495fbff50ef32fa0638dbc177103bf11f5c57365e0227bdcc6f"
+    },
+    {
+      "name": "20260906183000_marketplace_existing_business_prompt",
+      "sha256": "ae7aefe645307a9054c06dc848dad6fe88f160888a4990098dbaa258cdce4ef4"
+    },
+    {
+      "name": "20260906203000_marketplace_all_chile_communes",
+      "sha256": "5090686e834cb8418713a2647e36053b568125861dc26a863e16a37d3b58f453"
+    },
+    {
+      "name": "20260907120000_marketplace_listing_operational_status",
+      "sha256": "10b1115fef6b3750673ec35a2a4ac1825bcaac4ab46ea0f42f31a8f92af225d6"
+    },
+    {
+      "name": "20260907220000_superadmin_device_sessions",
+      "sha256": "bb41037b21b39fe8d73a893caa0666614dd7b1c0a607a2e1594b94686c90e8ef"
+    },
+    {
+      "name": "20260908120000_loyalty_v2",
+      "sha256": "42a7938705ff171bb46f7752d511f141821aad30a2e3d812e1469e419b33bb13"
+    },
+    {
+      "name": "20260908213000_add_gift_cards",
+      "sha256": "3882f119720e2fa74784cf7814c1b076c138eb4f99bf2ca8bded3c75c587ea19"
+    },
+    {
+      "name": "20260909170000_gift_card_loyalty_merge_hardening",
+      "sha256": "7dda0d5671ab0086074f6da10fc95c2936ac46837c2d207ea4d2b52921bea840"
+    },
+    {
+      "name": "20260909200000_add_booking_feedback",
+      "sha256": "66ce040ab8fe962cd5620db6d0bf1a8c2e992f7db4aa801809c0da873395cb31"
+    },
+    {
+      "name": "20260913120000_add_verified_appointment_reviews",
+      "sha256": "ba4467fe442f5122956c9bde4d467629bf301a587f7b74d692e6869b10ec71d5"
+    },
+    {
+      "name": "20260914160000_subscription_payment_notifications",
+      "sha256": "575602ef7c79d1197c4fc0142560f5514e5b229e1047cfd08d0009df9607bd84"
+    },
+    {
+      "name": "20260920100000_vivachile18_first_payment_trial_agnostic",
+      "sha256": "da8322978fc6bd30b4a7e1f430f0501aa34bf1056615c56f2d16177b273666d0"
+    },
+    {
+      "name": "20260929180000_puri_operational_telemetry",
+      "sha256": "16d6dae3863e64ed8db26490179cc1e5f1346f91e026f6733c29acbda6dc69b9"
+    },
+    {
+      "name": "20260930120000_public_booking_operations",
+      "sha256": "9513e26407dc8dca3040ba4b825677ede1b2fe7241d314174a0179f28ba354e8"
+    },
+    {
+      "name": "20260930160000_websites_addon_v1",
+      "sha256": "2c37c1f2dc816511431b9706e44cba0177a37d35a84c941d16905f950ad58003"
+    },
+    {
+      "name": "20260930210000_website_visual_builder_v2",
+      "sha256": "c07741f5bc545cfb67793cfed944900962adfe8682c0304ca0136b4d5aaeee94"
+    },
+    {
+      "name": "20261001120000_website_domain_tenant_ownership",
+      "sha256": "6a4513f9536ca44b0667ee5157f12e83477e41f9e44944929e369cc766d7ad0e"
+    },
+    {
+      "name": "20261001120000_website_launch_offers",
+      "sha256": "2e135215bc6a53bf6bd830c8880030ff88008d454af06e5796ee46fd39b41aa8"
+    },
+    {
+      "name": "20261001121000_booking_operation_fk_update",
+      "sha256": "22b02b184e3a145d2c91cc7f21031fd5e37bf27453e6ec8d1c46281db4ddd5cf"
+    },
+    {
+      "name": "20261001190000_matchday_template_snapshots",
+      "sha256": "d26fbb65a50789814f8f0298a8f9513ab3391d257c517de6faaaad74933a76b9"
+    },
+    {
+      "name": "20261002190000_website_mercadopago",
+      "sha256": "153aa3863ebc812229c3ffd4104e9a11965069bd4e210e3146c5bd0e088a7cb6"
+    },
+    {
+      "name": "20261003220000_website_purchase_intent",
+      "sha256": "a0f04772d5c9987aee6cfab7777fc6431e1f72e36d87bf051db67eba870af039"
+    },
+    {
+      "name": "20261016005730_secure_deposit_payment_delivery_rls",
+      "sha256": "77f2496e188f7e4fb1f5db21d416bddaee675c3fe7ce2b42606144beed39f3a6"
+    },
+    {
+      "name": "20261017021050_mcp_oauth_connector",
+      "sha256": "ee6d8a8969b09f4d4f3aafeb627e731d4791b2b05b1aaf7a99252b8975e5254f"
+    },
+    {
+      "name": "20261017163250_subscription_commercial_terms",
+      "sha256": "028c61deae23e37cc9b5205f2d77daf3c5271ed6d58261423751705ddb1e96be"
+    },
+    {
+      "name": "20261018055923_mcp_rollout_control",
+      "sha256": "bedcd778df0e25c953eac619665aee4be7d1bd41622bb418873de3d7019ec9b9"
+    },
+    {
+      "name": "20261020000000_payment_holds_google_read_calendars",
+      "sha256": "64c6c3fed1309814a68ba1aa7996cf9a415656b94b4d145e75921eecfb540a0a"
+    }
+  ],
+  "checks": {
+    "WidgetTheme_fontSize_check": {
+      "table": "WidgetTheme",
+      "expression": "(\"fontSize\" BETWEEN 10 AND 24)",
+      "source": "20260722203000_widget_studio_access_profiles"
+    },
+    "WidgetTheme_cornerRadius_check": {
+      "table": "WidgetTheme",
+      "expression": "(\"cornerRadius\" BETWEEN 0 AND 40)",
+      "source": "20260722203000_widget_studio_access_profiles"
+    },
+    "WidgetPromoBlock_position_check": {
+      "table": "WidgetPromoBlock",
+      "expression": "(\"position\" >= 0)",
+      "source": "20260722203000_widget_studio_access_profiles"
+    },
+    "Service_weeklyProductionCapacity_check": {
+      "table": "Service",
+      "expression": "(\"weeklyProductionCapacity\" BETWEEN 1 AND 100)",
+      "source": "20260723223050_production_order_services"
+    },
+    "Service_productionWeeksAhead_check": {
+      "table": "Service",
+      "expression": "(\"productionWeeksAhead\" BETWEEN 1 AND 104)",
+      "source": "20260723231107_configurable_production_windows"
+    },
+    "Service_productionDepositPercent_check": {
+      "table": "Service",
+      "expression": "(\"productionDepositPercent\" BETWEEN 0 AND 100)",
+      "source": "20260723223050_production_order_services"
+    },
+    "ProductionOrder_amounts_check": {
+      "table": "ProductionOrder",
+      "expression": "(\"totalPrice\" >= 0 AND \"depositAmount\" >= 0 AND \"balanceAmount\" >= 0)",
+      "source": "20260723223050_production_order_services"
+    },
+    "Service_productionLeadTimeWeeks_check": {
+      "table": "Service",
+      "expression": "(\"productionLeadTimeWeeks\" BETWEEN 0 AND 104)",
+      "source": "20260723231107_configurable_production_windows"
+    },
+    "ServiceCategory_position_check": {
+      "table": "ServiceCategory",
+      "expression": "(\"position\" >= 0)",
+      "source": "20260725150000_service_categories"
+    },
+    "Business_widgetShadowStyle_check": {
+      "table": "Business",
+      "expression": "(\"widgetShadowStyle\" IN ('none', 'soft', 'strong'))",
+      "source": "20260726202429_secure_widget_studio_tables"
+    },
+    "Business_widgetHeaderAlign_check": {
+      "table": "Business",
+      "expression": "(\"widgetHeaderAlign\" IN ('left', 'center', 'right'))",
+      "source": "20260726202429_secure_widget_studio_tables"
+    },
+    "WidgetTheme_shadowStyle_check": {
+      "table": "WidgetTheme",
+      "expression": "(\"shadowStyle\" IN ('none', 'soft', 'strong'))",
+      "source": "20260726202429_secure_widget_studio_tables"
+    },
+    "WidgetTheme_headerAlign_check": {
+      "table": "WidgetTheme",
+      "expression": "(\"headerAlign\" IN ('left', 'center', 'right'))",
+      "source": "20260726202429_secure_widget_studio_tables"
+    },
+    "WidgetPromoBlock_textAlign_check": {
+      "table": "WidgetPromoBlock",
+      "expression": "(\"textAlign\" IN ('left', 'center', 'right'))",
+      "source": "20260726202429_secure_widget_studio_tables"
+    },
+    "WidgetPromoBlock_discount_config_check": {
+      "table": "WidgetPromoBlock",
+      "expression": "(\n  (\"discountType\" IS NULL AND \"discountValue\" IS NULL)\n  OR (\n    \"discountType\" IN ('PERCENTAGE', 'FIXED')\n    AND \"discountValue\" > 0\n    AND (\"discountType\" <> 'PERCENTAGE' OR \"discountValue\" <= 100)\n  )\n)",
+      "source": "20260726223029_widget_promo_real_discounts"
+    },
+    "WidgetPromoBlock_discount_dates_check": {
+      "table": "WidgetPromoBlock",
+      "expression": "(\n  \"discountStartsAt\" IS NULL\n  OR \"discountEndsAt\" IS NULL\n  OR \"discountStartsAt\" < \"discountEndsAt\"\n)",
+      "source": "20260726223029_widget_promo_real_discounts"
+    },
+    "WidgetPromoBlock_discount_min_subtotal_check": {
+      "table": "WidgetPromoBlock",
+      "expression": "(\"discountMinSubtotal\" >= 0)",
+      "source": "20260726223029_widget_promo_real_discounts"
+    },
+    "Appointment_customer_action_token_expiry_check": {
+      "table": "Appointment",
+      "expression": "(\n  \"customerActionTokenExpiresAt\" IS NULL\n  OR \"customerActionTokenExpiresAt\" > \"createdAt\"\n)",
+      "source": "20260728021839_appointment_management_and_customer_email_actions"
+    },
+    "ScheduleBlock_priority_release_check": {
+      "table": "ScheduleBlock",
+      "expression": "(\n  (\"type\" = 'UNAVAILABLE' AND \"releaseAt\" IS NULL)\n  OR (\n    \"type\" = 'PRIORITY'\n    AND (\"releaseAt\" IS NULL OR \"releaseAt\" < \"startTime\")\n  )\n)",
+      "source": "20260728035500_priority_schedule_blocks"
+    },
+    "Business_countryCode_check": {
+      "table": "Business",
+      "expression": "(\"countryCode\" ~ '^[A-Z]{2}$')",
+      "source": "20260803223000_business_country_currency"
+    },
+    "Business_currencyCode_check": {
+      "table": "Business",
+      "expression": "(\"currencyCode\" ~ '^[A-Z]{3}$')",
+      "source": "20260803223000_business_country_currency"
+    },
+    "Business_locale_check": {
+      "table": "Business",
+      "expression": "(\"locale\" IN ('es', 'en', 'it', 'pt', 'fr', 'de', 'zh-CN'))",
+      "source": "20260806124500_add_business_locale"
+    },
+    "StoryCampaign_status_check": {
+      "table": "StoryCampaign",
+      "expression": "(\"status\" IN ('PUBLISHED', 'ARCHIVED'))",
+      "source": "20260808210919_story_studio_growth"
+    },
+    "StoryCampaign_objective_check": {
+      "table": "StoryCampaign",
+      "expression": "(\"objective\" IN ('FILL_SLOTS', 'LAST_MINUTE', 'PROMOTE_SERVICE', 'CANCELLATION'))",
+      "source": "20260808210919_story_studio_growth"
+    },
+    "PosPayment_amount_positive": {
+      "table": "PosPayment",
+      "expression": "(\"amount\" > 0)",
+      "source": "20260815160027_add_pos_qr_payments"
+    },
+    "PosPayment_currency_format": {
+      "table": "PosPayment",
+      "expression": "(\"currency\" ~ '^[A-Z]{3}$')",
+      "source": "20260815160027_add_pos_qr_payments"
+    },
+    "BookingDiscountCode_code_check": {
+      "table": "BookingDiscountCode",
+      "expression": "(\"code\" ~ '^[A-Z0-9]([A-Z0-9_-]{0,48}[A-Z0-9])?$')",
+      "source": "20260817000000_booking_discount_codes"
+    },
+    "BookingDiscountCode_value_check": {
+      "table": "BookingDiscountCode",
+      "expression": "(\n    \"discountValue\" > 0\n    AND (\"discountType\" <> 'PERCENTAGE' OR \"discountValue\" <= 100)\n  )",
+      "source": "20260817000000_booking_discount_codes"
+    },
+    "BookingDiscountCode_minSubtotal_check": {
+      "table": "BookingDiscountCode",
+      "expression": "(\"minSubtotal\" >= 0)",
+      "source": "20260817000000_booking_discount_codes"
+    },
+    "BookingDiscountCode_dates_check": {
+      "table": "BookingDiscountCode",
+      "expression": "(\n    \"startsAt\" IS NULL OR \"expiresAt\" IS NULL OR \"startsAt\" < \"expiresAt\"\n  )",
+      "source": "20260817000000_booking_discount_codes"
+    },
+    "TrackingConsent_decision_check": {
+      "table": "TrackingConsent",
+      "expression": "(\"decision\" IN ('accepted', 'rejected'))",
+      "source": "20260829040000_add_privacy_compliance"
+    },
+    "PrivacyRequest_requestType_check": {
+      "table": "PrivacyRequest",
+      "expression": "(\"requestType\" IN ('ACCESS', 'RECTIFICATION', 'SUPPRESSION', 'OPPOSITION', 'PORTABILITY', 'BLOCKING'))",
+      "source": "20260829040000_add_privacy_compliance"
+    },
+    "PrivacyRequest_status_check": {
+      "table": "PrivacyRequest",
+      "expression": "(\"status\" IN ('RECEIVED', 'IN_REVIEW', 'FULFILLED', 'DENIED'))",
+      "source": "20260829040000_add_privacy_compliance"
+    },
+    "PrivacyRequest_identityStatus_check": {
+      "table": "PrivacyRequest",
+      "expression": "(\"identityStatus\" IN ('PENDING', 'VERIFIED'))",
+      "source": "20260829040000_add_privacy_compliance"
+    },
+    "Business_loyaltyRewardExpirationDays_check": {
+      "table": "Business",
+      "expression": "(\"loyaltyRewardExpirationDays\" IS NULL OR \"loyaltyRewardExpirationDays\" IN (30, 60, 90))",
+      "source": "20260908120000_loyalty_v2"
+    },
+    "LoyaltyStampEvent_delta_check": {
+      "table": "LoyaltyStampEvent",
+      "expression": "(\"delta\" <> 0)",
+      "source": "20260908120000_loyalty_v2"
+    },
+    "GiftCardTemplate_salePrice_check": {
+      "table": "GiftCardTemplate",
+      "expression": "(\"salePrice\" > 0)",
+      "source": "20260908213000_add_gift_cards"
+    },
+    "GiftCardTemplate_faceValue_check": {
+      "table": "GiftCardTemplate",
+      "expression": "((\"type\" = 'BALANCE' AND \"faceValue\" > 0) OR (\"type\" = 'SERVICE' AND \"faceValue\" IS NULL))",
+      "source": "20260908213000_add_gift_cards"
+    },
+    "GiftCardTemplateService_quantity_check": {
+      "table": "GiftCardTemplateService",
+      "expression": "(\"quantity\" > 0)",
+      "source": "20260908213000_add_gift_cards"
+    },
+    "GiftCardPurchase_salePrice_check": {
+      "table": "GiftCardPurchase",
+      "expression": "(\"salePrice\" > 0)",
+      "source": "20260908213000_add_gift_cards"
+    },
+    "GiftCardPurchase_gift_delivery_check": {
+      "table": "GiftCardPurchase",
+      "expression": "(\n    (\"deliveryMode\" = 'SELF') OR\n    (\"deliveryMode\" = 'GIFT' AND \"recipientName\" IS NOT NULL AND \"recipientEmail\" IS NOT NULL AND \"senderName\" IS NOT NULL)\n  )",
+      "source": "20260908213000_add_gift_cards"
+    },
+    "GiftCard_balance_check": {
+      "table": "GiftCard",
+      "expression": "(\n    (\"type\" = 'BALANCE' AND \"initialBalance\" >= 0 AND \"remainingBalance\" >= 0 AND \"remainingBalance\" <= \"initialBalance\") OR\n    (\"type\" = 'SERVICE' AND \"initialBalance\" IS NULL AND \"remainingBalance\" IS NULL)\n  )",
+      "source": "20260908213000_add_gift_cards"
+    },
+    "GiftCardServiceEntitlement_quantity_check": {
+      "table": "GiftCardServiceEntitlement",
+      "expression": "(\"quantityInitial\" > 0 AND \"quantityRemaining\" >= 0 AND \"quantityRemaining\" <= \"quantityInitial\")",
+      "source": "20260908213000_add_gift_cards"
+    },
+    "GiftCardServiceEntitlement_value_check": {
+      "table": "GiftCardServiceEntitlement",
+      "expression": "(\"unitValueSnapshot\" >= 0)",
+      "source": "20260908213000_add_gift_cards"
+    },
+    "GiftCardRedemption_amount_check": {
+      "table": "GiftCardRedemption",
+      "expression": "(\"amountCovered\" >= 0)",
+      "source": "20260908213000_add_gift_cards"
+    },
+    "GiftCardRedemptionItem_quantity_check": {
+      "table": "GiftCardRedemptionItem",
+      "expression": "(\"quantity\" > 0)",
+      "source": "20260908213000_add_gift_cards"
+    },
+    "GiftCardRedemptionItem_amount_check": {
+      "table": "GiftCardRedemptionItem",
+      "expression": "(\"amountCovered\" >= 0)",
+      "source": "20260908213000_add_gift_cards"
+    },
+    "website_published_snapshot": {
+      "table": "BusinessWebsite",
+      "expression": "(\"status\" <> 'PUBLISHED' OR (\"publishedConfig\" IS NOT NULL AND \"publishedAt\" IS NOT NULL))",
+      "source": "20260930160000_websites_addon_v1"
+    },
+    "website_subdomain_format": {
+      "table": "BusinessWebsite",
+      "expression": "(\"subdomain\" ~ '^[a-z0-9]([a-z0-9-]{0,61}[a-z0-9])?$')",
+      "source": "20260930160000_websites_addon_v1"
+    },
+    "website_domain_lowercase": {
+      "table": "WebsiteDomain",
+      "expression": "(\"hostname\" = lower(\"hostname\"))",
+      "source": "20260930160000_websites_addon_v1"
+    },
+    "WebsitePurchaseIntent_baseState_check": {
+      "table": "WebsitePurchaseIntent",
+      "expression": "(\"baseState\" IN ('NONE','CREATING','PENDING','UNKNOWN','ACTIVE','CANCELLED'))",
+      "source": "20261003220000_website_purchase_intent"
+    },
+    "Subscription_staffLimitOverride_positive": {
+      "table": "Subscription",
+      "expression": "(\"staffLimitOverride\" IS NULL OR \"staffLimitOverride\" > 0)",
+      "source": "20261017163250_subscription_commercial_terms"
+    },
+    "Subscription_customMonthlyPriceClp_positive": {
+      "table": "Subscription",
+      "expression": "(\"customMonthlyPriceClp\" IS NULL OR \"customMonthlyPriceClp\" > 0)",
+      "source": "20261017163250_subscription_commercial_terms"
+    },
+    "Subscription_customMonthlyPriceClp_manual_monthly": {
+      "table": "Subscription",
+      "expression": "(\"customMonthlyPriceClp\" IS NULL OR (\"paymentMethod\" = 'BANK_TRANSFER' AND \"billingCycle\" = 'MONTHLY'))",
+      "source": "20261017163250_subscription_commercial_terms"
+    },
+    "McpRolloutState_singleton": {
+      "table": "McpRolloutState",
+      "expression": "(\"id\" = 'global')",
+      "source": "20261018055923_mcp_rollout_control"
+    },
+    "McpRolloutState_approval_required": {
+      "table": "McpRolloutState",
+      "expression": "(\n    NOT \"businessAccessEnabled\" OR (\"approvedAt\" IS NOT NULL AND length(trim(\"approvalReference\")) > 0 AND \"approvalReference\" IS NOT NULL)\n  )",
+      "source": "20261018055923_mcp_rollout_control"
+    }
+  },
+  "rlsTables": [
+    "AccessProfile",
+    "AdminInteractiveCampaign",
+    "AdminInteractiveRecipient",
+    "AdminInteractiveResponse",
+    "AdminLoginCode",
+    "ApiRateLimitBucket",
+    "BookingDiscountCode",
+    "BookingFeedback",
+    "BookingOperation",
+    "BusinessLocation",
+    "BusinessScheduleOverride",
+    "BusinessWebsite",
+    "ClientPortalAccount",
+    "ClientPortalSession",
+    "ClientPortalToken",
+    "DepositPaymentDelivery",
+    "DomainRequest",
+    "GiftCard",
+    "GiftCardPurchase",
+    "GiftCardRedemption",
+    "GiftCardRedemptionItem",
+    "GiftCardServiceEntitlement",
+    "GiftCardTemplate",
+    "GiftCardTemplateService",
+    "GiftCardTransaction",
+    "GoogleCalendarConnection",
+    "GoogleCalendarEvent",
+    "LocationHours",
+    "LocationScheduleOverride",
+    "LocationService",
+    "LoyaltyStampEvent",
+    "MarketplaceCategory",
+    "MarketplaceListing",
+    "MarketplaceListingCategory",
+    "MarketplaceLocality",
+    "McpConnection",
+    "McpOAuthClient",
+    "McpOAuthCode",
+    "McpOAuthRequest",
+    "McpOAuthToken",
+    "McpOperation",
+    "McpProfile",
+    "McpRolloutState",
+    "PlatformDiscountCode",
+    "PlatformDiscountRedemption",
+    "PosPayment",
+    "PrivacyRequest",
+    "PrivacyRestriction",
+    "ProductionOrder",
+    "PuriFeedback",
+    "PuriRequest",
+    "PuriToolCall",
+    "PuriUiEvent",
+    "ServiceCategory",
+    "ServiceOptionAlternative",
+    "ServiceOptionCategory",
+    "StaffLocation",
+    "StaffLocationSchedule",
+    "StaffScheduleOverride",
+    "StoryCampaign",
+    "StoryPreset",
+    "SubscriptionPaymentNotification",
+    "SuperAdminSession",
+    "TrackingConsent",
+    "TrackingEvent",
+    "WebsiteAddon",
+    "WebsiteBillingEvent",
+    "WebsiteCheckoutOperation",
+    "WebsiteCommercialEvent",
+    "WebsiteDomain",
+    "WebsiteLaunchSnapshot",
+    "WebsiteMedia",
+    "WebsiteOfferEligibility",
+    "WebsitePurchaseIntent",
+    "WidgetPromoBlock",
+    "WidgetTheme"
+  ],
+  "partialIndexes": [
+    "BusinessLocation_one_primary_per_business",
+    "PosPayment_one_active_per_appointment_idx",
+    "WebsiteDomain_one_primary"
+  ],
+  "excludedHistoricalObjects": [
+    {
+      "table": "AppointmentReview",
+      "reason": "Not present in the schema at the baseline commit; legacy databases containing it require explicit reconciliation."
+    }
+  ]
+}

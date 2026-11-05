@@ -5,8 +5,8 @@ import { differenceInDays, differenceInHours } from "date-fns";
 import { ArrowUpRight, Crown, Sparkles, Clock, Zap, AlertTriangle } from "@/components/icons/hover-icons";
 import Link from "next/link";
 import { ActivatePlanButton } from "./activate-plan-button";
-import { PRICING, STAFF_LIMITS } from "@/core/constants";
 import { DunningActions } from "./dunning-actions";
+import { isV2Plan } from "@/server/services/commercial-plan-access";
 
 export async function SubscriptionBanner({
   businessId,
@@ -22,10 +22,21 @@ export async function SubscriptionBanner({
   const subscription = await prisma.subscription.findUnique({ where: { businessId } });
   if (!subscription) return null;
 
+  if (isV2Plan(subscription.plan)) {
+    const contract = await prisma.commercialSubscription.findUnique({ where: { businessId }, select: { planCode: true, professionalTotal: true, billingCycle: true, status: true, trialEnd: true } });
+    if (hideHealthyStatus && contract?.status === "ACTIVE") return null;
+    const days = contract?.trialEnd ? Math.max(0, Math.ceil((+contract.trialEnd - new Date().getTime()) / 86400000)) : 0;
+    return <section aria-label="Plan de Puragenda" className="rounded-2xl border border-border bg-card p-5 text-sm">
+      <p className="font-semibold">{subscription.plan === "PURAGENDA_PLUS" ? "Puragenda+" : "Puragenda"}{contract ? ` · ${contract.professionalTotal} ${contract.professionalTotal === 1 ? "profesional" : "profesionales"} · ${contract.billingCycle === "ANNUAL" ? "Anual" : "Mensual"}` : ""}</p>
+      <p className="mt-1 text-muted-foreground">{!contract ? "Tu contrato requiere revisión." : contract.status === "TRIALING" && days > 0 ? `Te quedan ${days} días de prueba gratuita. No se realizan cobros automáticos durante la prueba.` : contract.status === "ACTIVE" ? "Tu suscripción está vigente." : "Revisa la vigencia y contratación de tu plan."}</p>
+      <Link href="/dashboard/settings" className="mt-3 inline-flex font-semibold underline">Revisar plan y contratación</Link>
+    </section>;
+  }
+
   const { plan, status, isTrial, trialEndsAt } = subscription;
   const daysLeft = trialEndsAt ? Math.max(0, differenceInDays(new Date(trialEndsAt), new Date())) : 0;
   const isUrgent = daysLeft <= 5;
-  const planLabel = plan === "INDIVIDUAL" ? "Individual" : "Equipo";
+  const planLabel = "Puragenda";
 
   if (subscription.paymentMethod === "BANK_TRANSFER") {
     if (hideHealthyStatus && status === "ACTIVE") return null;
@@ -139,9 +150,9 @@ export async function SubscriptionBanner({
 
             {/* Secondary CTA: Upgrade if on Individual */}
             {plan === "INDIVIDUAL" && (
-              <Link href="/dashboard/settings#plan">
+              <Link href="/puragenda-plus">
                 <button className="flex items-center gap-1.5 rounded-xl border border-[#7C3AED]/30 px-4 py-2.5 text-sm font-semibold text-[#A78BFA] transition-all hover:border-[#7C3AED] hover:bg-[#7C3AED]/10">
-                  <Crown className="h-3.5 w-3.5" /> <LocalizedText id="jxCec3Nc3DIX" /> <ArrowUpRight className="h-3.5 w-3.5" />
+                  <Crown className="h-3.5 w-3.5" /> Pasar a Puragenda+ <ArrowUpRight className="h-3.5 w-3.5" />
                 </button>
               </Link>
             )}
@@ -151,20 +162,20 @@ export async function SubscriptionBanner({
     );
   }
 
-  // INDIVIDUAL paid: upsell to Equipo
+  // Legacy Individual paid: direct the owner to the new Plus offer.
   if (plan === "INDIVIDUAL" && status === "ACTIVE" && !isTrial) {
     return (
       <div className="rounded-2xl border border-[#7C3AED]/15 bg-[#7C3AED]/5 p-5">
         <div className="flex flex-wrap items-center justify-between gap-4">
           <div className="space-y-1">
-            <p className="flex items-center gap-2 text-sm font-semibold"><Zap className="h-4 w-4 text-[#A78BFA]" /><LocalizedText id="ecv0CSnVXwha" /></p>
+            <p className="flex items-center gap-2 text-sm font-semibold"><Zap className="h-4 w-4 text-[#A78BFA]" />Potencia tu negocio con Puragenda+</p>
             <p className="text-sm text-muted-foreground">
-              <LocalizedText id="ldt0Y3vGeiOY" />{PRICING.EQUIPO.monthly.toLocaleString("es-CL")} <LocalizedText id="DEYY0K7es8d8" /> {STAFF_LIMITS.EQUIPO} <LocalizedText id="gD5EREn2bDGy" />
+              Desbloquea sitio web, Puri+ y marketing con Puragenda+.
             </p>
           </div>
-          <Link href="/dashboard/settings#plan">
+          <Link href="/puragenda-plus">
             <button className="flex items-center gap-1.5 rounded-xl bg-gradient-to-r from-[#7C3AED] to-[#5B21B6] px-4 py-2.5 text-sm font-semibold text-white shadow-lg shadow-[#7C3AED]/20">
-              <Crown className="h-3.5 w-3.5" /> <LocalizedText id="B0rydBFNOg1_" /> <ArrowUpRight className="h-3.5 w-3.5" />
+              <Crown className="h-3.5 w-3.5" /> Pasar a Puragenda+ <ArrowUpRight className="h-3.5 w-3.5" />
             </button>
           </Link>
         </div>
@@ -178,7 +189,7 @@ export async function SubscriptionBanner({
     return (
       <div className="flex items-center gap-2 rounded-xl border border-[#7C3AED]/20 bg-[#7C3AED]/5 px-4 py-2.5">
         <Crown className="h-4 w-4 text-[#A78BFA]" />
-        <p className="text-sm text-[#A78BFA]"><LocalizedText id="-o7Qvavda8sc" /> <span className="font-bold"><LocalizedText id="wpRGdUrhm5Ag" /></span> <LocalizedText id="1_f-j6jtjoTN" /></p>
+        <p className="text-sm text-[#A78BFA]">Plan <span className="font-bold">Puragenda</span> activo.</p>
       </div>
     );
   }

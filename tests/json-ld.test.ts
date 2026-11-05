@@ -1,5 +1,5 @@
 import { describe, expect, it } from "vitest";
-import { PRICING } from "@/core/constants";
+import { COMMERCIAL_PLAN_METADATA } from "@/core/commercial-catalog";
 import { industriesData } from "@/lib/data/industries";
 import { featureSolutions } from "@/lib/data/feature-solutions";
 import { serializeJsonLd } from "@/lib/seo";
@@ -40,10 +40,12 @@ describe("JSON-LD helpers", () => {
     expect(offers).toHaveLength(2);
     expect(offers.every((offer) => offer["@type"] === "Offer")).toBe(true);
     expect(offers.map((offer) => offer.price)).toEqual([
-      String(PRICING.INDIVIDUAL.monthly),
-      String(PRICING.EQUIPO.monthly),
+      String(COMMERCIAL_PLAN_METADATA.PURAGENDA.baseMonthly),
+      String(COMMERCIAL_PLAN_METADATA.PURAGENDA_PLUS.baseMonthly),
     ]);
     expect(offers.every((offer) => offer.priceCurrency === "CLP")).toBe(true);
+    expect(offers.map((offer) => offer.name)).toEqual(["Puragenda · 1 profesional", "Puragenda+ · 1 profesional"]);
+    for (const offer of offers) expect(offer.priceSpecification).toMatchObject({ valueAddedTaxIncluded: true, billingDuration: "P1M" });
     expect(JSON.stringify(softwareApplicationNode())).not.toContain("AggregateOffer");
     expect(JSON.stringify(softwareApplicationNode())).not.toContain("priceValidUntil");
     expect(JSON.stringify(softwareApplicationNode())).not.toContain("InStock");

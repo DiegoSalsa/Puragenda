@@ -1,5 +1,6 @@
 "use server";
 
+import { isV2Plan } from "@/server/services/commercial-plan-access";
 import { prisma } from "@/server/db/prisma";
 import {
   isRecentAdminAuth,
@@ -16,6 +17,7 @@ import { getOrCreateAffiliate } from "@/server/services/affiliate.service";
 import { syncMercadoPagoSubscriptionAmount } from "@/server/services/subscription-billing.service";
 import { createPrimaryLocation } from "@/server/services/location.service";
 import { fromZonedTime } from "date-fns-tz";
+import { commercialSelectionSchema, createRegistrationContract } from "@/server/services/commercial-trial.service";
 
 // ═══════════════════════════════════════════
 // HELPERS
@@ -27,33 +29,6 @@ async function requireSuperAdmin() {
 
 function createApiKey(): string {
   return `${API_KEY_PREFIX}${crypto.randomBytes(24).toString("hex")}`;
-}
-
-function addMonthsFromNow(months: number) {
-  const date = new Date();
-  date.setMonth(date.getMonth() + months);
-  return date;
-}
-
-function getInitialNoCardBenefit(initialBenefit?: "NONE" | SubscriptionBenefitPreset) {
-  if (!initialBenefit || initialBenefit === "NONE") return null;
-
-  if (initialBenefit === "PARTICIPANT_OFFER") {
-    return {
-      promoName: "Sorteo participantes - 2 meses gratis + 2 meses al 50%",
-      currentPeriodEnd: addMonthsFromNow(2),
-      promoDiscountPercentage: 50,
-      promoDiscountMonthsRemaining: 2,
-    };
-  }
-
-  const months = initialBenefit === "PRIZE_12" ? 12 : initialBenefit === "PRIZE_6" ? 6 : 3;
-  return {
-    promoName: `Sorteo - ${months} meses gratis sin tarjeta`,
-    currentPeriodEnd: addMonthsFromNow(months),
-    promoDiscountPercentage: null,
-    promoDiscountMonthsRemaining: 0,
-  };
 }
 
 async function generateUniqueSlug(baseSlug: string): Promise<string> {
@@ -76,10 +51,13 @@ export async function createBusinessAction(data: {
   ownerEmail: string;
   ownerPassword: string;
   businessName: string;
-  plan: "INDIVIDUAL" | "EQUIPO";
-  initialBenefit?: "NONE" | SubscriptionBenefitPreset;
+  plan: "PURAGENDA" | "PURAGENDA_PLUS";
+  professionalTotal: number;
+  billingCycle: "MONTHLY" | "ANNUAL";
 }) {
   const admin = await requireSuperAdmin();
+  const selection = commercialSelectionSchema.safeParse({ plan: data.plan, professionalTotal: data.professionalTotal, billingCycle: data.billingCycle });
+  if (!selection.success) return { error: "Selecciona Puragenda o Puragenda+ y una cantidad válida de profesionales." };
 
   const trimmedEmail = data.ownerEmail.trim().toLowerCase();
 
@@ -94,7 +72,6 @@ export async function createBusinessAction(data: {
   if (isSuperAdmin && !isRecentAdminAuth(admin)) return stepUpRequiredResult();
   const baseSlug = toSlug(data.businessName);
   const slug = await generateUniqueSlug(baseSlug);
-  const initialBenefit = getInitialNoCardBenefit(data.initialBenefit);
 
   try {
     await prisma.$transaction(async (tx) => {
@@ -130,21 +107,8 @@ export async function createBusinessAction(data: {
 
       await createPrimaryLocation(tx, business, ownerStaff.id);
 
-      await tx.subscription.create({
-        data: {
-          businessId: business.id,
-          plan: data.plan,
-          status: "ACTIVE",
-          billingCycle: "MONTHLY",
-          isTrial: false,
-          ...(initialBenefit ? {
-            promoName: initialBenefit.promoName,
-            currentPeriodEnd: initialBenefit.currentPeriodEnd,
-            promoDiscountPercentage: initialBenefit.promoDiscountPercentage,
-            promoDiscountMonthsRemaining: initialBenefit.promoDiscountMonthsRemaining,
-          } : {}),
-        },
-      });
+      await createRegistrationContract(tx, { ...selection.data, businessId: business.id, trialEligible: true });
+      await tx.auditLog.create({ data: { userId: admin.id, action: "ADMIN_BUSINESS_CREATED", details: JSON.stringify({ businessId: business.id, ...selection.data }) } });
     });
 
     revalidatePath("/para/x7k9m2v4q8");
@@ -173,6 +137,7 @@ export async function updateSubscriptionAction(
 
   try {
     const current = await prisma.subscription.findUnique({ where: { id: subscriptionId } });
+    if (isV2Plan(current?.plan)) return { error: "El contrato V2 se gestiona desde su flujo comercial. Este formulario legacy no puede cambiarlo." };
     if (current?.paymentMethod === "BANK_TRANSFER" && (
       (data.plan !== undefined && data.plan !== current.plan) ||
       (data.billingCycle !== undefined && data.billingCycle !== current.billingCycle) ||
@@ -260,10 +225,11 @@ export async function extendTrialAction(subscriptionId: string, days: number) {
   try {
     const sub = await prisma.subscription.findUnique({
       where: { id: subscriptionId },
-      select: { trialEndsAt: true, status: true },
+      select: { trialEndsAt: true, status: true, plan: true },
     });
 
     if (!sub) return { error: "Suscripción no encontrada" };
+    if (isV2Plan(sub.plan)) return { error: "La prueba V2 conserva su fecha original y no se extiende desde el sistema legacy." };
 
     const base = sub.trialEndsAt && sub.trialEndsAt > new Date() ? sub.trialEndsAt : new Date();
     const newTrialEndsAt = new Date(base.getTime() + days * 24 * 60 * 60 * 1000);
@@ -333,7 +299,8 @@ function revalidateSubscriptionAdmin(subscriptionId?: string) {
 }
 
 async function automaticBillingOnly(subscriptionId: string) {
-  const subscription = await prisma.subscription.findUnique({ where: { id: subscriptionId }, select: { paymentMethod: true } });
+  const subscription = await prisma.subscription.findUnique({ where: { id: subscriptionId }, select: { paymentMethod: true, plan: true } });
+  if (isV2Plan(subscription?.plan)) return { error: "Las condiciones V2 se gestionan desde el contrato comercial, sin modificaciones legacy." };
   return subscription?.paymentMethod === "BANK_TRANSFER"
     ? { error: "Esta suscripción se renueva por transferencia. Los beneficios y la sincronización automática no modifican su acuerdo." }
     : null;
@@ -851,7 +818,7 @@ export async function createPlatformDiscountCodeAction(data: {
   const name = data.name.trim();
   const discountValue = Math.floor(Number(data.discountValue));
   const maxRedemptions = data.maxRedemptions ? Math.floor(Number(data.maxRedemptions)) : null;
-  const appliesToPlans = data.appliesToPlans.filter((plan) => ["INDIVIDUAL", "EQUIPO", "TEST"].includes(plan));
+  const appliesToPlans = data.appliesToPlans.filter((plan) => ["PURAGENDA", "PURAGENDA_PLUS", "INDIVIDUAL", "EQUIPO", "TEST"].includes(plan));
 
   if (!code || code.length < 3 || code.length > 32) return { error: "El codigo debe tener entre 3 y 32 caracteres" };
   if (!/^[A-Z0-9_-]+$/.test(code)) return { error: "Usa solo letras, numeros, guion o guion bajo" };

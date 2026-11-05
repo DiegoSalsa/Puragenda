@@ -16,7 +16,7 @@ import {
 } from "@/components/landing/seo";
 import { breadcrumbListNode, faqPageNode, jsonLdGraph, organizationRef, softwareApplicationNode } from "@/lib/json-ld";
 import { createPageMetadata } from "@/lib/seo";
-import { EXTRA_STAFF_COST, PRICING, STAFF_LIMITS, TRIAL_DURATION_DAYS } from "@/core/constants";
+import { TRIAL_DURATION_DAYS } from "@/core/constants";
 import { formatLandingClp } from "@/lib/data/scheduling-system-landing";
 import {
   AESTHETICS_SOFTWARE_PATH,
@@ -57,7 +57,7 @@ export default function AestheticsSoftwareLandingPage() {
           { href: "/sistema-de-agendamiento-online", label: "Sistema de agendamiento" },
           { label: "Centros de estética" },
         ]}
-        eyebrow="Estética no clínica · individual o equipo"
+        eyebrow="Estética no clínica · para ti y tu equipo"
         tone="mint"
         h1={aestheticsSoftwareCopy.h1}
         lead={aestheticsSoftwareCopy.hero}
@@ -162,7 +162,7 @@ export default function AestheticsSoftwareLandingPage() {
 
       <section className={seo.section} aria-labelledby="profesionales">
         <SectionIntro id="profesionales" title="Una profesional independiente o un equipo con catálogos distintos">
-          <p>Con el plan Individual, una profesional organiza sus servicios y disponibilidad mediante el horario del negocio. Con Equipo, cada integrante puede tener servicios asignados, su propia jornada y períodos bloqueados.</p>
+          <p>Si atiendes sola, organiza tus servicios y disponibilidad. Si trabajan varias profesionales, configura sus servicios, jornadas y períodos bloqueados. Ambos planes permiten elegir la cantidad de profesionales del negocio.</p>
           <p>Esto permite que la agenda de cejas de A y la agenda de pestañas de B compartan el mismo enlace del centro sin ofrecer a una profesional para un servicio que no tiene asignado.</p>
           <p>Consulta el funcionamiento de la <Link href="/funciones/agenda-multiples-profesionales" className={seo.link}>agenda para múltiples profesionales</Link>. Si usas calendarios externos, revisa también la <Link href="/funciones/agenda-google-calendar" className={seo.link}>integración con Google Calendar</Link>.</p>
         </SectionIntro>
@@ -220,21 +220,6 @@ export default function AestheticsSoftwareLandingPage() {
       <PricingSection
         id="precios"
         title="Planes para una profesional o un equipo"
-        individual={{
-          name: PRICING.INDIVIDUAL.name,
-          price: formatLandingClp(PRICING.INDIVIDUAL.monthly),
-          detail: `${STAFF_LIMITS.INDIVIDUAL} profesional, con disponibilidad según el horario del negocio.`,
-        }}
-        team={{
-          name: PRICING.EQUIPO.name,
-          price: formatLandingClp(PRICING.EQUIPO.monthly),
-          detail: (
-            <>
-              <p>{STAFF_LIMITS.EQUIPO} profesionales incluidos, con servicios y horarios por integrante.</p>
-              <p className="mt-3">Profesional adicional: {formatLandingClp(EXTRA_STAFF_COST.EQUIPO)} CLP / mes.</p>
-            </>
-          ),
-        }}
         footer={
           <>
           <p>

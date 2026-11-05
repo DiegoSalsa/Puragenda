@@ -1,3 +1,4 @@
+import { commercialPlanName } from "@/core/commercial-display";
 import { formatInTimeZone } from "date-fns-tz";
 import type { AppLocale } from "@/i18n/config";
 import { getDateLocale } from "@/i18n/date-locale";
@@ -61,7 +62,7 @@ export function withClientPortalAccess(template: EmailTemplate, portalUrl: strin
       <a href="${safeUrl}" style="display:inline-block;background:linear-gradient(135deg,${BRAND},${BRAND_DARK});color:#fff;padding:12px 26px;border-radius:9px;font-size:14px;font-weight:700;text-decoration:none;">
         Ver mis citas y premios →
       </a>
-      <p style="margin:10px 0 0;font-size:11px;color:#7C3AED;">Acceso privado de un solo uso · válido por 30 días</p>
+      <p style="margin:10px 0 0;font-size:11px;color:#7C3AED;">Inicia sesión para consultar tu información privada.</p>
     </div>
   </td></tr>`;
 
@@ -130,9 +131,9 @@ function enterpriseDetailsTable(data: BookingEmailData | ReminderEmailData): str
   const timezone = data.timezone || BUSINESS_TZ;
   const date = formatInTimeZone(data.startTime, timezone, "PPPP", { locale: getDateLocale(data.locale ?? "es") });
   const time = `${formatInTimeZone(data.startTime, timezone, "HH:mm")} - ${formatInTimeZone(data.endTime, timezone, "HH:mm")}`;
-  
+
   let html = `<table width="100%" cellpadding="0" cellspacing="0" style="margin:24px 0;border-collapse:collapse;border:1px solid #E5E7EB;border-radius:8px;overflow:hidden;display:table;">`;
-  
+
   const row = (label: string, value: string, isLast = false) => `
     <tr>
       <td style="padding:16px;background:#F9FAFB;font-size:13px;color:#6B7280;font-weight:500;border-bottom:${isLast ? 'none' : '1px solid #E5E7EB'};width:35%;">${label}</td>
@@ -143,11 +144,11 @@ function enterpriseDetailsTable(data: BookingEmailData | ReminderEmailData): str
   html += row("Fecha", date);
   html += row("Hora", time);
   html += row("Zona horaria", escapeHtml(timezone));
-  html += row("Servicio", data.serviceName);
+  html += row("Servicio", escapeHtml(data.serviceName));
   const customerPhone =
     "customerPhone" in data ? data.customerPhone?.trim() || null : null;
   const customerAddress = "customerAddress" in data && data.customerAddress ? escapeHtml(data.customerAddress) : null;
-  html += row("Profesional", data.staffName, !customerPhone && !customerAddress);
+  html += row("Profesional", escapeHtml(data.staffName), !customerPhone && !customerAddress);
   if (customerPhone) {
     const safePhone = escapeHtml(customerPhone);
     const phoneHref = escapeHtml(customerPhone.replace(/[^\d+]/g, ""));
@@ -160,7 +161,7 @@ function enterpriseDetailsTable(data: BookingEmailData | ReminderEmailData): str
     );
   }
   if (customerAddress) html += row("Direccion de la visita", customerAddress, true);
-  
+
   html += `</table>`;
 
   if (data.businessAddress) {
@@ -178,19 +179,28 @@ function enterpriseDetailsTable(data: BookingEmailData | ReminderEmailData): str
   return html;
 }
 
+function venueDetails(data: { businessAddress?: string | null; businessMapsUrl?: string | null }) {
+  if (!data.businessAddress) return "";
+  const map = data.businessMapsUrl && /^https?:\/\//i.test(data.businessMapsUrl) ? data.businessMapsUrl : null;
+  return `<div style="margin:16px 0;padding:16px;background:#f8fafc;border-radius:10px;">
+    <p style="margin:0;font-size:14px;">${escapeHtml(data.businessAddress)}</p>
+    ${map ? `<a href="${escapeHtml(map)}" style="font-size:13px;">Ver en Google Maps</a>` : ""}
+  </div>`;
+}
+
 function googleCalendarButton(data: BookingEmailData): string {
   const dates = [data.startTime, data.endTime]
     .map((date) => formatInTimeZone(date, "UTC", "yyyyMMdd'T'HHmmss'Z'"))
     .join("/");
   const details = [
-    `Servicio: ${data.serviceName}`,
-    `Profesional: ${data.staffName}`,
-    `Cliente: ${data.customerName}`,
-    data.customerPhone ? `Teléfono: ${data.customerPhone}` : null,
+    `Servicio: ${escapeHtml(data.serviceName)}`,
+    `Profesional: ${escapeHtml(data.staffName)}`,
+    `Cliente: ${escapeHtml(data.customerName)}`,
+    data.customerPhone ? `Teléfono: ${escapeHtml(data.customerPhone)}` : null,
   ].filter(Boolean).join("\n");
   const params = new URLSearchParams({
     action: "TEMPLATE",
-    text: `${data.serviceName} — ${data.businessName}`,
+    text: `${escapeHtml(data.serviceName)} — ${escapeHtml(data.businessName)}`,
     dates,
     details,
     ctz: data.timezone || BUSINESS_TZ,
@@ -214,7 +224,7 @@ export function newBookingOwnerEmail(data: BookingEmailData): { subject: string;
     html: enterpriseLayout("Nueva Reserva", `
       <h2 style="margin:0 0 8px;font-size:20px;color:#111827;font-weight:700;">Nueva reserva recibida</h2>
       <p style="margin:0 0 24px;font-size:15px;color:#4B5563;line-height:1.6;">
-        <strong style="color:#111827;">${data.customerName}</strong> (${data.customerEmail}) ha solicitado una cita.
+        <strong style="color:#111827;">${escapeHtml(data.customerName)}</strong> (${escapeHtml(data.customerEmail)}) ha solicitado una cita.
       </p>
       ${enterpriseDetailsTable(data)}
       ${googleCalendarButton(data)}
@@ -232,7 +242,7 @@ export function newBookingStaffEmail(data: BookingEmailData): { subject: string;
     html: enterpriseLayout("Nuevo Compromiso", `
       <h2 style="margin:0 0 8px;font-size:20px;color:#111827;font-weight:700;">Tienes una nueva cita asignada</h2>
       <p style="margin:0 0 24px;font-size:15px;color:#4B5563;line-height:1.6;">
-        Se ha agendado una cita con <strong style="color:#111827;">${data.customerName}</strong>.
+        Se ha agendado una cita con <strong style="color:#111827;">${escapeHtml(data.customerName)}</strong>.
       </p>
       ${enterpriseDetailsTable(data)}
       ${googleCalendarButton(data)}
@@ -250,13 +260,13 @@ export function newBookingClientEmail(data: BookingEmailData): { subject: string
     html: enterpriseLayout("Reserva Solicitada", `
       <h2 style="margin:0 0 8px;font-size:20px;color:#111827;font-weight:700;">Solicitud de reserva recibida</h2>
       <p style="margin:0 0 24px;font-size:15px;color:#4B5563;line-height:1.6;">
-        Hola <strong style="color:#111827;">${data.customerName}</strong>, hemos recibido su solicitud de reserva en <strong style="color:#111827;">${data.businessName}</strong>.
+        Hola <strong style="color:#111827;">${escapeHtml(data.customerName)}</strong>, hemos recibido su solicitud de reserva en <strong style="color:#111827;">${escapeHtml(data.businessName)}</strong>.
       </p>
       ${enterpriseDetailsTable(data)}
       ${googleCalendarButton(data)}
       <div style="margin:24px 0;padding:16px;background:#FEF3C7;border-radius:8px;border:1px solid #FDE68A;">
         <p style="margin:0;font-size:14px;color:#92400E;line-height:1.5;">
-          <strong>Estado: Pendiente</strong> — Su cita será confirmada por el equipo de ${data.businessName}. Le avisaremos en cuanto sea aprobada.
+          <strong>Estado: Pendiente</strong> — Su cita será confirmada por el equipo de ${escapeHtml(data.businessName)}. Le avisaremos en cuanto sea aprobada.
         </p>
       </div>
     `),
@@ -286,14 +296,14 @@ export function confirmedBookingClientEmail(data: BookingEmailData): { subject: 
     html: enterpriseLayout("Reserva Confirmada", `
       <h2 style="margin:0 0 8px;font-size:20px;color:#111827;font-weight:700;">Su cita ha sido confirmada</h2>
       <p style="margin:0 0 24px;font-size:15px;color:#4B5563;line-height:1.6;">
-        Hola <strong style="color:#111827;">${data.customerName}</strong>, su cita en <strong style="color:#111827;">${data.businessName}</strong> ha sido agendada exitosamente.
+        Hola <strong style="color:#111827;">${escapeHtml(data.customerName)}</strong>, su cita en <strong style="color:#111827;">${escapeHtml(data.businessName)}</strong> ha sido agendada exitosamente.
       </p>
       ${enterpriseDetailsTable(data)}
       ${googleCalendarButton(data)}
       <p style="margin:0;font-size:14px;color:#6B7280;line-height:1.6;">
         ${actionsBlock
           ? "Puede administrar esta reserva con las opciones seguras disponibles a continuación."
-          : `Si necesita cancelar o reprogramar su cita, por favor contacte directamente a ${data.businessName}.`}
+          : `Si necesita cancelar o reprogramar su cita, por favor contacte directamente a ${escapeHtml(data.businessName)}.`}
       </p>
       ${actionsBlock}
     `),
@@ -315,9 +325,9 @@ export function welcomeEmail(data: WelcomeEmailData): { subject: string; html: s
   return {
     subject: "¡Bienvenido a Puragenda!",
     html: layout("¡Bienvenido!", `
-      <h2 style="margin:0 0 8px;font-size:18px;color:#0f172a;">¡Hola ${data.ownerName}! </h2>
+      <h2 style="margin:0 0 8px;font-size:18px;color:#0f172a;">¡Hola ${escapeHtml(data.ownerName)}! </h2>
       <p style="margin:0 0 20px;font-size:14px;color:#64748b;">
-        Tu negocio <strong style="color:${BRAND};">${data.businessName}</strong> ha sido creado exitosamente en Puragenda.
+        Tu negocio <strong style="color:${BRAND};">${escapeHtml(data.businessName)}</strong> ha sido creado exitosamente en Puragenda.
       </p>
       <div style="margin:20px 0;padding:20px;background:#f8fafc;border-radius:12px;border:1px solid #e2e8f0;">
         <p style="margin:0 0 12px;font-size:14px;color:#0f172a;font-weight:600;">Próximos pasos:</p>
@@ -355,20 +365,20 @@ export function staffInviteEmail(data: StaffInviteEmailData): { subject: string;
   return {
     subject: `Te han invitado a ${data.businessName} — Puragenda`,
     html: layout("Invitación", `
-      <h2 style="margin:0 0 8px;font-size:18px;color:#0f172a;">¡Hola ${data.staffName}! </h2>
+      <h2 style="margin:0 0 8px;font-size:18px;color:#0f172a;">¡Hola ${escapeHtml(data.staffName)}! </h2>
       <p style="margin:0 0 20px;font-size:14px;color:#64748b;">
-        <strong style="color:${BRAND};">${data.businessName}</strong> te ha agregado como profesional en Puragenda.
+        <strong style="color:${BRAND};">${escapeHtml(data.businessName)}</strong> te ha agregado como profesional en Puragenda.
       </p>
       <div style="margin:20px 0;padding:20px;background:#f8fafc;border-radius:12px;border:1px solid #e2e8f0;">
         <p style="margin:0 0 12px;font-size:14px;color:#0f172a;font-weight:600;">Tus credenciales de acceso:</p>
         <table width="100%" cellpadding="0" cellspacing="0">
           <tr>
             <td style="padding:6px 0;font-size:13px;color:#64748b;"> Email:</td>
-            <td style="padding:6px 0;font-size:13px;color:#0f172a;font-weight:600;">${data.email}</td>
+            <td style="padding:6px 0;font-size:13px;color:#0f172a;font-weight:600;">${escapeHtml(data.email)}</td>
           </tr>
           <tr>
             <td style="padding:6px 0;font-size:13px;color:#64748b;"> Contraseña temporal:</td>
-            <td style="padding:6px 0;font-size:15px;color:#0f172a;font-weight:700;font-family:monospace;letter-spacing:1px;">${data.tempPassword}</td>
+            <td style="padding:6px 0;font-size:15px;color:#0f172a;font-weight:700;font-family:monospace;letter-spacing:1px;">${escapeHtml(data.tempPassword)}</td>
           </tr>
         </table>
       </div>
@@ -397,7 +407,7 @@ export function cancellationClientEmail(data: BookingEmailData): { subject: stri
     html: enterpriseLayout("Cita Cancelada", `
       <h2 style="margin:0 0 8px;font-size:20px;color:#111827;font-weight:700;">Cita cancelada</h2>
       <p style="margin:0 0 24px;font-size:15px;color:#4B5563;line-height:1.6;">
-        Hola <strong style="color:#111827;">${data.customerName}</strong>, le informamos que su cita en <strong style="color:#111827;">${data.businessName}</strong> ha sido cancelada.
+        Hola <strong style="color:#111827;">${escapeHtml(data.customerName)}</strong>, le informamos que su cita en <strong style="color:#111827;">${escapeHtml(data.businessName)}</strong> ha sido cancelada.
       </p>
       ${enterpriseDetailsTable(data)}
       <p style="margin:0;font-size:14px;color:#6B7280;line-height:1.6;">
@@ -570,19 +580,19 @@ export function newRegistrationAdminEmail(data: NewRegistrationData): { subject:
       <table width="100%" cellpadding="0" cellspacing="0" style="background:#f8fafc;border-radius:12px;border:1px solid #e2e8f0;margin:16px 0;">
         <tr>
           <td style="padding:10px 14px;font-size:13px;color:#64748b;white-space:nowrap;"> Negocio</td>
-          <td style="padding:10px 14px;font-size:13px;color:#0f172a;font-weight:600;">${data.businessName}</td>
+          <td style="padding:10px 14px;font-size:13px;color:#0f172a;font-weight:600;">${escapeHtml(data.businessName)}</td>
         </tr>
         <tr>
           <td style="padding:10px 14px;font-size:13px;color:#64748b;white-space:nowrap;"> Dueño</td>
-          <td style="padding:10px 14px;font-size:13px;color:#0f172a;font-weight:500;">${data.ownerName}</td>
+          <td style="padding:10px 14px;font-size:13px;color:#0f172a;font-weight:500;">${escapeHtml(data.ownerName)}</td>
         </tr>
         <tr>
           <td style="padding:10px 14px;font-size:13px;color:#64748b;white-space:nowrap;"> Email</td>
-          <td style="padding:10px 14px;font-size:13px;color:#0f172a;font-weight:500;">${data.ownerEmail}</td>
+          <td style="padding:10px 14px;font-size:13px;color:#0f172a;font-weight:500;">${escapeHtml(data.ownerEmail)}</td>
         </tr>
         <tr>
           <td style="padding:10px 14px;font-size:13px;color:#64748b;white-space:nowrap;"> Plan</td>
-          <td style="padding:10px 14px;font-size:13px;color:#0f172a;font-weight:500;">${data.plan}</td>
+          <td style="padding:10px 14px;font-size:13px;color:#0f172a;font-weight:500;">${escapeHtml(commercialPlanName(data.plan))}</td>
         </tr>
         <tr>
           <td style="padding:10px 14px;font-size:13px;color:#64748b;white-space:nowrap;"> Estado</td>
@@ -645,7 +655,7 @@ export function subscriptionPaymentAdminEmail(data: SubscriptionPaymentAdminEmai
         ${detailRow("Negocio", safe(data.businessName))}
         ${detailRow("Dueño", safe(data.ownerName))}
         ${detailRow("Email", safe(data.ownerEmail))}
-        ${detailRow("Plan", safe(data.plan))}
+        ${detailRow("Plan", safe(commercialPlanName(data.plan)))}
         ${detailRow("Ciclo", safe(data.billingCycle))}
         ${detailRow("Tipo", safe(badge))}
         ${detailRow("Proveedor", safe(data.provider))}
@@ -690,8 +700,8 @@ export function loyaltyStampEarnedEmail(data: LoyaltyStampEmailData): { subject:
     html: layout("Nuevo Timbre", `
       <h2 style="margin:0 0 8px;font-size:18px;color:#0f172a;">¡Nuevo timbre sumado! </h2>
       <p style="margin:0 0 20px;font-size:14px;color:#64748b;">
-        Hola <strong style="color:#0f172a;">${data.clientName}</strong>, gracias por tu visita.
-        Acabas de sumar un timbre en <strong style="color:${BRAND};">${data.businessName}</strong>.
+        Hola <strong style="color:#0f172a;">${escapeHtml(data.clientName)}</strong>, gracias por tu visita.
+        Acabas de sumar un timbre en <strong style="color:${BRAND};">${escapeHtml(data.businessName)}</strong>.
       </p>
 
       <!-- Progress -->
@@ -701,7 +711,7 @@ export function loyaltyStampEarnedEmail(data: LoyaltyStampEmailData): { subject:
           ${data.currentStamps} <span style="color:#94a3b8;font-size:14px;font-weight:400;">de</span> ${data.stampsRequired}
         </p>
         <p style="margin:4px 0 0;font-size:13px;color:#64748b;">
-          Te ${remaining === 1 ? "falta <strong>1 visita</strong>" : `faltan <strong>${remaining} visitas</strong>`} para ganar tu <strong style="color:${BRAND};">${data.rewardName}</strong>
+          Te ${remaining === 1 ? "falta <strong>1 visita</strong>" : `faltan <strong>${remaining} visitas</strong>`} para ganar tu <strong style="color:${BRAND};">${escapeHtml(data.rewardName)}</strong>
         </p>
       </div>
 
@@ -749,17 +759,17 @@ export function loyaltyRewardWonEmail(data: LoyaltyRewardEmailData): { subject: 
     html: layout("¡Premio Ganado!", `
       <h2 style="margin:0 0 8px;font-size:18px;color:#0f172a;">¡Felicidades, completaste tu tarjeta! </h2>
       <p style="margin:0 0 20px;font-size:14px;color:#64748b;">
-        <strong style="color:#0f172a;">${data.clientName}</strong>, completaste tus <strong>${data.stampsRequired} visitas</strong> en
-        <strong style="color:${BRAND};">${data.businessName}</strong>. ¡Aquí tienes tu premio!
+        <strong style="color:#0f172a;">${escapeHtml(data.clientName)}</strong>, completaste tus <strong>${data.stampsRequired} visitas</strong> en
+        <strong style="color:${BRAND};">${escapeHtml(data.businessName)}</strong>. ¡Aquí tienes tu premio!
       </p>
 
       <!-- Reward card -->
       <div style="margin:20px 0;padding:24px;background:linear-gradient(135deg,${BRAND},${BRAND_DARK});border-radius:16px;text-align:center;">
         <p style="margin:0 0 4px;font-size:12px;color:rgba(255,255,255,0.7);text-transform:uppercase;letter-spacing:1px;">Tu premio</p>
-        <p style="margin:0 0 16px;font-size:18px;font-weight:700;color:#fff;">${data.rewardName}</p>
+        <p style="margin:0 0 16px;font-size:18px;font-weight:700;color:#fff;">${escapeHtml(data.rewardName)}</p>
         <div style="background:rgba(255,255,255,0.15);border:2px dashed rgba(255,255,255,0.4);border-radius:12px;padding:16px;margin:0 auto;max-width:280px;">
           <p style="margin:0 0 4px;font-size:11px;color:rgba(255,255,255,0.6);text-transform:uppercase;letter-spacing:1px;">Código</p>
-          <p style="margin:0;font-size:28px;font-weight:800;color:#fff;letter-spacing:3px;font-family:monospace;">${data.rewardCode}</p>
+          <p style="margin:0;font-size:28px;font-weight:800;color:#fff;letter-spacing:3px;font-family:monospace;">${escapeHtml(data.rewardCode)}</p>
         </div>
         <p style="margin:12px 0 0;font-size:13px;color:rgba(255,255,255,0.8);">${discountLabel}</p>
         <p style="margin:6px 0 0;font-size:12px;color:rgba(255,255,255,0.75);">${expiryLabel}</p>
@@ -767,7 +777,7 @@ export function loyaltyRewardWonEmail(data: LoyaltyRewardEmailData): { subject: 
 
       <div style="margin:16px 0;padding:14px;background:#f0fdf4;border-radius:10px;border:1px solid #bbf7d0;">
         <p style="margin:0;font-size:13px;color:#166534;">
-          <strong>¿Cómo canjearlo?</strong> Abre tu tarjeta y aplica el premio al reservar en ${data.businessName}.
+          <strong>¿Cómo canjearlo?</strong> Abre tu tarjeta y aplica el premio al reservar en ${escapeHtml(data.businessName)}.
         </p>
       </div>
 
@@ -811,18 +821,19 @@ export function reminderEmail(data: ReminderEmailData): { subject: string; html:
     html: layout("Recordatorio de Cita", `
       <h2 style="margin:0 0 8px;font-size:18px;color:#0f172a;">Recordatorio de tu cita de mañana </h2>
       <p style="margin:0 0 20px;font-size:14px;color:#64748b;">
-        Hola <strong style="color:#0f172a;">${data.customerName}</strong>, te recordamos que mañana tienes una cita en <strong style="color:${BRAND};">${data.businessName}</strong>.
+        Hola <strong style="color:#0f172a;">${escapeHtml(data.customerName)}</strong>, te recordamos que mañana tienes una cita en <strong style="color:${BRAND};">${escapeHtml(data.businessName)}</strong>.
       </p>
       <table width="100%" cellpadding="0" cellspacing="0" style="background:#f8fafc;border-radius:12px;border:1px solid #e2e8f0;margin:16px 0;">
         ${detailRow(" Fecha", dateStr)}
         ${detailRow(" Hora", `${timeStr} - ${timeEnd}`)}
         ${detailRow(" Zona horaria", escapeHtml(timezone))}
-        ${detailRow(" Servicio", data.serviceName)}
-        ${detailRow(" Profesional", data.staffName)}
+        ${detailRow(" Servicio", escapeHtml(data.serviceName))}
+        ${detailRow(" Profesional", escapeHtml(data.staffName))}
       </table>
+      ${venueDetails(data)}
       <div style="margin:20px 0;padding:16px;background:linear-gradient(135deg,${BRAND}10,${BRAND}05);border-radius:10px;border:1px solid ${BRAND}30;">
         <p style="margin:0;font-size:15px;color:${BRAND_DARK};text-align:center;font-weight:600;">
-          Te esperamos mañana a las ${timeStr} 
+          Te esperamos mañana a las ${timeStr}
         </p>
       </div>
 
@@ -842,7 +853,7 @@ export function reminderEmail(data: ReminderEmailData): { subject: string; html:
         </tr>
       </table>
 
-      <p style="margin:16px 0 0;font-size:12px;color:#94a3b8;text-align:center;">Si tienes dudas, contacta directamente a ${data.businessName}.</p>
+      <p style="margin:16px 0 0;font-size:12px;color:#94a3b8;text-align:center;">Si tienes dudas, contacta directamente a ${escapeHtml(data.businessName)}.</p>
     `),
   };
 }
@@ -865,14 +876,14 @@ interface MarketingCampaignEmailData {
  */
 export function marketingCampaignEmail(data: MarketingCampaignEmailData): { subject: string; html: string } {
   // Convert newlines in body to <br> for HTML
-  const htmlBody = data.body.replace(/\n/g, "<br>");
+  const htmlBody = escapeHtml(data.body).replace(/\n/g, "<br>");
 
   return {
     subject: data.subject,
     html: `<!DOCTYPE html>
 <html lang="es">
 <head><meta charset="UTF-8"><meta name="viewport" content="width=device-width,initial-scale=1">
-<title>${data.subject}</title></head>
+<title>${escapeHtml(data.subject)}</title></head>
 <body style="margin:0;padding:0;background:#f4f4f5;font-family:-apple-system,BlinkMacSystemFont,'Segoe UI',Roboto,sans-serif;">
 <table width="100%" cellpadding="0" cellspacing="0" style="background:#f4f4f5;padding:32px 16px;">
 <tr><td align="center">
@@ -882,7 +893,7 @@ export function marketingCampaignEmail(data: MarketingCampaignEmailData): { subj
     <table width="100%" cellpadding="0" cellspacing="0">
       <tr><td style="padding:32px 32px 24px;text-align:center;">
         <p style="margin:0 0 4px;font-size:11px;color:rgba(255,255,255,0.6);text-transform:uppercase;letter-spacing:2px;">Un mensaje especial de</p>
-        <h1 style="margin:0;color:#fff;font-size:26px;font-weight:800;letter-spacing:-0.5px;">${data.businessName}</h1>
+        <h1 style="margin:0;color:#fff;font-size:26px;font-weight:800;letter-spacing:-0.5px;">${escapeHtml(data.businessName)}</h1>
       </td></tr>
       <!-- Decorative wave -->
       <tr><td style="height:24px;background:#ffffff;border-radius:24px 24px 0 0;"></td></tr>
@@ -891,8 +902,8 @@ export function marketingCampaignEmail(data: MarketingCampaignEmailData): { subj
 
   <!-- Greeting -->
   <tr><td style="padding:8px 32px 0;">
-    <h2 style="margin:0 0 4px;font-size:20px;color:#0f172a;font-weight:700;">¡Hola ${data.clientName}! </h2>
-    <p style="margin:0 0 4px;font-size:13px;color:#94a3b8;">Te extrañamos en ${data.businessName}</p>
+    <h2 style="margin:0 0 4px;font-size:20px;color:#0f172a;font-weight:700;">¡Hola ${escapeHtml(data.clientName)}! </h2>
+    <p style="margin:0 0 4px;font-size:13px;color:#94a3b8;">Te extrañamos en ${escapeHtml(data.businessName)}</p>
     <div style="width:40px;height:3px;background:linear-gradient(90deg,${BRAND},${BRAND_DARK});border-radius:2px;margin:16px 0;"></div>
   </td></tr>
 
@@ -921,10 +932,10 @@ export function marketingCampaignEmail(data: MarketingCampaignEmailData): { subj
   <!-- Footer -->
   <tr><td style="padding:20px 32px;text-align:center;">
     <p style="margin:0 0 4px;font-size:11px;color:#94a3b8;">
-      Enviado por <strong>${data.businessName}</strong> vía Puragenda
+      Enviado por <strong>${escapeHtml(data.businessName)}</strong> vía Puragenda
     </p>
     <p style="margin:0;font-size:11px;color:#cbd5e1;">
-      Si no deseas recibir estos correos, contacta directamente a ${data.businessName}.
+      Si no deseas recibir estos correos, contacta directamente a ${escapeHtml(data.businessName)}.
     </p>
   </td></tr>
 </table>
@@ -946,7 +957,7 @@ interface TrialExpiringEmailData {
 
 /** Email to owner when trial is about to expire */
 export function trialExpiringEmail(data: TrialExpiringEmailData): { subject: string; html: string } {
-  const planLabel = data.plan === "EQUIPO" ? "Equipo" : "Individual";
+  const planLabel = commercialPlanName(data.plan);
   const pricingUrl = process.env.NODE_ENV === "production" ? "https://www.puragenda.cl/pricing" : "http://localhost:3000/pricing";
 
   return {
@@ -954,9 +965,9 @@ export function trialExpiringEmail(data: TrialExpiringEmailData): { subject: str
     html: layout("Prueba por Expirar", `
       <h2 style="margin:0 0 8px;font-size:18px;color:#0f172a;">Tu prueba gratuita está por terminar</h2>
       <p style="margin:0 0 20px;font-size:14px;color:#64748b;">
-        Hola <strong style="color:#0f172a;">${data.ownerName}</strong>, tu periodo de prueba del
+        Hola <strong style="color:#0f172a;">${escapeHtml(data.ownerName)}</strong>, tu periodo de prueba del
         <strong style="color:${BRAND};">Plan ${planLabel}</strong> para
-        <strong style="color:#0f172a;">${data.businessName}</strong> expira en
+        <strong style="color:#0f172a;">${escapeHtml(data.businessName)}</strong> expira en
         <strong style="color:#ef4444;">${data.daysLeft} días</strong>.
       </p>
       <div style="margin:20px 0;padding:20px;background:#fef3c7;border-radius:12px;border:1px solid #fde68a;">
@@ -990,7 +1001,7 @@ interface TrialExpiredEmailData {
 
 /** Email to owner when trial has expired */
 export function trialExpiredEmail(data: TrialExpiredEmailData): { subject: string; html: string } {
-  const planLabel = data.plan === "EQUIPO" ? "Equipo" : "Individual";
+  const planLabel = commercialPlanName(data.plan);
   const pricingUrl = process.env.NODE_ENV === "production" ? "https://www.puragenda.cl/pricing" : "http://localhost:3000/pricing";
 
   return {
@@ -998,9 +1009,9 @@ export function trialExpiredEmail(data: TrialExpiredEmailData): { subject: strin
     html: layout("Prueba Finalizada", `
       <h2 style="margin:0 0 8px;font-size:18px;color:#0f172a;">Tu prueba gratuita ha finalizado</h2>
       <p style="margin:0 0 20px;font-size:14px;color:#64748b;">
-        Hola <strong style="color:#0f172a;">${data.ownerName}</strong>, el periodo de prueba del
+        Hola <strong style="color:#0f172a;">${escapeHtml(data.ownerName)}</strong>, el periodo de prueba del
         <strong style="color:${BRAND};">Plan ${planLabel}</strong> para
-        <strong style="color:#0f172a;">${data.businessName}</strong> ha finalizado.
+        <strong style="color:#0f172a;">${escapeHtml(data.businessName)}</strong> ha finalizado.
       </p>
       <div style="margin:20px 0;padding:20px;background:#fef2f2;border-radius:12px;border:1px solid #fecaca;">
         <p style="margin:0;font-size:14px;color:#991b1b;line-height:1.6;">
@@ -1034,6 +1045,8 @@ interface AppointmentActionEmailData extends LocalizedEmailData {
   endTime: Date;
   businessName: string;
   timezone?: string;
+  businessAddress?: string | null;
+  businessMapsUrl?: string | null;
 }
 
 /** Email to business owner when customer confirms or cancels via reminder link */
@@ -1046,8 +1059,8 @@ export function appointmentActionOwnerEmail(data: AppointmentActionEmailData): {
   const isConfirm = data.action === "confirmed";
   const title = isConfirm ? "Asistencia confirmada" : "Cita cancelada por el cliente";
   const subtitle = isConfirm
-    ? `<strong style="color:#0f172a;">${data.customerName}</strong> ha confirmado su asistencia a la siguiente cita:`
-    : `<strong style="color:#0f172a;">${data.customerName}</strong> ha cancelado la siguiente cita:`;
+    ? `<strong style="color:#0f172a;">${escapeHtml(data.customerName)}</strong> ha confirmado su asistencia a la siguiente cita:`
+    : `<strong style="color:#0f172a;">${escapeHtml(data.customerName)}</strong> ha cancelado la siguiente cita:`;
   const statusBadge = isConfirm
     ? `<div style="margin:16px 0;padding:14px;background:#f0fdf4;border-radius:10px;border:1px solid #bbf7d0;">
         <p style="margin:0;font-size:14px;color:#166534;text-align:center;font-weight:600;">✓ Asistencia Confirmada</p>
@@ -1076,14 +1089,15 @@ export function appointmentActionOwnerEmail(data: AppointmentActionEmailData): {
         </tr>
         <tr>
           <td style="padding:16px;background:#F9FAFB;font-size:13px;color:#6B7280;font-weight:500;border-bottom:1px solid #E5E7EB;width:35%;">Servicio</td>
-          <td style="padding:16px;font-size:14px;color:#111827;font-weight:600;border-bottom:1px solid #E5E7EB;">${data.serviceName}</td>
+          <td style="padding:16px;font-size:14px;color:#111827;font-weight:600;border-bottom:1px solid #E5E7EB;">${escapeHtml(data.serviceName)}</td>
         </tr>
         <tr>
           <td style="padding:16px;background:#F9FAFB;font-size:13px;color:#6B7280;font-weight:500;width:35%;">Profesional</td>
-          <td style="padding:16px;font-size:14px;color:#111827;font-weight:600;">${data.staffName}</td>
+          <td style="padding:16px;font-size:14px;color:#111827;font-weight:600;">${escapeHtml(data.staffName)}</td>
         </tr>
       </table>
       ${statusBadge}
+      ${venueDetails(data)}
       <div style="text-align:center;margin:24px 0;">
         <a href="${dashboardUrl}" style="display:inline-block;padding:12px 32px;background:#E5E7EB;color:#374151;text-decoration:none;font-size:14px;font-weight:600;border-radius:10px;">
           Ver en Dashboard →
@@ -1101,8 +1115,8 @@ export function appointmentActionStaffEmail(data: AppointmentActionEmailData): {
   const isConfirm = data.action === "confirmed";
   const title = isConfirm ? "Cita confirmada" : "Cita cancelada";
   const message = isConfirm
-    ? `La cita de ${data.customerName} que tienes asignada fue confirmada.`
-    : `La cita de ${data.customerName} que tienes asignada fue cancelada.`;
+    ? `La cita de ${escapeHtml(data.customerName)} que tienes asignada fue confirmada.`
+    : `La cita de ${escapeHtml(data.customerName)} que tienes asignada fue cancelada.`;
   const badge = isConfirm
     ? `<div style="margin:16px 0;padding:14px;background:#f0fdf4;border-radius:10px;border:1px solid #bbf7d0;">
         <p style="margin:0;font-size:14px;color:#166534;text-align:center;font-weight:600;">Cita confirmada</p>
@@ -1127,14 +1141,15 @@ export function appointmentActionStaffEmail(data: AppointmentActionEmailData): {
         </tr>
         <tr>
           <td style="padding:16px;background:#F9FAFB;font-size:13px;color:#6B7280;font-weight:500;border-bottom:1px solid #E5E7EB;width:35%;">Servicio</td>
-          <td style="padding:16px;font-size:14px;color:#111827;font-weight:600;border-bottom:1px solid #E5E7EB;">${data.serviceName}</td>
+          <td style="padding:16px;font-size:14px;color:#111827;font-weight:600;border-bottom:1px solid #E5E7EB;">${escapeHtml(data.serviceName)}</td>
         </tr>
         <tr>
           <td style="padding:16px;background:#F9FAFB;font-size:13px;color:#6B7280;font-weight:500;width:35%;">Negocio</td>
-          <td style="padding:16px;font-size:14px;color:#111827;font-weight:600;">${data.businessName}</td>
+          <td style="padding:16px;font-size:14px;color:#111827;font-weight:600;">${escapeHtml(data.businessName)}</td>
         </tr>
       </table>
       ${badge}
+      ${venueDetails(data)}
     `),
   };
 }
@@ -1160,7 +1175,7 @@ function recurringSessionsTable(
     const time = selectedTimes[String(day)] ?? "";
     return `<tr>
       <td style="padding:12px 16px;font-size:14px;color:#111827;font-weight:600;border-bottom:1px solid #E5E7EB;">${DAY_NAMES[day] ?? day}</td>
-      <td style="padding:12px 16px;font-size:14px;color:#374151;border-bottom:1px solid #E5E7EB;">${time}</td>
+      <td style="padding:12px 16px;font-size:14px;color:#374151;border-bottom:1px solid #E5E7EB;">${escapeHtml(time)}</td>
     </tr>`;
   }).join("");
 
@@ -1208,7 +1223,7 @@ export function recurringBookingCreatedClientEmail(data: RecurringCreatedClientD
     ? `<div style="margin:16px 0;padding:16px;background:#FEF3C7;border:1px solid #FDE68A;border-radius:8px;">
         <p style="margin:0 0 8px;font-size:13px;color:#92400E;font-weight:700;">Atencion: hay ${data.conflicts.length} sesion(es) con conflicto de horario</p>
         <p style="margin:0;font-size:13px;color:#92400E;line-height:1.5;">
-          Las siguientes fechas no pudieron ser agendadas porque ya tenian turnos ocupados: 
+          Las siguientes fechas no pudieron ser agendadas porque ya tenian turnos ocupados:
           ${data.conflicts.map(d => formatInTimeZone(d, data.timezone || BUSINESS_TZ, "MMM d", { locale: getDateLocale(data.locale ?? "es") })).join(", ")}.
           El negocio te contactara para coordinar esas sesiones.
         </p>
@@ -1220,9 +1235,9 @@ export function recurringBookingCreatedClientEmail(data: RecurringCreatedClientD
     html: enterpriseLayout("Plan Recurrente Confirmado", `
       <h2 style="margin:0 0 8px;font-size:20px;color:#111827;font-weight:700;">Tu suscripcion esta activa</h2>
       <p style="margin:0 0 16px;font-size:15px;color:#4B5563;line-height:1.6;">
-        Hola <strong style="color:#111827;">${data.customerName}</strong>, tu plan de 
-        <strong style="color:#111827;">${data.serviceName}</strong> por <strong style="color:#111827;">${data.durationMonths} mes(es)</strong>
-        en <strong style="color:#111827;">${data.businessName}</strong> ha sido confirmado.
+        Hola <strong style="color:#111827;">${escapeHtml(data.customerName)}</strong>, tu plan de
+        <strong style="color:#111827;">${escapeHtml(data.serviceName)}</strong> por <strong style="color:#111827;">${data.durationMonths} mes(es)</strong>
+        en <strong style="color:#111827;">${escapeHtml(data.businessName)}</strong> ha sido confirmado.
       </p>
       <p style="margin:0 0 8px;font-size:14px;color:#374151;font-weight:600;">Tus sesiones semanales:</p>
       ${recurringSessionsTable(data.selectedDays, data.selectedTimes, data.startDate, data.endDate, data.timezone || BUSINESS_TZ, data.locale)}
@@ -1264,9 +1279,9 @@ export function recurringBookingPendingApprovalBusinessEmail(data: RecurringPend
     ? `<div style="margin:16px 0;padding:16px;background:#F0F9FF;border:1px solid #BAE6FD;border-radius:8px;">
         <p style="margin:0 0 8px;font-size:13px;color:#0369A1;font-weight:700;">Informacion de salud del cliente</p>
         ${Object.entries(data.healthAnswers ?? {}).map(([q, a]) =>
-          `<p style="margin:0 0 4px;font-size:13px;color:#374151;"><strong>${q}:</strong> ${a}</p>`
+          `<p style="margin:0 0 4px;font-size:13px;color:#374151;"><strong>${escapeHtml(q)}:</strong> ${escapeHtml(a)}</p>`
         ).join("")}
-        ${data.healthFreeText ? `<p style="margin:8px 0 0;font-size:13px;color:#374151;"><strong>Comentarios:</strong> ${data.healthFreeText}</p>` : ""}
+        ${data.healthFreeText ? `<p style="margin:8px 0 0;font-size:13px;color:#374151;"><strong>Comentarios:</strong> ${escapeHtml(data.healthFreeText)}</p>` : ""}
       </div>`
     : "";
 
@@ -1275,8 +1290,8 @@ export function recurringBookingPendingApprovalBusinessEmail(data: RecurringPend
     html: enterpriseLayout("Nueva Solicitud de Plan Recurrente", `
       <h2 style="margin:0 0 8px;font-size:20px;color:#111827;font-weight:700;">Nueva solicitud de suscripcion</h2>
       <p style="margin:0 0 16px;font-size:15px;color:#4B5563;line-height:1.6;">
-        <strong style="color:#111827;">${data.customerName}</strong> (${data.customerEmail}) solicito un plan recurrente de
-        <strong style="color:#111827;">${data.serviceName}</strong> por <strong style="color:#111827;">${data.durationMonths} mes(es)</strong>.
+        <strong style="color:#111827;">${escapeHtml(data.customerName)}</strong> (${escapeHtml(data.customerEmail)}) solicito un plan recurrente de
+        <strong style="color:#111827;">${escapeHtml(data.serviceName)}</strong> por <strong style="color:#111827;">${data.durationMonths} mes(es)</strong>.
       </p>
       ${recurringSessionsTable(data.selectedDays, data.selectedTimes, data.startDate, data.endDate, data.timezone || BUSINESS_TZ, data.locale)}
       ${data.customerAddress ? `<div style="margin:0 0 16px;padding:16px;background:#F9FAFB;border:1px solid #E5E7EB;border-radius:8px;"><p style="margin:0 0 6px;font-size:12px;color:#6B7280;text-transform:uppercase;font-weight:600;">Direccion de las visitas</p><p style="margin:0;font-size:14px;color:#111827;font-weight:600;">${escapeHtml(data.customerAddress)}</p></div>` : ""}
@@ -1316,9 +1331,9 @@ export function recurringBookingApprovedClientEmail(data: RecurringApprovedClien
     html: enterpriseLayout("Plan Aprobado", `
       <h2 style="margin:0 0 8px;font-size:20px;color:#111827;font-weight:700;">Tu solicitud fue aprobada</h2>
       <p style="margin:0 0 16px;font-size:15px;color:#4B5563;line-height:1.6;">
-        Hola <strong style="color:#111827;">${data.customerName}</strong>, 
-        <strong style="color:#111827;">${data.businessName}</strong> aprobo tu plan de 
-        <strong style="color:#111827;">${data.serviceName}</strong>.
+        Hola <strong style="color:#111827;">${escapeHtml(data.customerName)}</strong>,
+        <strong style="color:#111827;">${escapeHtml(data.businessName)}</strong> aprobo tu plan de
+        <strong style="color:#111827;">${escapeHtml(data.serviceName)}</strong>.
       </p>
       <div style="margin:16px 0;padding:16px;background:#F0FDF4;border:1px solid #BBF7D0;border-radius:8px;">
         <p style="margin:0 0 4px;font-size:14px;color:#166534;font-weight:700;">Plan activo</p>
@@ -1348,16 +1363,16 @@ export function recurringBookingRejectedClientEmail(data: RecurringRejectedClien
     html: enterpriseLayout("Solicitud No Aprobada", `
       <h2 style="margin:0 0 8px;font-size:20px;color:#111827;font-weight:700;">Tu solicitud no fue aprobada</h2>
       <p style="margin:0 0 16px;font-size:15px;color:#4B5563;line-height:1.6;">
-        Hola <strong style="color:#111827;">${data.customerName}</strong>, lamentablemente tu solicitud de plan de
-        <strong style="color:#111827;">${data.serviceName}</strong> en 
-        <strong style="color:#111827;">${data.businessName}</strong> no fue aprobada.
+        Hola <strong style="color:#111827;">${escapeHtml(data.customerName)}</strong>, lamentablemente tu solicitud de plan de
+        <strong style="color:#111827;">${escapeHtml(data.serviceName)}</strong> en
+        <strong style="color:#111827;">${escapeHtml(data.businessName)}</strong> no fue aprobada.
       </p>
       ${data.reason ? `<div style="margin:16px 0;padding:16px;background:#FEF2F2;border:1px solid #FECACA;border-radius:8px;">
         <p style="margin:0 0 4px;font-size:13px;color:#991B1B;font-weight:700;">Motivo:</p>
-        <p style="margin:0;font-size:13px;color:#991B1B;line-height:1.5;">${data.reason}</p>
+        <p style="margin:0;font-size:13px;color:#991B1B;line-height:1.5;">${escapeHtml(data.reason)}</p>
       </div>` : ""}
       <p style="margin:0;font-size:14px;color:#6B7280;line-height:1.6;">
-        Si tienes dudas, por favor contacta directamente a ${data.businessName}.
+        Si tienes dudas, por favor contacta directamente a ${escapeHtml(data.businessName)}.
       </p>
     `),
   };
@@ -1376,12 +1391,12 @@ export function recurringBookingCancelledClientEmail(data: RecurringCancelledCli
     html: enterpriseLayout("Plan Cancelado", `
       <h2 style="margin:0 0 8px;font-size:20px;color:#111827;font-weight:700;">Tu plan ha sido cancelado</h2>
       <p style="margin:0 0 16px;font-size:15px;color:#4B5563;line-height:1.6;">
-        Hola <strong style="color:#111827;">${data.customerName}</strong>, tu plan de 
-        <strong style="color:#111827;">${data.serviceName}</strong> en 
-        <strong style="color:#111827;">${data.businessName}</strong> ha sido cancelado.
+        Hola <strong style="color:#111827;">${escapeHtml(data.customerName)}</strong>, tu plan de
+        <strong style="color:#111827;">${escapeHtml(data.serviceName)}</strong> en
+        <strong style="color:#111827;">${escapeHtml(data.businessName)}</strong> ha sido cancelado.
         Todos los turnos futuros fueron eliminados de la agenda.
       </p>
-      <p style="margin:0;font-size:14px;color:#6B7280;">Si necesitas mas informacion, contacta a ${data.businessName}.</p>
+      <p style="margin:0;font-size:14px;color:#6B7280;">Si necesitas mas informacion, contacta a ${escapeHtml(data.businessName)}.</p>
     `),
   };
 }
@@ -1403,11 +1418,11 @@ export function recurringSessionCancelledClientEmail(data: RecurringSessionCance
     html: enterpriseLayout("Sesion Cancelada", `
       <h2 style="margin:0 0 8px;font-size:20px;color:#111827;font-weight:700;">Una sesion de tu plan fue cancelada</h2>
       <p style="margin:0 0 16px;font-size:15px;color:#4B5563;line-height:1.6;">
-        Hola <strong style="color:#111827;">${data.customerName}</strong>, la sesion de 
-        <strong style="color:#111827;">${data.serviceName}</strong> del dia 
+        Hola <strong style="color:#111827;">${escapeHtml(data.customerName)}</strong>, la sesion de
+        <strong style="color:#111827;">${escapeHtml(data.serviceName)}</strong> del dia
         <strong style="color:#111827;">${dateStr}</strong> fue cancelada porque el profesional no esta disponible ese dia.
       </p>
-      <p style="margin:0;font-size:14px;color:#6B7280;">El resto de tus sesiones del plan continuan con normalidad. Para mas informacion contacta a ${data.businessName}.</p>
+      <p style="margin:0;font-size:14px;color:#6B7280;">El resto de tus sesiones del plan continuan con normalidad. Para mas informacion contacta a ${escapeHtml(data.businessName)}.</p>
     `),
   };
 }
@@ -1434,14 +1449,14 @@ export function recurringExpiringClientEmail(data: RecurringExpiringClientData):
     html: enterpriseLayout("Plan por Vencer", `
       <h2 style="margin:0 0 8px;font-size:20px;color:#111827;font-weight:700;">Tu plan esta por terminar</h2>
       <p style="margin:0 0 16px;font-size:15px;color:#4B5563;line-height:1.6;">
-        Hola <strong style="color:#111827;">${data.customerName}</strong>, tu plan de 
-        <strong style="color:#111827;">${data.serviceName}</strong> en 
-        <strong style="color:#111827;">${data.businessName}</strong> vence el 
+        Hola <strong style="color:#111827;">${escapeHtml(data.customerName)}</strong>, tu plan de
+        <strong style="color:#111827;">${escapeHtml(data.serviceName)}</strong> en
+        <strong style="color:#111827;">${escapeHtml(data.businessName)}</strong> vence el
         <strong style="color:#111827;">${endStr}</strong> (en ${data.daysLeft} dias).
       </p>
       ${data.renewalMessage
         ? `<div style="margin:16px 0;padding:16px;background:#F0F9FF;border:1px solid #BAE6FD;border-radius:8px;">
-            <p style="margin:0;font-size:14px;color:#0369A1;line-height:1.6;">${data.renewalMessage}</p>
+            <p style="margin:0;font-size:14px;color:#0369A1;line-height:1.6;">${escapeHtml(data.renewalMessage)}</p>
           </div>`
         : ""}
       <div style="text-align:center;margin:24px 0;">
@@ -1474,8 +1489,8 @@ export function recurringExpiringBusinessEmail(data: RecurringExpiringBusinessDa
     html: enterpriseLayout("Plan de Cliente por Vencer", `
       <h2 style="margin:0 0 8px;font-size:20px;color:#111827;font-weight:700;">Un plan esta por terminar</h2>
       <p style="margin:0 0 16px;font-size:15px;color:#4B5563;line-height:1.6;">
-        El plan de <strong style="color:#111827;">${data.customerName}</strong> para 
-        <strong style="color:#111827;">${data.serviceName}</strong> vence el 
+        El plan de <strong style="color:#111827;">${escapeHtml(data.customerName)}</strong> para
+        <strong style="color:#111827;">${escapeHtml(data.serviceName)}</strong> vence el
         <strong style="color:#111827;">${endStr}</strong> (en ${data.daysLeft} dias).
       </p>
       <p style="margin:0 0 16px;font-size:14px;color:#6B7280;">Podes contactarlo para ofrecerle renovar su plan.</p>
@@ -1509,10 +1524,10 @@ export function recurringConflictWarningClientEmail(data: RecurringConflictWarni
     html: enterpriseLayout("Cambio en tu Sesion", `
       <h2 style="margin:0 0 8px;font-size:20px;color:#111827;font-weight:700;">Cambio en una de tus sesiones</h2>
       <p style="margin:0 0 16px;font-size:15px;color:#4B5563;line-height:1.6;">
-        Hola <strong style="color:#111827;">${data.customerName}</strong>, te informamos que tu sesion de
-        <strong style="color:#111827;">${data.serviceName}</strong> programada para el dia
+        Hola <strong style="color:#111827;">${escapeHtml(data.customerName)}</strong>, te informamos que tu sesion de
+        <strong style="color:#111827;">${escapeHtml(data.serviceName)}</strong> programada para el dia
         <strong style="color:#111827;">${dateStr}</strong> en
-        <strong style="color:#111827;">${data.businessName}</strong> tiene un cambio pendiente.
+        <strong style="color:#111827;">${escapeHtml(data.businessName)}</strong> tiene un cambio pendiente.
       </p>
       <div style="margin:16px 0;padding:16px;background:#FEF3C7;border:1px solid #FDE68A;border-radius:8px;">
         <p style="margin:0;font-size:14px;color:#92400E;line-height:1.5;">
@@ -1520,7 +1535,7 @@ export function recurringConflictWarningClientEmail(data: RecurringConflictWarni
           debido a un cambio en la disponibilidad del profesional. Revisa el detalle de tu plan para mas informacion.
         </p>
       </div>
-      <p style="margin:0;font-size:14px;color:#6B7280;line-height:1.6;">El resto de tus sesiones continuan con normalidad. Si tienes dudas, contacta directamente a ${data.businessName}.</p>
+      <p style="margin:0;font-size:14px;color:#6B7280;line-height:1.6;">El resto de tus sesiones continuan con normalidad. Si tienes dudas, contacta directamente a ${escapeHtml(data.businessName)}.</p>
     `),
   };
 }

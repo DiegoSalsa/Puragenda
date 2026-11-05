@@ -1,4 +1,5 @@
 import { getStaffLimit } from "@/core/subscription-plan";
+import { commercialPlanGroup, commercialPlanName, contractedProfessionalsLabel } from "@/core/commercial-display";
 import { calculateNextBillingPreview, type BillingSubscriptionInput } from "./subscription-billing.service";
 
 type ReportSubscription = BillingSubscriptionInput & {
@@ -37,7 +38,9 @@ export function getAdminSubscriptionReport(
   const amountDue = isClp ? preview.amountDue : null;
   const baseAmount = isClp ? preview.baseAmount : null;
   return {
-    plan: subscription.plan,
+    plan: commercialPlanGroup(subscription.plan),
+    planLabel: commercialPlanName(subscription.plan),
+    professionalsLabel: contractedProfessionalsLabel(getStaffLimit(subscription)),
     method,
     methodLabel,
     isManual,
@@ -51,7 +54,7 @@ export function getAdminSubscriptionReport(
     cycleLabel: subscription.billingCycle === "ANNUAL" ? "anual" : "mensual",
     staffLimit: getStaffLimit(subscription),
     hasCustomStaffLimit: subscription.staffLimitOverride != null,
-    hasCustomPrice: isManual && subscription.customMonthlyPriceClp != null,
+    hasCustomPrice: subscription.recurringPriceOverrideClp != null || (isManual && subscription.customMonthlyPriceClp != null),
     periodEnd: periodEnd?.toISOString() ?? null,
     monthlyRevenueClp: contributesRevenue ? preview.baseAmount / (subscription.billingCycle === "ANNUAL" ? 12 : 1) : 0,
     nextTransferClp: contributesRevenue && isManual ? preview.amountDue : 0,

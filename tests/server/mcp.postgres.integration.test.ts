@@ -73,6 +73,55 @@ async function approve(receipt: string, userId?: string) {
 }
 
 describe.skipIf(!enabled)("MCP/OAuth with isolated PostgreSQL and real HTTP transport", () => {
+  it.each(["create", "cancel", "reschedule"] as const)("Audit 07 denies %s after connection revocation during a real capacity lock wait", async kind => {
+    const auth = await identity((await link()).token.access_token);
+    let receipt: string, appointmentId: string | undefined;
+    if (kind === "create") {
+      receipt = (await prepareCreation(creationSchema.parse(creation), auth)).receipt;
+    } else {
+      const prepared = await prepareCreation(creationSchema.parse(creation), auth); await approve(prepared.receipt, "mcp-owner-a");
+      const created = await executeOperation(prepared.receipt, "create", auth) as { id: string }; appointmentId = created.id;
+      receipt = (await prepareMutation(kind, { operationKey: randomUUID(), appointmentId, locationId: "mcp-location-a", ...(kind === "reschedule" ? { startTime: "2026-10-01T14:00:00.000Z" } : {}) }, auth)).receipt;
+    }
+    await approve(receipt, "mcp-owner-a"); providers.notify.mockClear(); providers.sync.mockClear();
+    const blocker = new pg.Client({ connectionString: database }), observer = new pg.Client({ connectionString: database });
+    await blocker.connect(); await observer.connect(); let pending: Promise<unknown> | undefined;
+    try {
+      await blocker.query('BEGIN'); const pid = (await blocker.query('SELECT pg_backend_pid() AS pid')).rows[0].pid;
+      await blocker.query('SELECT pg_advisory_xact_lock(hashtextextended($1,0))', ['booking-capacity:mcp-business-a']);
+      pending = executeOperation(receipt, kind, auth);
+      const outcome = pending.then(value => ({ value }), error => ({ error }));
+      let waiting = false;
+      for (let i = 0; i < 150; i++) {
+        if ((await observer.query('SELECT 1 FROM pg_stat_activity WHERE $1::int = ANY(pg_blocking_pids(pid))', [pid])).rowCount) { waiting = true; break; }
+        await new Promise(resolve => setTimeout(resolve, 20));
+      }
+      expect(waiting).toBe(true);
+      await blocker.query('UPDATE "McpConnection" SET "revokedAt" = NOW() WHERE id = $1', [auth.connection.id]); await blocker.query('COMMIT');
+      const result = await outcome;
+      if ('value' in result) expect(result.value).not.toMatchObject({ httpStatus: 201 });
+      if (appointmentId) expect(await prisma.appointment.findUniqueOrThrow({ where: { id: appointmentId } })).toMatchObject({ status: 'PENDING', startTime: new Date(startTime) });
+      else expect(await prisma.appointment.count({ where: { businessId: 'mcp-business-a' } })).toBe(0);
+      expect(providers.notify).not.toHaveBeenCalled(); expect(providers.sync).not.toHaveBeenCalled();
+    } finally { await blocker.query('ROLLBACK'); await pending?.catch(() => undefined); await blocker.end(); await observer.end(); }
+  });
+  it("Audit 07 rechecks connection revocation after a direct read", async () => {
+    const auth = await identity((await link()).token.access_token);
+    const prepared = await prepareCreation(creationSchema.parse(creation), auth); await approve(prepared.receipt, "mcp-owner-a");
+    const created = await executeOperation(prepared.receipt, "create", auth) as { id: string };
+    const find = prisma.appointment.findFirst.bind(prisma.appointment);
+    const read = async (args: Parameters<typeof find>[0]) => {
+      const result = await find(args); await prisma.mcpConnection.update({ where: { id: auth.connection.id }, data: { revokedAt: new Date() } }); return result;
+    };
+    const spy = vi.spyOn(prisma.appointment, 'findFirst').mockImplementationOnce(read as unknown as typeof prisma.appointment.findFirst);
+    try { await expect(tool('get_appointment_details', { appointmentId: created.id }, auth)).rejects.toThrow('ACCESS_REVOKED'); }
+    finally { spy.mockRestore(); }
+  });
+  it("Audit 07 rejects an access token that expires after transport authentication", async () => {
+    const auth = await identity((await link()).token.access_token);
+    vi.setSystemTime(new Date(Date.now() + 601000));
+    await expect(tool('get_business_profile', {}, auth)).rejects.toThrow('INVALID_TOKEN');
+  });
   beforeAll(async () => {
     http = createServer(async (req, res) => {
       try {

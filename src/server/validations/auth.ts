@@ -1,8 +1,12 @@
 import { z } from "zod";
-import { isSupportedCountryCode, isValidTimeZone } from "@/core/countries";
+import { STAFF_LIMITS } from "@/core/constants";
+import { COMMERCIAL_MAX_PROFESSIONALS } from "@/core/commercial-catalog";
+import { registrationMarketSchema } from "@/core/registration-market";
 import { registrationMarketplaceShapeErrors } from "@/lib/marketplace/onboarding";
 
 export const registerSchema = z.object({
+  commercialPlanIntent: z.enum(["PURAGENDA", "PURAGENDA_PLUS"]).optional(),
+  professionalTotal: z.number().int().min(1).max(COMMERCIAL_MAX_PROFESSIONALS).optional(),
   websiteIntent: z.boolean().optional().default(false),
   billingCycle: z.enum(["MONTHLY", "ANNUAL"]).optional().default("MONTHLY"),
   email: z
@@ -29,24 +33,7 @@ export const registerSchema = z.object({
     .max(100, "El nombre del negocio no debe exceder 100 caracteres")
     .trim(),
 
-  countryCode: z
-    .string()
-    .default("CL")
-    .transform((value) => value.trim().toUpperCase())
-    .refine(isSupportedCountryCode, "Selecciona un país válido"),
-
-  timezone: z
-    .string()
-    .trim()
-    .refine(isValidTimeZone, "Selecciona una zona horaria válida")
-    .optional(),
-
-  currencyCode: z
-    .string()
-    .trim()
-    .toUpperCase()
-    .regex(/^[A-Z]{3}$/, "Usa un código de moneda ISO de 3 letras")
-    .optional(),
+  ...registrationMarketSchema.shape,
 
   referralCode: z
     .string()
@@ -65,7 +52,7 @@ export const registerSchema = z.object({
     .default(0),
 
   planIntent: z
-    .enum(["INDIVIDUAL", "EQUIPO", "TEST"])
+    .enum(["INDIVIDUAL", "EQUIPO", "PURAGENDA", "PURAGENDA_PLUS"])
     .optional()
     .nullable(),
 
@@ -104,6 +91,10 @@ export const registerSchema = z.object({
 
   termsAccepted: z.literal(true, { error: "Debes aceptar los Términos de Servicio" }),
 }).superRefine((data, ctx) => {
+  if (data.commercialPlanIntent && (data.planIntent === "PURAGENDA" || data.planIntent === "PURAGENDA_PLUS") && data.planIntent !== data.commercialPlanIntent) {
+    ctx.addIssue({ code: "custom", message: "La selección de plan es inconsistente" });
+  }
+  if (!data.professionalTotal && data.planIntent === "EQUIPO" && STAFF_LIMITS.EQUIPO + data.extraStaffCount > COMMERCIAL_MAX_PROFESSIONALS) ctx.addIssue({ code: "custom", message: "La cantidad de profesionales supera el máximo del catálogo público" });
   const errors = registrationMarketplaceShapeErrors({
     countryCode: data.countryCode,
     categorySlug: data.marketplaceCategorySlug,

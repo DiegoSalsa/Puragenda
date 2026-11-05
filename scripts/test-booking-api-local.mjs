@@ -62,6 +62,13 @@ try {
     await client.query('DROP TABLE "BookingOperation"');
     await client.query(fs.readFileSync(new URL("../prisma/migrations/20260930120000_public_booking_operations/migration.sql", import.meta.url), "utf8"));
     await client.query(fs.readFileSync(new URL("../prisma/migrations/20261001121000_booking_operation_fk_update/migration.sql", import.meta.url), "utf8"));
+    const lifecycleSql = fs.readFileSync(new URL("../prisma/migrations/20261029180000_preserve_service_staff_history/migration.sql", import.meta.url), "utf8");
+    // db push created the columns/index. Execute the exact versioned guards too.
+    await client.query(lifecycleSql.slice(lifecycleSql.indexOf("CREATE FUNCTION prevent_catalog_history_delete"), lifecycleSql.lastIndexOf("COMMIT;")));
+    const portalSql = fs.readFileSync(new URL("../prisma/migrations/20261030120000_client_portal_privacy/migration.sql", import.meta.url), "utf8");
+    // db push created the new columns; fixtures must also enforce the real
+    // ownership, health-consent and RLS guards used by the application.
+    await client.query(portalSql.slice(portalSql.indexOf('CREATE FUNCTION "portal_reservation_owner"'), portalSql.lastIndexOf("COMMIT;")));
     if (process.argv.includes("--mcp") || mcpPreview) {
       // Recreate connector tables from the versioned migration, so tests cover
       // real FKs, indexes, grants and RLS rather than db push alone.
@@ -117,8 +124,9 @@ try {
         } else code = await run([nextBin, "dev", "-H", "127.0.0.1", "-p", port]);
       }
     } else {
-      const files = process.argv.includes("--mcp") ? ["tests/server/mcp.security.test.ts", "tests/server/mcp.rollout.test.ts", "tests/server/mcp.release.test.ts", "tests/server/mcp-rollout.actions.test.ts", "tests/server/mcp.postgres.integration.test.ts"] : process.argv.includes("--all") ? [] : ["tests/server/booking-api.integration.test.ts", "tests/server/booking-read.test.ts", "tests/core/booking-selection.test.ts", "tests/core/booking-availability.test.ts"];
-      code = await run([vitestBin, "run", ...files]);
+      const files = process.argv.includes("--mcp") ? ["tests/server/mcp.security.test.ts", "tests/server/mcp.rollout.test.ts", "tests/server/mcp.release.test.ts", "tests/server/mcp-rollout.actions.test.ts", "tests/server/mcp.postgres.integration.test.ts"] : process.argv.includes("--all") ? [] : ["tests/server/booking-api.integration.test.ts", "tests/server/dashboard-appointments.postgres.integration.test.ts", "tests/server/booking-read.test.ts", "tests/core/booking-selection.test.ts", "tests/core/booking-availability.test.ts"];
+      // Database fixtures share this disposable schema; do not overlap cleanup.
+      code = await run([vitestBin, "run", "--no-file-parallelism", ...files]);
     }
   }
 } finally {

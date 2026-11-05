@@ -1,0 +1,439 @@
+{
+  "capturedAt": "2026-10-28T17:38:34.244Z",
+  "branch": "feature/puragenda-next",
+  "productionEnabled": false,
+  "externalEmailReleaseOpen": false,
+  "commitPushMergeDeploy": false,
+  "backup": "C:/Users/diego/.codex/backups/puri-contact-close-20261028-122932",
+  "tests": {
+    "postgres": {
+      "files": 9,
+      "passed": 255,
+      "skipped": 0
+    },
+    "general": {
+      "filesPassed": 234,
+      "filesSkipped": 4,
+      "passed": 1601,
+      "skipped": 102,
+      "excluded": "**/*postgres.integration.test.ts"
+    },
+    "checks": {
+      "typecheck": 0,
+      "typegen": 0,
+      "lint": 0,
+      "build": 0,
+      "bundler": "webpack",
+      "general": 0,
+      "postgres": 0
+    }
+  },
+  "providers": {
+    "probe": {
+      "at": "2026-10-28T15:36:20.853Z",
+      "source": "AGGREGATE_READ_ONLY_AND_SYNTHETIC_PROVIDER_PROBE",
+      "commercialQuotaApproved": false,
+      "emailsSent": 0,
+      "telemetry30days": [
+        {
+          "model": "gpt-6-luna",
+          "status": "SUCCESS",
+          "requests": 8,
+          "input_tokens": 25722,
+          "output_tokens": 565,
+          "cached_tokens": 13592,
+          "average_input": 3215,
+          "average_output": 71,
+          "p95_input": 4127.9,
+          "p95_output": 91,
+          "requests_with_cost": 0,
+          "recorded_estimated_usd": null
+        },
+        {
+          "model": "gpt-6-luna",
+          "status": "NO_DATA",
+          "requests": 1,
+          "input_tokens": 2777,
+          "output_tokens": 71,
+          "cached_tokens": 1349,
+          "average_input": 2777,
+          "average_output": 71,
+          "p95_input": 2777,
+          "p95_output": 71,
+          "requests_with_cost": 0,
+          "recorded_estimated_usd": null
+        }
+      ],
+      "openai": {
+        "requests": 1,
+        "model": "gpt-6-luna",
+        "serviceTier": "default",
+        "usage": {
+          "input_tokens": 20,
+          "input_tokens_details": {
+            "cache_write_tokens": 0,
+            "cached_tokens": 0
+          },
+          "output_tokens": 7,
+          "output_tokens_details": {
+            "reasoning_tokens": 0
+          },
+          "total_tokens": 27
+        },
+        "completed": true
+      },
+      "resendDomains": [
+        {
+          "name": "puragenda.cl",
+          "status": "verified"
+        }
+      ]
+    },
+    "livePuriAcceptance": {
+      "at": "2026-10-28T16:02:02.852Z",
+      "emailsSent": 0,
+      "results": [
+        {
+          "scenario": "basic",
+          "provider": "OPENAI_RESPONSES",
+          "syntheticDataOnly": true,
+          "errorCode": null,
+          "answerReturned": true,
+          "fallback": false,
+          "toolsUsed": [
+            "getAppointments"
+          ],
+          "reservations": [
+            {
+              "state": "SETTLED",
+              "category": "STANDARD_INTERACTIVE",
+              "actualMicros": 177,
+              "inputTokens": 1347,
+              "outputTokens": 22,
+              "cachedTokens": 0,
+              "cacheWriteTokens": 1221
+            },
+            {
+              "state": "SETTLED",
+              "category": "STANDARD_INTERACTIVE",
+              "actualMicros": 37,
+              "inputTokens": 1422,
+              "outputTokens": 27,
+              "cachedTokens": 1344,
+              "cacheWriteTokens": 75
+            }
+          ],
+          "customerUsage": {
+            "plan": "PURAGENDA",
+            "active": true,
+            "trial": true,
+            "resetsAt": "2026-11-27T15:46:53.250Z",
+            "periodLabel": "Prueba de 30 días",
+            "items": [
+              {
+                "key": "STANDARD_INTERACTIVE",
+                "title": "Puri estándar",
+                "included": true,
+                "configured": true,
+                "limit": 10,
+                "used": 10,
+                "reserved": 0,
+                "remaining": 0,
+                "state": "EXHAUSTED"
+              },
+              {
+                "key": "PLUS_INTERACTIVE",
+                "title": "Puri avanzado",
+                "included": false,
+                "configured": true,
+                "limit": 10,
+                "used": 0,
+                "reserved": 0,
+                "remaining": 0,
+                "state": "EXCLUSIVE"
+              },
+              {
+                "key": "RECOMMENDATION",
+                "title": "Recomendaciones de Puri",
+                "included": false,
+                "configured": true,
+                "limit": 10,
+                "used": 0,
+                "reserved": 0,
+                "remaining": 0,
+                "state": "EXCLUSIVE"
+              },
+              {
+                "key": "ANALYSIS_SQL",
+                "title": "Análisis del negocio",
+                "included": false,
+                "configured": true,
+                "limit": 20,
+                "used": 0,
+                "reserved": 0,
+                "remaining": 0,
+                "state": "EXCLUSIVE"
+              },
+              {
+                "key": "PROACTIVE_SQL",
+                "title": "Detección de oportunidades",
+                "included": false,
+                "configured": true,
+                "limit": 20,
+                "used": 0,
+                "reserved": 0,
+                "remaining": 0,
+                "state": "EXCLUSIVE"
+              },
+              {
+                "key": "CONTACT_FLOW",
+                "title": "Correos de Contact Flow",
+                "included": false,
+                "configured": true,
+                "limit": 10,
+                "used": 0,
+                "reserved": 0,
+                "remaining": 0,
+                "state": "EXCLUSIVE",
+                "resetsAt": "2026-11-27T15:46:53.250Z"
+              }
+            ]
+          }
+        },
+        {
+          "scenario": "plus",
+          "provider": "OPENAI_RESPONSES",
+          "syntheticDataOnly": true,
+          "errorCode": null,
+          "answerReturned": true,
+          "fallback": false,
+          "toolsUsed": [
+            "get_contact_campaigns"
+          ],
+          "reservations": [
+            {
+              "state": "SETTLED",
+              "category": "PLUS_INTERACTIVE",
+              "actualMicros": 165,
+              "inputTokens": 1280,
+              "outputTokens": 16,
+              "cachedTokens": 0,
+              "cacheWriteTokens": 1154
+            },
+            {
+              "state": "SETTLED",
+              "category": "PLUS_INTERACTIVE",
+              "actualMicros": 92,
+              "inputTokens": 1510,
+              "outputTokens": 99,
+              "cachedTokens": 1277,
+              "cacheWriteTokens": 230
+            }
+          ],
+          "customerUsage": {
+            "plan": "PURAGENDA_PLUS",
+            "active": true,
+            "trial": true,
+            "resetsAt": "2026-11-27T15:46:52.832Z",
+            "periodLabel": "Prueba de 30 días",
+            "items": [
+              {
+                "key": "STANDARD_INTERACTIVE",
+                "title": "Puri estándar",
+                "included": true,
+                "configured": true,
+                "limit": 10,
+                "used": 0,
+                "reserved": 0,
+                "remaining": 10,
+                "state": "AVAILABLE"
+              },
+              {
+                "key": "PLUS_INTERACTIVE",
+                "title": "Puri avanzado",
+                "included": true,
+                "configured": true,
+                "limit": 10,
+                "used": 2,
+                "reserved": 0,
+                "remaining": 8,
+                "state": "AVAILABLE"
+              },
+              {
+                "key": "RECOMMENDATION",
+                "title": "Recomendaciones de Puri",
+                "included": true,
+                "configured": true,
+                "limit": 10,
+                "used": 0,
+                "reserved": 0,
+                "remaining": 10,
+                "state": "AVAILABLE"
+              },
+              {
+                "key": "ANALYSIS_SQL",
+                "title": "Análisis del negocio",
+                "included": true,
+                "configured": true,
+                "limit": 20,
+                "used": 10,
+                "reserved": 0,
+                "remaining": 10,
+                "state": "AVAILABLE"
+              },
+              {
+                "key": "PROACTIVE_SQL",
+                "title": "Detección de oportunidades",
+                "included": true,
+                "configured": true,
+                "limit": 20,
+                "used": 0,
+                "reserved": 0,
+                "remaining": 20,
+                "state": "AVAILABLE"
+              },
+              {
+                "key": "CONTACT_FLOW",
+                "title": "Correos de Contact Flow",
+                "included": true,
+                "configured": true,
+                "limit": 10,
+                "used": 4,
+                "reserved": 0,
+                "remaining": 6,
+                "state": "AVAILABLE",
+                "resetsAt": "2026-11-27T15:46:52.832Z"
+              }
+            ]
+          }
+        }
+      ]
+    },
+    "resendUsage": {
+      "available": true,
+      "emails": {
+        "daily": {
+          "used": 33,
+          "limit": 100,
+          "sent": 33,
+          "received": 0,
+          "resets_at": "2026-10-28T23:59:59.999Z"
+        },
+        "monthly": {
+          "used": 861,
+          "limit": 3000,
+          "sent": 861,
+          "received": 0,
+          "resets_at": "2026-10-29T23:48:21.366Z"
+        }
+      },
+      "contacts": {
+        "used": 0,
+        "limit": 1000
+      },
+      "queriedAt": "2026-10-28T15:38:08.523Z"
+    },
+    "emailsSent": 0,
+    "authenticResendWebhookObserved": false,
+    "remoteDatabaseWrites": 0
+  },
+  "browser": {
+    "at": "2026-10-28T16:14:40.140Z",
+    "mobile": {
+      "clientWidth": 389,
+      "documentWidth": 389,
+      "height": 844
+    },
+    "desktop": {
+      "clientWidth": 1365,
+      "documentWidth": 1365,
+      "height": 895
+    },
+    "syntheticDataOnly": true,
+    "activeTrialWithoutPaymentVerified": true,
+    "basicNearLimit": {
+      "used": 8,
+      "remaining": 2
+    },
+    "basicAfterLiveModel": {
+      "used": 10,
+      "remaining": 0
+    },
+    "plusAdvancedAfterLiveModel": {
+      "used": 2,
+      "remaining": 8
+    },
+    "campaign": {
+      "eligible": 4,
+      "excludedWithoutConsent": 1,
+      "simulatedDelivered": 4,
+      "emailsRemaining": 6
+    },
+    "expiredQuotaBlocked": true,
+    "basicAdvancedDenied": true,
+    "externalEmailsSent": 0
+  },
+  "quotaProposal": {
+    "path": "puri-contact-quota-proposal-2026-10-28.json",
+    "status": "PENDING_OWNER_APPROVAL",
+    "active": false,
+    "transactionalCapsImplemented": false,
+    "validation": {
+      "schemaValid": true,
+      "installedInEnvironment": false,
+      "active": false,
+      "status": "PENDING_OWNER_APPROVAL"
+    }
+  },
+  "localEnvironmentCleanup": {
+    "qaServerStopped": true,
+    "stoppedProcessIds": [
+      28284,
+      8744,
+      2056
+    ],
+    "source": "verified QA launcher and port 3121 descendants",
+    "postgresStopped": true,
+    "otherDatabaseClientsBeforeStop": 0,
+    "fixtureDatabaseRetained": true
+  },
+  "security": {
+    "scannedFiles": 90,
+    "secretValuesCompared": 14,
+    "secretOccurrences": 0,
+    "stagedFiles": 0,
+    "initialFiles": 49,
+    "missingInitialFiles": [],
+    "modifiedInitialFiles": [
+      ".env.example",
+      "src/app/dashboard/settings/page.tsx",
+      "src/server/commercial-worker.ts"
+    ],
+    "protectedMercadoPagoChanges": [],
+    "mpWorkerStageUnchanged": true,
+    "ignoredEnvironment": true
+  },
+  "operationalState": {
+    "hostedSchedulerActivated": false,
+    "sourceReleaseOpen": false,
+    "controlledTestRequiresApprovedIsolatedDatabase": true,
+    "productionApprovalBindsCredentialPolicySenderDomainOriginPilotAndExpiry": true,
+    "providerEventsRemainVerifiableWithOutboundOff": true,
+    "realResendCertificationPending": true,
+    "fixtureDatabaseRetained": true
+  },
+  "evidenceSha256": {
+    "puri-contact-plus-quota-desktop.jpg": "4779379ffe574821e7f2aae9ab8649ae8eee5ec030d36b636c5da1061c63d179",
+    "puri-contact-basic-quota-mobile.jpg": "bc3ae18b0567a61614ff02912a20606a840cba67b299cf5a8e74acd5d94b70ef",
+    "puri-contact-flow-mobile.jpg": "2aa593cb79de5f4772b7b14eb04b53098d44e1ec14391790a9b8e2a850f2b382",
+    "puri-contact-trial-expired-mobile.jpg": "e08bf2f0abf39daae06689bae8fe9ad387597f461f5701a5428e999e48b99ac7",
+    "puri-contact-quota-proposal-2026-10-28.json": "67c77f85a7f39c891507764dec1d826a15ec7e519275eaf28cc98da107020837"
+  },
+  "validationLogSha256": {
+    "postgres-tests.log": "caad716468935c7a74d7571b890e61949642dcdb16e049a459b52630bec22541",
+    "general-tests.log": "979b99013e6ea716e88de6c0541b0b048c14a538452080666cebc24534394413",
+    "typecheck.log": "8b0db89a1e25137a4cb79143a4ea63ae347e6f5f2247f026d984e133255d3084",
+    "lint.log": "e3b0c44298fc1c149afbf4c8996fb92427ae41e4649b934ca495991b7852b855",
+    "build.log": "9e0c6ae57e31dd55ddf69a3085e0d6582241f4a9c4687157376a0cda33689237"
+  }
+}

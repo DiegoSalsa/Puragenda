@@ -1,489 +1,142 @@
 "use client";
 
-import { useState, useEffect, useRef } from "react";
-import { commercialQuote, commercialRegisterUrl, publicWebsiteMonthly } from "@/websites/commercial";
-import { Check, Loader2, Minus, Plus, Sparkles, Users, Crown, Zap } from "@/components/icons/hover-icons";
-import { useLocale, useTranslations } from "next-intl";
+import { useState } from "react";
 import { useRouter } from "next/navigation";
+import { Check, ArrowRight, Sparkles } from "@/components/icons/hover-icons";
+import { COMMERCIAL_ANNUAL_POLICY, COMMERCIAL_MAX_PROFESSIONALS, type CommercialPlanCode } from "@/core/commercial-catalog";
+import { Select, SelectContent, SelectItem, SelectTrigger, SelectValue } from "@/components/ui/select";
+import { commercialRegisterUrl } from "@/websites/commercial";
 import { track } from "@/lib/analytics/client";
-import {
-  PRICING,
-  EXTRA_STAFF_COST,
-  STAFF_LIMITS,
-  TRIAL_DURATION_DAYS,
-  ANNUAL_MULTIPLIER,
-} from "@/core/constants";
+import { formatPublicClp, PUBLIC_PLUS_GROWTH_FEATURES, PUBLIC_TRIAL_NOTE, publicAnnualQuote, publicMonthlyQuote } from "@/lib/public-plans";
 
-// ═══════════════════════════════════════════
-// TYPES
-// ═══════════════════════════════════════════
+const professionalOptions = Array.from({ length: COMMERCIAL_MAX_PROFESSIONALS }, (_, index) => ({
+  value: index + 1,
+  label: `${index + 1} ${index === 0 ? "profesional" : "profesionales"}`,
+}));
+const annualFreeMonths = COMMERCIAL_ANNUAL_POLICY.monthsInYear - COMMERCIAL_ANNUAL_POLICY.paidMonths;
 
-type PlanKey = "INDIVIDUAL" | "EQUIPO" | "TEST";
-type BillingCycle = "monthly" | "annual";
+const plans: Array<{ code: CommercialPlanCode; description: string; features: string[]; accent: string }> = [
+  {
+    code: "PURAGENDA",
+    description: "Todo lo que necesitas para organizar reservas, clientes y profesionales.",
+    features: [
+      "Reservas online, agenda y enlace para compartir",
+      "Clientes, servicios y profesionales en un solo panel",
+      "Puri para consultar agenda, cobros y disponibilidad",
+      "Fidelización, gift cards y estadísticas operativas",
+    ],
+    accent: "bg-[#FFF5BA]",
+  },
+  {
+    code: "PURAGENDA_PLUS",
+    description: "Agenda, sitio web y herramientas inteligentes para organizar y hacer crecer tu negocio.",
+    features: [
+      "Todas las funciones de Puragenda",
+      "Sitio web personalizable con reservas integradas",
+      "Editor, hosting, SSL y subdominio incluidos",
+      "Conexión de dominio propio (compra no incluida)",
+      ...PUBLIC_PLUS_GROWTH_FEATURES.map((feature) => feature.label),
+    ],
+    accent: "bg-[#E9D8FF]",
+  },
+];
 
-interface PricingCardsProps {
+export interface PricingCardsProps {
   mode?: "landing" | "selection";
   websiteAcquisitionEnabled?: boolean;
 }
 
-// ═══════════════════════════════════════════
-// HELPERS
-// ═══════════════════════════════════════════
-
-function formatCLP(amount: number, locale: string): string {
-  return new Intl.NumberFormat(locale.startsWith("es") ? "es-CL" : locale, {
-    style: "currency",
-    currency: "CLP",
-    currencyDisplay: "narrowSymbol",
-    maximumFractionDigits: 0,
-  }).format(amount);
-}
-
-function getDisplayMonthlyPrice(monthlyBase: number, cycle: BillingCycle): number {
-  if (cycle === "annual") {
-    return Math.round((monthlyBase * ANNUAL_MULTIPLIER) / 12);
-  }
-  return monthlyBase;
-}
-
-function getAnnualTotal(monthlyBase: number): number {
-  return monthlyBase * ANNUAL_MULTIPLIER;
-}
-
-function getSavingsPercent(): number {
-  return Math.round(((12 - ANNUAL_MULTIPLIER) / 12) * 100);
-}
-
-// ═══════════════════════════════════════════
-// BILLING TOGGLE
-// ═══════════════════════════════════════════
-
-function BillingToggle({
-  cycle,
-  onChange,
-  monthlyLabel,
-  annualLabel,
-}: {
-  cycle: BillingCycle;
-  onChange: (cycle: BillingCycle) => void;
-  monthlyLabel: string;
-  annualLabel: string;
-}) {
-  return (
-    <div className="flex items-center justify-center gap-1">
-      <div className="flex items-center rounded-2xl border-4 border-black dark:border-white bg-[#FFB5E8] dark:bg-black p-1 shadow-[4px_4px_0_#000] dark:shadow-[4px_4px_0_#FFFFFF]">
-        <button
-          type="button"
-          onClick={() => onChange("monthly")}
-          className={`rounded-xl px-6 py-3 text-sm font-black uppercase tracking-wider transition-all duration-200 ${
-            cycle === "monthly"
-              ? "bg-black text-white dark:bg-white dark:text-black border-2 border-transparent"
-              : "text-black dark:text-white border-2 border-transparent hover:border-black dark:hover:border-white"
-          }`}
-        >
-          {monthlyLabel}
-        </button>
-        <button
-          type="button"
-          onClick={() => onChange("annual")}
-          className={`flex items-center gap-3 rounded-xl px-6 py-3 text-sm font-black uppercase tracking-wider transition-all duration-200 ${
-            cycle === "annual"
-              ? "bg-black text-white dark:bg-white dark:text-black border-2 border-transparent"
-              : "text-black dark:text-white border-2 border-transparent hover:border-black dark:hover:border-white"
-          }`}
-        >
-          {annualLabel}
-          <span className={`rounded-md border-2 border-black dark:border-white px-2 py-0.5 text-[10px] font-black shadow-[2px_2px_0_#000] dark:shadow-[2px_2px_0_#FFF] ${cycle === 'annual' ? 'bg-[#BFFCC6] text-black dark:bg-[#BFFCC6]' : 'bg-[#BFFCC6] text-black'}`}>
-            -{getSavingsPercent()}%
-          </span>
-        </button>
-      </div>
-    </div>
-  );
-}
-
-// ═══════════════════════════════════════════
-// COMPONENT
-// ═══════════════════════════════════════════
-
-export function PricingCards({ mode = "landing", websiteAcquisitionEnabled = false }: PricingCardsProps) {
-  const t = useTranslations("pricing");
-  const locale = useLocale();
+export function PricingCards(_props: PricingCardsProps) {
+  void _props;
   const router = useRouter();
-  const plans: {
-    key: PlanKey;
-    name: string;
-    description: string;
-    highlighted: boolean;
-    badge: string;
-    icon: typeof Zap;
-    staffLabel: string;
-    items: string[];
-  }[] = [
-    {
-      key: "INDIVIDUAL",
-      name: t("individual.name"),
-      description: t("individual.description"),
-      highlighted: false,
-      badge: t("trialDays", { days: TRIAL_DURATION_DAYS }),
-      icon: Zap,
-      staffLabel: t("individual.staff", { count: STAFF_LIMITS.INDIVIDUAL }),
-      items: t.raw("individual.features") as string[],
-    },
-    {
-      key: "EQUIPO",
-      name: t("team.name"),
-      description: t("team.description"),
-      highlighted: true,
-      badge: t("trialDays", { days: TRIAL_DURATION_DAYS }),
-      icon: Crown,
-      staffLabel: t("team.staff", { count: STAFF_LIMITS.EQUIPO }),
-      items: t.raw("team.features") as string[],
-    },
-  ];
-  const [cycle, setCycle] = useState<BillingCycle>("monthly");
-  const [websites, setWebsites] = useState<Record<PlanKey, boolean>>({ INDIVIDUAL: false, EQUIPO: false, TEST: false });
-  const actionBusy = useRef(false);
-  const [extras, setExtras] = useState<Record<PlanKey, number>>({
-    INDIVIDUAL: 0,
-    EQUIPO: 0,
-    TEST: 0,
-  });
-  const [isLoggedIn, setIsLoggedIn] = useState(mode === "selection");
+  const [professionals, setProfessionals] = useState<Record<CommercialPlanCode, number>>({ PURAGENDA: 1, PURAGENDA_PLUS: 1 });
+  const [period, setPeriod] = useState<"monthly" | "annual">("monthly");
 
-  // Detect if user is logged in (for landing mode where we don't know server-side)
-  useEffect(() => {
-    if (mode === "selection") return; // already known
-    fetch("/api/auth/me", { credentials: "include" })
-      .then((res) => { if (res.ok) setIsLoggedIn(true); })
-      .catch(() => {});
-  }, [mode]);
-
-  function handleExtraChange(key: PlanKey, delta: number) {
-    setExtras((prev) => ({
-      ...prev,
-      [key]: Math.max(0, Math.min(20, prev[key] + delta)),
-    }));
-  }
-
-  function getTotalPrice(key: PlanKey): number {
-    const monthlyBase = PRICING[key].monthly;
-    const displayMonthly = getDisplayMonthlyPrice(monthlyBase, cycle);
-    if (key === "EQUIPO" && extras.EQUIPO > 0) {
-      const extraCostPerUnit = EXTRA_STAFF_COST.EQUIPO;
-      const displayExtraCost = cycle === "annual"
-        ? Math.round((extraCostPerUnit * ANNUAL_MULTIPLIER) / 12)
-        : extraCostPerUnit;
-      return displayMonthly + displayExtraCost * extras.EQUIPO;
-    }
-    return displayMonthly;
-  }
-
-  function getBasePriceDisplay(key: PlanKey): number {
-    return getDisplayMonthlyPrice(PRICING[key].monthly, cycle);
-  }
-
-  const [loading, setLoading] = useState<PlanKey | null>(null);
-  const [error, setError] = useState<string | null>(null);
-
-  async function handlePlanAction(key: PlanKey, isTrial: boolean) {
-    if (actionBusy.current || key === "TEST") return;
-    if (websites[key] && !websiteAcquisitionEnabled && !isTrial && !isLoggedIn) return;
-    actionBusy.current = true;
-    setLoading(key);
-    setError(null);
+  function beginTrial(plan: CommercialPlanCode) {
+    const professionalTotal = professionals[plan];
     track("pricing_plan_selected", {
-      plan: key,
-      intent: isTrial ? "trial" : "subscription",
-      extra_staff: extras[key],
-      billing_cycle: cycle,
-      website_intent: websites[key],
+      plan,
+      intent: "trial",
+      extra_staff: professionalTotal - 1,
+      billing_cycle: period,
+      website_intent: plan === "PURAGENDA_PLUS",
     });
-    try {
-      if (isLoggedIn) {
-        if (websites[key]) {
-          if (!websiteAcquisitionEnabled) router.push("/dashboard/website");
-          else {
-            const response = await fetch("/api/websites/purchase-intent", { method: "POST" });
-            const data = await response.json();
-            if (!response.ok) throw new Error(data.error || "No se pudo guardar la selección.");
-            router.push(data.nextUrl);
-          }
-        } else router.push("/dashboard");
-      } else router.push(commercialRegisterUrl(key, cycle, extras[key], websites[key], isTrial));
-    } catch (err) {
-      setError(err instanceof Error ? err.message : "Intenta nuevamente.");
-    } finally {
-      actionBusy.current = false;
-      setLoading(null);
-    }
+    // Preserve the existing trial flow. Showing an annual offer does not
+    // create an annual checkout or alter a subscription contract.
+    router.push(commercialRegisterUrl(plan, period, professionalTotal, false, true));
   }
 
   return (
-    <div className="space-y-8">
-      {/* Billing Cycle Toggle */}
-      <BillingToggle cycle={cycle} onChange={setCycle} monthlyLabel={t("monthly")} annualLabel={t("annual")} />
-      {isLoggedIn && <p className="mx-auto max-w-4xl text-center text-sm font-bold">Se usará tu plan Puragenda actual. Los cambios de plan se gestionan desde tu suscripción.</p>}
-
-
-      {/* Plan Cards — 2 columns */}
-      <div className="mx-auto grid min-w-0 max-w-4xl gap-6 pt-6 sm:pt-8 lg:grid-cols-2">
+    <div className="mx-auto max-w-5xl" data-testid="public-pricing-cards">
+      <div className="mb-7 flex justify-center">
+        <fieldset>
+          <legend className="sr-only">Periodo de pago</legend>
+          <div className="flex rounded-full border-2 border-black bg-white p-1 text-black shadow-[3px_3px_0_#000]">
+            {([["monthly", "Mensual"], ["annual", "Anual"]] as const).map(([value, label]) => (
+              <label key={value} className="relative cursor-pointer">
+                <input type="radio" name="public-pricing-period" value={value} checked={period === value} onChange={() => setPeriod(value)} className="peer sr-only" />
+                <span className="flex min-h-11 items-center gap-2 rounded-full px-4 text-sm font-black transition hover:bg-[#E9D8FF] peer-checked:bg-[#7C3AED] peer-checked:text-white peer-focus-visible:ring-4 peer-focus-visible:ring-[#7C3AED]/50 peer-focus-visible:ring-offset-2">{label}{value === "annual" && <span className="rounded-full bg-[#BFFCC6] px-2 py-1 text-[10px] font-black text-black">{annualFreeMonths} meses gratis</span>}</span>
+              </label>
+            ))}
+          </div>
+        </fieldset>
+      </div>
+      <div className="grid items-stretch gap-6 lg:grid-cols-2">
         {plans.map((plan) => {
-          const totalPrice = getTotalPrice(plan.key);
-          const basePrice = getBasePriceDisplay(plan.key);
-          const hasExtras = plan.key === "EQUIPO" && extras.EQUIPO > 0;
-          const monthlyFull = PRICING[plan.key].monthly;
-          const PlanIcon = plan.icon;
-          const withWebsite = websites[plan.key];
-          const quote = commercialQuote(plan.key === "EQUIPO" ? "EQUIPO" : "INDIVIDUAL", cycle, extras[plan.key], withWebsite);
-
+          const total = professionals[plan.code];
+          const quote = period === "annual" ? publicAnnualQuote(plan.code, total) : publicMonthlyQuote(plan.code, total);
+          const displayedMonthly = quote.billingCycle === "ANNUAL" ? quote.monthlyEquivalent : quote.monthlyTotal;
           return (
-            <div
-              key={plan.key}
-              className={`relative flex min-w-0 flex-col h-full rounded-[32px] border-4 border-black dark:border-white p-5 sm:p-10 transition-transform duration-300 ${
-                plan.highlighted
-                  ? "bg-[#B28DFF] dark:bg-[#111111] shadow-[12px_12px_0_#000] dark:shadow-[12px_12px_0_#B28DFF] -translate-y-2"
-                  : "bg-white dark:bg-[#000000] shadow-[8px_8px_0_#000] dark:shadow-[8px_8px_0_#FFF] hover:-translate-y-1 hover:shadow-[10px_10px_0_#000] dark:hover:shadow-[10px_10px_0_#FFF]"
-              }`}
-            >
-              {/* Badges */}
-              {plan.highlighted ? (
-                <div className="absolute -top-6 sm:-top-6 left-0 right-0 w-full flex justify-center items-center gap-2 px-2 z-10">
-                  <div className="rounded-full border-4 border-black dark:border-white bg-[#85E3FF] dark:bg-[#7C3AED] px-4 sm:px-6 py-1.5 text-xs sm:text-sm font-black uppercase tracking-widest text-black dark:text-white shadow-[4px_4px_0_#000] dark:shadow-[4px_4px_0_#FFF] whitespace-nowrap">
-                    {t("mostPopular")}
-                  </div>
-                  {plan.badge && (
-                    <div className="rounded-full border-4 border-black dark:border-white bg-[#FFB5E8] px-3 sm:px-4 py-1.5 text-[10px] sm:text-xs font-black uppercase text-black shadow-[4px_4px_0_#000] dark:shadow-[4px_4px_0_#FFF] whitespace-nowrap">
-                      {plan.badge}
-                    </div>
-                  )}
+            <article key={plan.code} data-plan={plan.code} className={`flex h-full min-w-0 flex-col rounded-[2rem] border-4 border-black p-6 text-black shadow-[6px_6px_0_#000] sm:p-8 ${plan.accent}`}>
+              <div className="flex items-start justify-between gap-3">
+                <div>
+                  <p className="text-xs font-black uppercase tracking-[0.18em] text-[#6D28D9]">Plan</p>
+                  <h2 id={`plan-name-${plan.code}`} className="mt-2 text-4xl font-black tracking-tight">{quote.displayName}</h2>
                 </div>
-              ) : (
-                plan.badge && (
-                  <div className="absolute -top-5 left-4 lg:-left-4 z-10 rounded-full border-4 border-black dark:border-white bg-[#FFB5E8] px-4 py-1.5 text-xs font-black uppercase text-black shadow-[4px_4px_0_#000] dark:shadow-[4px_4px_0_#FFF]">
-                    {plan.badge}
-                  </div>
-                )
-              )}
-
-              {/* Header */}
-              <div className="space-y-5">
-                <div className="flex min-w-0 items-center gap-3 sm:gap-4">
-                  <div className={`flex h-14 w-14 shrink-0 items-center justify-center rounded-xl border-4 border-black dark:border-white ${plan.highlighted ? "bg-[#FFF5BA] dark:bg-black" : "bg-[#85E3FF] dark:bg-black"} shadow-[4px_4px_0_#000] dark:shadow-[4px_4px_0_#FFF]`}>
-                    <PlanIcon className="h-7 w-7 text-black dark:text-white" />
-                  </div>
-                  <p className="min-w-0 break-words text-3xl font-black uppercase sm:text-4xl">{plan.name}{withWebsite && <span className="block text-xl">+ Sitio Web</span>}</p>
-                </div>
-                <p className="text-base font-bold opacity-80">{plan.description}</p>
-
-                {/* Staff count */}
-                <div className="flex items-center gap-3 rounded-xl border-4 border-black dark:border-white bg-[#BFFCC6] dark:bg-black px-4 py-3 shadow-[4px_4px_0_#000] dark:shadow-[4px_4px_0_#FFF]">
-                  <Users className="h-6 w-6 text-black dark:text-[#BFFCC6]" />
-                  <span className="text-sm font-black uppercase tracking-wide text-black dark:text-[#BFFCC6]">{plan.staffLabel}</span>
-                </div>
-
-                {/* Price display */}
-                <div className="space-y-2 pt-2">
-                  <div className="flex min-w-0 flex-wrap items-baseline gap-x-2">
-                    <p className="min-w-0 text-5xl font-black tracking-tighter sm:text-6xl">
-                      {formatCLP(withWebsite ? quote.monthlyTotal ?? quote.baseCharge : totalPrice, locale)}
-                    </p>
-                    <span className="text-xl font-bold opacity-70">/{withWebsite && cycle === "annual" ? t("year") : t("month")}</span>
-                  </div>
-                  <p className="text-sm font-black uppercase tracking-widest pb-1 opacity-70">
-                    {t("taxIncluded")}
-                  </p>
-
-                  {cycle === "annual" && !withWebsite && (
-                    <div className="space-y-2 animate-fade-in mt-4 border-t-4 border-black dark:border-white pt-4">
-                      <p className="text-sm font-bold line-through opacity-60">
-                        {formatCLP(monthlyFull + (plan.key === "EQUIPO" ? EXTRA_STAFF_COST.EQUIPO * extras.EQUIPO : 0), locale)}/{t("month")}
-                      </p>
-                      <p className="text-sm font-black bg-[#BFFCC6] dark:bg-black text-black dark:text-white border-2 border-black dark:border-white rounded-lg px-3 py-1.5 inline-block shadow-[2px_2px_0_#000] dark:shadow-[2px_2px_0_#FFF]">
-                        {formatCLP(getAnnualTotal(monthlyFull) + (plan.key === "EQUIPO" ? EXTRA_STAFF_COST.EQUIPO * extras.EQUIPO * ANNUAL_MULTIPLIER : 0), locale)}/{t("year")} · {t("saveAmount", { amount: formatCLP((monthlyFull + (plan.key === "EQUIPO" ? EXTRA_STAFF_COST.EQUIPO * extras.EQUIPO : 0)) * 2, locale) })}
-                      </p>
-                    </div>
-                  )}
-
-                  {withWebsite && <div className="space-y-2 rounded-xl border-2 border-black bg-white p-3 text-sm font-bold text-black dark:border-white">
-                    <p>Puragenda: {formatCLP(quote.baseCharge, locale)}/{cycle === "annual" ? "año" : "mes"}{hasExtras ? " (con profesionales extra)" : ""}</p>
-                    <p>Sitio Web: {formatCLP(quote.websiteMonthly, locale)}/mes</p>
-                    <p>{cycle === "annual" ? "Tu plan Puragenda se factura anualmente y el sitio web mensualmente." : "Dos suscripciones recurrentes independientes."}</p>
-                  </div>}
-                  {hasExtras && !withWebsite && (
-                    <p className="text-sm font-black uppercase mt-2 opacity-80 animate-fade-in">
-                      {t("basePlusExtras", { base: formatCLP(basePrice, locale), extras: formatCLP(totalPrice - basePrice, locale) })}
-                    </p>
-                  )}
-                </div>
+                {plan.code === "PURAGENDA_PLUS" ? <Sparkles className="h-8 w-8 shrink-0 text-[#7C3AED]" aria-hidden="true" /> : null}
               </div>
-
-              {/* Features */}
-              <ul className="mt-10 space-y-4">
-                {plan.items.map((item) => (
-                  <li key={item} className="flex items-center gap-4 text-base font-bold">
-                    <div className="flex h-7 w-7 shrink-0 items-center justify-center rounded-full border-2 border-black dark:border-white bg-[#FFF5BA] dark:bg-[#7C3AED]">
-                      <Check className="h-4 w-4 text-black dark:text-white" strokeWidth={4} />
-                    </div>
-                    {item}
-                  </li>
-                ))}
-                {cycle === "annual" && (
-                  <li className="flex items-center gap-4 text-base font-black text-black dark:text-[#BFFCC6] animate-fade-in">
-                    <div className="flex h-7 w-7 shrink-0 items-center justify-center rounded-full border-2 border-black dark:border-white bg-[#FFB5E8] dark:bg-transparent">
-                      <Sparkles className="h-4 w-4 text-black dark:text-[#BFFCC6]" />
-                    </div>
-                    {t("payTenGetTwelve")}
-                  </li>
-                )}
-              </ul>
-
-              {/* Extra Staff Selector — Equipo only */}
-              {plan.key === "EQUIPO" && (
-                <div className="mt-8 rounded-2xl border-4 border-black dark:border-white bg-white dark:bg-black p-5 shadow-[6px_6px_0_#000] dark:shadow-[6px_6px_0_#FFF]">
-                  <div className="flex items-center justify-between">
-                    <div className="flex items-center gap-3">
-                      <Users className="h-6 w-6 dark:text-white" />
-                      <span className="text-base font-black uppercase dark:text-white">
-                        {t("extraStaff")}
-                      </span>
-                    </div>
-                    <div className="flex items-center gap-3">
-                      <button
-                        type="button"
-                        onClick={() => handleExtraChange("EQUIPO", -1)}
-                        disabled={extras.EQUIPO === 0}
-                        className="flex h-10 w-10 items-center justify-center rounded-xl border-4 border-black dark:border-white bg-[#FFB5E8] dark:bg-black text-black dark:text-white transition-all shadow-[4px_4px_0_#000] dark:shadow-[4px_4px_0_#FFF] disabled:opacity-50 disabled:translate-y-1 disabled:shadow-[0px_0px_0_#000] active:translate-y-1 active:shadow-[0px_0px_0_#000]"
-                        aria-label={t("removeExtraStaff")}
-                      >
-                        <Minus className="h-5 w-5" strokeWidth={4} />
-                      </button>
-                      <span className="w-8 text-center text-xl font-black tabular-nums dark:text-white">
-                        {extras.EQUIPO}
-                      </span>
-                      <button
-                        type="button"
-                        onClick={() => handleExtraChange("EQUIPO", 1)}
-                        disabled={extras.EQUIPO >= 20}
-                        className="flex h-10 w-10 items-center justify-center rounded-xl border-4 border-black dark:border-white bg-[#85E3FF] dark:bg-black text-black dark:text-white transition-all shadow-[4px_4px_0_#000] dark:shadow-[4px_4px_0_#FFF] disabled:opacity-50 disabled:translate-y-1 disabled:shadow-[0px_0px_0_#000] active:translate-y-1 active:shadow-[0px_0px_0_#000]"
-                        aria-label={t("addExtraStaff")}
-                      >
-                        <Plus className="h-5 w-5" strokeWidth={4} />
-                      </button>
-                    </div>
-                  </div>
-                  {extras.EQUIPO > 0 && (
-                    <p className="mt-4 text-sm font-bold opacity-80 animate-fade-in">
-                      +{formatCLP(
-                        cycle === "annual" && withWebsite ? EXTRA_STAFF_COST.EQUIPO * ANNUAL_MULTIPLIER : cycle === "annual"
-                          ? Math.round((EXTRA_STAFF_COST.EQUIPO * ANNUAL_MULTIPLIER) / 12)
-                          : EXTRA_STAFF_COST.EQUIPO,
-                        locale
-                      )}/{withWebsite && cycle === "annual" ? t("year") : t("month")} {t("perProfessional")} ·{" "}
-                      <span className="font-black uppercase">
-                        {t("extrasTotal", { amount: formatCLP(withWebsite && cycle === "annual" ? quote.extras * EXTRA_STAFF_COST.EQUIPO * ANNUAL_MULTIPLIER : totalPrice - basePrice, locale) })}
-                      </span>
-                    </p>
-                  )}
-                  <p className="mt-3 text-xs font-black uppercase opacity-60">
-                    {t("extrasChargedFrom", { count: STAFF_LIMITS.EQUIPO + 1 })}
-                  </p>
-                </div>
-              )}
-
-              <button type="button" aria-pressed={withWebsite} onClick={() => {
-                setWebsites(prev => ({ ...prev, [plan.key]: !withWebsite }));
-                track("website_addon_toggled", { selected: !withWebsite, plan: plan.key, billing_cycle: cycle });
-              }} className={`mt-8 w-full rounded-2xl border-4 border-black p-4 text-left text-black shadow-[4px_4px_0_#000] ${withWebsite ? "bg-[#85E3FF]" : "bg-[#FFF5BA]"}`}>
-                <span className="flex items-center justify-between gap-2 text-base font-black"><span>{withWebsite ? "✓ Sitio Web añadido" : "+ Añadir Sitio Web"}</span><span className="shrink-0">+{formatCLP(publicWebsiteMonthly, locale)}/mes</span></span>
-                <span className="mt-2 block text-sm font-bold">Editor, 3 templates, hosting, SSL, subdominio y reservas integradas.</span>
-              </button>
-              {withWebsite && <div className="mt-4 space-y-2 text-sm font-bold">
-                <p>Publica desde Puragenda. Dominio propio compatible; compra del dominio no incluida.</p>
-                <p>La prueba de 30 días cubre solo Puragenda. No cobra ni activa Sitio Web.</p>
-                {!websiteAcquisitionEnabled && <p role="status">Contratación pública del sitio próximamente.</p>}
-              </div>}
-              {/* Action Buttons */}
-              <div className="mt-auto pt-10 space-y-4">
-                {plan.key === "EQUIPO" && (
-                  <>
-                    <button
-                      onClick={() => handlePlanAction("EQUIPO", false)}
-                      disabled={loading === "EQUIPO" || (withWebsite && !websiteAcquisitionEnabled && !isLoggedIn)}
-                      className="w-full rounded-2xl border-4 border-black dark:border-white bg-[#BFFCC6] dark:bg-[#7C3AED] py-5 text-xl font-black uppercase tracking-wider text-black dark:text-white shadow-[6px_6px_0_#000] dark:shadow-[6px_6px_0_#FFF] transition-all hover:-translate-y-1 active:translate-y-1 active:shadow-[0px_0px_0_#000] disabled:opacity-70 disabled:cursor-not-allowed"
-                    >
-                      {loading === "EQUIPO" ? (
-                        <span className="flex items-center justify-center gap-3"><Loader2 className="h-6 w-6 animate-spin" /> ...</span>
-                      ) : (
-                        withWebsite ? isLoggedIn ? websiteAcquisitionEnabled ? "Continuar con Sitio Web" : "Ir a Sitio Web" : websiteAcquisitionEnabled ? "Contratar Puragenda + Sitio Web" : "Sitio Web próximamente" : t("subscribe")
-                      )}
-                    </button>
-                    <button
-                      onClick={() => handlePlanAction("EQUIPO", true)}
-                      disabled={loading === "EQUIPO"}
-                      className="flex w-full items-center justify-center gap-3 rounded-2xl border-4 border-black dark:border-white bg-white dark:bg-black py-4 text-base font-black uppercase text-black dark:text-white shadow-[4px_4px_0_#000] dark:shadow-[4px_4px_0_#FFF] transition-all hover:-translate-y-1 active:translate-y-1 active:shadow-[0px_0px_0_#000] disabled:opacity-70 disabled:cursor-not-allowed"
-                    >
-                      {loading === "EQUIPO" ? (
-                        <><Loader2 className="h-5 w-5 animate-spin" /> ...</>
-                      ) : (
-                        <><Sparkles className="h-5 w-5" strokeWidth={3} /> {t("trialDays", { days: TRIAL_DURATION_DAYS })}</>
-                      )}
-                    </button>
-                  </>
-                )}
-
-                {plan.key === "INDIVIDUAL" && (
-                  <>
-                    <button
-                      onClick={() => handlePlanAction("INDIVIDUAL", false)}
-                      disabled={loading === "INDIVIDUAL" || (withWebsite && !websiteAcquisitionEnabled && !isLoggedIn)}
-                      className="w-full rounded-2xl border-4 border-black dark:border-white bg-[#FFB5E8] dark:bg-[#7C3AED] py-5 text-xl font-black uppercase tracking-wider text-black dark:text-white shadow-[6px_6px_0_#000] dark:shadow-[6px_6px_0_#FFF] transition-all hover:-translate-y-1 active:translate-y-1 active:shadow-[0px_0px_0_#000] disabled:opacity-70 disabled:cursor-not-allowed"
-                    >
-                      {loading === "INDIVIDUAL" ? (
-                        <span className="flex items-center justify-center gap-3"><Loader2 className="h-6 w-6 animate-spin" /> ...</span>
-                      ) : (
-                        withWebsite ? isLoggedIn ? websiteAcquisitionEnabled ? "Continuar con Sitio Web" : "Ir a Sitio Web" : websiteAcquisitionEnabled ? "Contratar Puragenda + Sitio Web" : "Sitio Web próximamente" : t("subscribe")
-                      )}
-                    </button>
-                    <button
-                      onClick={() => handlePlanAction("INDIVIDUAL", true)}
-                      disabled={loading === "INDIVIDUAL"}
-                      className="flex w-full items-center justify-center gap-3 rounded-2xl border-4 border-black dark:border-white bg-white dark:bg-black py-4 text-base font-black uppercase text-black dark:text-white shadow-[4px_4px_0_#000] dark:shadow-[4px_4px_0_#FFF] transition-all hover:-translate-y-1 active:translate-y-1 active:shadow-[0px_0px_0_#000] disabled:opacity-70 disabled:cursor-not-allowed"
-                    >
-                      {loading === "INDIVIDUAL" ? (
-                        <><Loader2 className="h-5 w-5 animate-spin" /> ...</>
-                      ) : (
-                        <><Sparkles className="h-5 w-5" strokeWidth={3} /> {t("trialDays", { days: TRIAL_DURATION_DAYS })}</>
-                      )}
-                    </button>
-                  </>
-                )}
-
-                {plan.key === "TEST" && (
-                  <button
-                    onClick={() => handlePlanAction("TEST", false)}
-                    disabled={loading === "TEST"}
-                    className="w-full rounded-2xl border-4 border-black dark:border-white bg-gray-200 dark:bg-gray-800 py-4 text-lg font-black uppercase text-black dark:text-white shadow-[4px_4px_0_#000] dark:shadow-[4px_4px_0_#FFF] transition-all hover:-translate-y-1 active:translate-y-1 active:shadow-[0px_0px_0_#000] disabled:opacity-70 disabled:cursor-not-allowed"
+              <p className="mt-4 text-base font-bold leading-7 lg:min-h-21">{plan.description}</p>
+              <div className="mt-6 border-y-3 border-black py-5">
+                <label id={`professionals-label-${plan.code}`} htmlFor={`professionals-${plan.code}`} className="mb-2 block text-sm font-black">Profesionales</label>
+                <Select
+                  items={professionalOptions}
+                  value={total}
+                  onValueChange={(value) => {
+                    if (value !== null) setProfessionals((current) => ({ ...current, [plan.code]: value }));
+                  }}
+                >
+                  <SelectTrigger id={`professionals-${plan.code}`} aria-labelledby={`professionals-label-${plan.code} plan-name-${plan.code}`} className="h-12 w-full rounded-xl border-2 border-black bg-white px-4 text-base font-black shadow-[3px_3px_0_#000] transition hover:bg-[#F3E8FF] focus-visible:border-black focus-visible:ring-4 focus-visible:ring-[#7C3AED]/50 data-[size=default]:h-12 dark:bg-white dark:hover:bg-[#F3E8FF] [&_svg]:text-black">
+                    <SelectValue />
+                  </SelectTrigger>
+                  <SelectContent
+                    align="start"
+                    alignItemWithTrigger={false}
+                    sideOffset={6}
+                    className="max-h-[min(22rem,var(--available-height))] overflow-hidden rounded-xl border-3 border-black bg-white p-1 text-black shadow-[4px_4px_0_#000] [&_[data-slot=select-scroll-down-button]]:bg-white [&_[data-slot=select-scroll-up-button]]:bg-white"
+                    listClassName="max-h-[min(18rem,calc(var(--available-height)-3.5rem))] overflow-y-auto overscroll-contain p-0.5 [scrollbar-width:thin]"
                   >
-                    {loading === "TEST" ? (
-                      <span className="flex items-center justify-center gap-2"><Loader2 className="h-5 w-5 animate-spin" /> ...</span>
-                    ) : (
-                      t("testPayment")
-                    )}
-                  </button>
-                )}
-
-                {/* Error message */}
-                {error && (
-                  <p className="rounded-xl border-4 border-black bg-[#FFB5E8] px-4 py-3 text-center text-sm font-black uppercase text-black shadow-[4px_4px_0_#000] animate-fade-in">
-                    {error}
-                  </p>
-                )}
+                    {professionalOptions.map(({ value, label }) => <SelectItem key={value} value={value} className="min-h-11 cursor-pointer rounded-lg px-3 font-bold data-highlighted:bg-[#E9D8FF] data-highlighted:text-black data-selected:bg-[#F3E8FF] focus:bg-[#E9D8FF] focus:text-black">{label}</SelectItem>)}
+                  </SelectContent>
+                </Select>
+                <div id={`price-${plan.code}`} className="mt-5" aria-live="polite" aria-atomic="true">
+                  <p className="text-sm font-black">{quote.billingCycle === "ANNUAL" ? "Equivalente mensual con pago anual" : `Para ${total} ${total === 1 ? "profesional" : "profesionales"}`}</p>
+                  <p className="mt-2 text-[clamp(2.5rem,8vw,3rem)] font-black leading-tight tracking-tight" data-testid="monthly-price">{!Number.isInteger(displayedMonthly) && <span className="text-base" aria-label="aproximadamente">≈ </span>}{formatPublicClp(Math.round(displayedMonthly))} <span className="text-base tracking-normal">CLP/mes</span></p>
+                  <p className="mt-2 text-sm font-bold" data-testid="billed-total">IVA incluido · Se facturan {formatPublicClp(quote.cycleTotal)} {quote.billingCycle === "ANNUAL" ? "al año" : "cada mes"}.</p>
+                  {quote.billingCycle === "ANNUAL" && <p className="mt-2 text-sm font-black text-[#6D28D9]">Ahorras {formatPublicClp(quote.savings)} al año · {quote.freeMonths} meses gratis.</p>}
+                </div>
               </div>
-            </div>
+              <p className="mt-3 text-xs font-bold leading-5 text-black/70">{quote.billingCycle === "ANNUAL" && "Referencia mensual sin descuento. "}Base: {formatPublicClp(quote.baseMonthly)} · Profesionales adicionales: {formatPublicClp(quote.professionalSurchargeMonthly)} CLP/mes.</p>
+              <button type="button" onClick={() => beginTrial(plan.code)} aria-label={`Comenzar prueba de ${quote.displayName}`} className="mt-6 inline-flex min-h-14 w-full items-center justify-center gap-2 rounded-xl border-4 border-black bg-[#FFB5E8] px-4 py-3 text-base font-black uppercase shadow-[4px_4px_0_#000] transition hover:-translate-y-0.5 hover:shadow-[6px_6px_0_#000] focus-visible:outline-none focus-visible:ring-4 focus-visible:ring-[#7C3AED] focus-visible:ring-offset-2 active:translate-y-1 active:shadow-none">
+                Comenzar prueba <ArrowRight className="h-5 w-5 shrink-0" aria-hidden="true" />
+              </button>
+              <ul className="mt-7 space-y-3 border-t-2 border-black/30 pt-6 text-sm font-bold">
+                {plan.features.map((feature) => <li key={feature} className="flex items-start gap-3"><Check className="mt-0.5 h-5 w-5 shrink-0 text-[#6D28D9]" strokeWidth={3} aria-hidden="true" /><span>{feature}</span></li>)}
+              </ul>
+            </article>
           );
         })}
       </div>
+      <p className="mx-auto mt-7 max-w-3xl text-center text-sm font-bold leading-6 text-black/70 dark:text-white/70">{PUBLIC_TRIAL_NOTE}</p>
     </div>
   );
 }

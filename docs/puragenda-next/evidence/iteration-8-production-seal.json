@@ -1,0 +1,65 @@
+{
+  "productionRuntime": true,
+  "commercialFlagsIntentionallySet": true,
+  "providerCredentialsPresent": false,
+  "sealed": true,
+  "results": [
+    {
+      "path": "/api/dashboard/puri-plus",
+      "method": "POST",
+      "status": 401,
+      "check": "proxy authentication"
+    },
+    {
+      "path": "/api/dashboard/puri-plus",
+      "method": "POST",
+      "status": 404
+    },
+    {
+      "path": "/api/dashboard/contact-flow",
+      "method": "POST",
+      "status": 401,
+      "check": "proxy authentication"
+    },
+    {
+      "path": "/api/dashboard/contact-flow",
+      "method": "POST",
+      "status": 404
+    },
+    {
+      "path": "/api/internal/puri-plus",
+      "method": "POST",
+      "status": 404
+    },
+    {
+      "path": "/api/internal/contact-flow",
+      "method": "POST",
+      "status": 404
+    },
+    {
+      "path": "/api/internal/commercial-sandbox/webhooks/paddle",
+      "method": "POST",
+      "status": 404
+    },
+    {
+      "path": "/api/internal/commercial-sandbox/webhooks/mercadopago",
+      "method": "POST",
+      "status": 404
+    },
+    {
+      "path": "/api/contact-flow/webhooks/resend",
+      "method": "POST",
+      "status": 404
+    },
+    {
+      "path": "/api/client-portal/commercial-preferences",
+      "method": "POST",
+      "status": 404
+    },
+    {
+      "path": "/api/cron/puragenda-next",
+      "method": "GET",
+      "status": 404
+    }
+  ]
+}

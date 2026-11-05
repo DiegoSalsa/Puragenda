@@ -369,7 +369,7 @@ export function RecurringClient({
             )}
 
             {/* Internal notes */}
-            <div className="space-y-2">
+            {Object.prototype.hasOwnProperty.call(selected, "internalNotes") && <div className="space-y-2">
               <div className="flex items-center justify-between">
                 <p className="text-xs font-semibold text-muted-foreground uppercase tracking-wider"><LocalizedText id="dM2vqmftDgku" /></p>
                 <button
@@ -407,14 +407,13 @@ export function RecurringClient({
               )}
             </div>
 
+            }
             {/* Management link */}
             <div className="space-y-1">
               <p className="text-xs font-semibold text-muted-foreground uppercase tracking-wider"><LocalizedText id="rFdHMxO3FDZ5" /></p>
               <button
                 onClick={() => {
-                const url = selected.managementToken
-                  ? `${baseUrl}/mi-plan/${selected.managementToken}`
-                  : "";
+                const url = `${baseUrl}/mi-plan/${selected.id}`;
                 if (!url) { alert(legacy("q7JO-7wIgtIG")); return; }
                   navigator.clipboard.writeText(url).catch(() => {});
                   alert(legacy("n2S2ZbPnRCgQ"));

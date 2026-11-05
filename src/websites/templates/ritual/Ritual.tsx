@@ -30,6 +30,7 @@ export default function Ritual({ view: initial }: { view: View }) {
 
 function Page({ view }: { view: View }) {
   const { config: c, business: b, catalog } = view, copy = c.copy, t = ritualTokens(c);
+  const root = useRef<HTMLElement>(null);
   const [active, setActive] = useState(catalog.services[0]?.id ?? ""), [bookingService, setBookingService] = useState<string>(), [bookingOpen, setBookingOpen] = useState(false), [category, setCategory] = useState("all"), [visibleCount, setVisibleCount] = useState(ritualServiceLimit(catalog.services.length)), [galleryFilter, setGalleryFilter] = useState("all"), [lightbox, setLightbox] = useState<number | null>(null), [lightboxOrigin, setLightboxOrigin] = useState<HTMLElement | null>(null), [seen, setSeen] = useState(false);
   const featuredService = catalog.services.find(item => item.id === c.featuredServiceId) ?? catalog.services[0];
   const service = catalog.services.find(item => item.id === active) ?? featuredService;
@@ -39,12 +40,24 @@ function Page({ view }: { view: View }) {
   const gallery = ritualGallery(c, catalog), filteredGallery = galleryFilter === "all" ? gallery : gallery.filter(item => item.categoryIds?.includes(galleryFilter));
   const galleryCategories = ritualGalleryCategories(c, catalog);
   const staff = catalog.staff.filter(person => c.staffEditorial[person.id]?.visible !== false);
-  useEffect(() => { const observer = new IntersectionObserver(entries => entries.forEach(entry => { if (entry.isIntersecting) { entry.target.setAttribute("data-seen", "true"); observer.unobserve(entry.target); } }), { threshold: .1 }); document.querySelectorAll("[data-ritual-reveal]").forEach(el => observer.observe(el)); setSeen(true); return () => observer.disconnect(); }, []);
+  useEffect(() => {
+    const elements = root.current?.querySelectorAll('[data-ritual-reveal]');
+    if (!elements) return;
+    if (!('IntersectionObserver' in window) || window.matchMedia('(prefers-reduced-motion: reduce)').matches) {
+      elements.forEach(element => element.setAttribute('data-seen', 'true'));
+      setSeen(true); return;
+    }
+    const observer = new IntersectionObserver(entries => entries.forEach(entry => {
+      if (entry.isIntersecting) { entry.target.setAttribute('data-seen', 'true'); observer.unobserve(entry.target); }
+    }), { threshold: .1 });
+    elements.forEach(element => observer.observe(element)); setSeen(true);
+    return () => observer.disconnect();
+  }, []);
   const styles = { "--ritual-background": t.background, "--ritual-surface": t.surface, "--ritual-text": t.text, "--ritual-muted": t.muted, "--ritual-accent": t.accent, "--ritual-accent-contrast": t.accentContrast, "--ritual-line": t.line, "--ritual-warm": t.warm, "--ritual-dark": t.dark } as CSSProperties;
   const reserve = (id?: string) => { setBookingService(id); setBookingOpen(true); requestAnimationFrame(() => document.getElementById("booking")?.scrollIntoView({ behavior: window.matchMedia("(prefers-reduced-motion: reduce)").matches ? "instant" : "smooth" })); };
   usePreviewBooking(view.preview && view.previewExperience === "booking", reserve);
   const nav = [{ id: "services", label: copy.nav.services, show: !!catalog.services.length }, { id: "staff", label: copy.nav.staff, show: c.visibility.showStaff && !!staff.length }, { id: "gallery", label: copy.nav.gallery, show: c.visibility.showGallery && !!gallery.length }, { id: "about", label: copy.nav.about, show: c.visibility.showAbout && (!!c.about || !!c.aboutImage) }, { id: "faq", label: copy.nav.faq, show: c.visibility.showFaq && !!c.faq.length }];
-  return <main id="studio-root" className={`${s.root} ${display.variable} ${body.variable}`} style={styles} data-ready={seen}>
+  return <main ref={root} id="studio-root" className={`${s.root} ${display.variable} ${body.variable}`} style={styles} data-ready={seen}>
     <header className={s.header}><a className={s.brand} href="#top">{c.logo || b.logo ? <Media src={c.logo || b.logo!} alt={c.displayName || c.brandTitle || b.name} width={140} height={42} /> : c.displayName || c.brandTitle || b.name}</a><nav className={s.nav} aria-label="Navegación principal">{nav.filter(x => x.show).map(x => <a key={x.id} href={`#${x.id}`}>{x.label}</a>)}</nav><button className={s.action} onClick={() => reserve()}>{copy.nav.reserve}</button></header>
     <section id="top" className={s.hero} data-ritual-reveal data-website-field="heroImage"><div className={s.heroMeta}><span>{c.brandEyebrow}</span>{b.address ? <span>{b.address}</span> : null}</div><div className={s.heroCopy}><p className={s.eyebrow}>{c.brandEyebrow}</p><h1 data-long={c.headline.length > 55 ? "true" : undefined} data-website-field="headline">{c.headline}</h1><p className={s.heroIntro} data-website-field="intro">{c.intro}</p><div className={s.heroActions}><button className={s.action} onClick={() => reserve()}>{copy.reserve}</button>{gallery.length && c.visibility.showGallery ? <a className={`${s.action} ${s.outline}`} href="#gallery">{copy.secondary}</a> : null}</div></div><div className={s.heroVisual}>{c.heroImage ? <figure className={s.heroPhoto}><Media src={c.heroImage} alt={c.heroCaption || c.displayName || c.brandTitle || b.name} fill sizes="(max-width: 800px) 100vw, 55vw" loading="eager" fetchPriority="high" /><figcaption className={s.heroCaption}>{c.heroCaption}</figcaption></figure> : <div className={s.heroPhoto} aria-label="Añade una fotografía en Portada" />}</div>{copy.heroStamp ? <span className={s.heroStamp}>{copy.heroStamp}</span> : null}</section>
     {c.visibility.showFeatured && featuredService ? <section className={`${s.section} ${s.featured}`} data-ritual-reveal><div><p className={s.kicker} data-website-field="featuredEyebrow">{copy.featuredEyebrow}</p><h2 data-website-field="featuredTitle">{copy.featuredTitle}</h2><p>{featuredService.description}</p><button className={s.textAction} onClick={() => reserve(featuredService.id)}>{copy.serviceAction} <span>↗</span></button></div><div className={s.featuredMeta}><strong>{featuredService.name}</strong><span>{featuredService.duration} min · {money(featuredService.price, catalog.business.currency)}</span></div></section> : null}

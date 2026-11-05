@@ -1,6 +1,6 @@
-import { EXTRA_STAFF_COST, PRICING, STAFF_LIMITS, TRIAL_DURATION_DAYS } from "@/core/constants";
+import { PUBLIC_PLANS_PRICE_SUMMARY } from "@/lib/public-plans";
+import { TRIAL_DURATION_DAYS } from "@/core/constants";
 import type { FaqItem } from "@/lib/json-ld";
-import { formatLandingClp } from "@/lib/data/scheduling-system-landing";
 
 /** The commercial hub for psychologists. Keep this page about appointment administration. */
 export const PSYCHOLOGISTS_SOFTWARE_PATH = "/software-agenda-psicologos";
@@ -54,8 +54,8 @@ export const psychologistsCoordinationProblems = [
 export const psychologistsWorkflow = [
   { title: "Crea los tipos de cita", description: "Añade Primera cita, Seguimiento u otros servicios administrativos que ofrezcas." },
   { title: "Define duración y precio", description: "El profesional decide cuánto dura cada servicio y qué precio mostrar, cuando corresponda." },
-  { title: "Configura profesionales", description: "En el plan Equipo, asigna cada servicio a las personas que lo realizan." },
-  { title: "Define jornadas", description: "Configura el horario individual de cada profesional o el horario de tu negocio en el plan Individual." },
+  { title: "Configura profesionales", description: "Asigna cada servicio a las personas que lo realizan, en cualquiera de los dos planes." },
+  { title: "Define jornadas", description: "Configura los horarios de atención de cada profesional y del negocio." },
   { title: "Añade bloqueos", description: "Marca períodos sin atención para que no se publiquen como disponibles." },
   { title: "Comparte la agenda", description: "Publica el enlace, usa el widget o intégralo mediante iframe en tu sitio." },
   { title: "La persona reserva", description: "Elige tipo de cita, profesional cuando corresponda, horario y datos de contacto." },
@@ -76,7 +76,7 @@ export function psychologistsSoftwareFaqs(): FaqItem[] {
     },
     {
       question: "¿Cada psicólogo tiene su propio horario?",
-      answer: "Sí. En el plan Equipo cada profesional puede tener servicios y jornada propios. En el plan Individual la disponibilidad se organiza con el horario del negocio.",
+      answer: "Sí. Ambos planes permiten sumar profesionales y organizar sus servicios y jornadas.",
     },
     {
       question: "¿Puedo bloquear horas no disponibles?",
@@ -104,7 +104,7 @@ export function psychologistsSoftwareFaqs(): FaqItem[] {
     },
     {
       question: "¿Cuánto cuesta Puragenda para psicólogos?",
-      answer: `El plan ${PRICING.INDIVIDUAL.name} cuesta ${formatLandingClp(PRICING.INDIVIDUAL.monthly)} CLP al mes e incluye ${STAFF_LIMITS.INDIVIDUAL} profesional. El plan ${PRICING.EQUIPO.name} cuesta ${formatLandingClp(PRICING.EQUIPO.monthly)} CLP al mes e incluye ${STAFF_LIMITS.EQUIPO} profesionales; cada profesional adicional cuesta ${formatLandingClp(EXTRA_STAFF_COST.EQUIPO)} CLP al mes. La prueba dura ${TRIAL_DURATION_DAYS} días. Revisa los planes y condiciones vigentes en Precios.`,
+      answer: `${PUBLIC_PLANS_PRICE_SUMMARY} La prueba de Puragenda dura ${TRIAL_DURATION_DAYS} días y no pide tarjeta.`,
     },
   ];
 }

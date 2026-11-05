@@ -8,6 +8,8 @@ import { useRouter } from "next/navigation";
 import Link from "next/link";
 import { Loader2, ArrowLeft, Building2, CheckCircle2 } from "@/components/icons/hover-icons";
 import { createBusinessAction } from "@/server/actions/admin.actions";
+import { COMMERCIAL_CATALOG_VERSION, COMMERCIAL_MAX_PROFESSIONALS, quoteCommercialContract, type CommercialPlanCode, type CommercialBillingCycle } from "@/core/commercial-catalog";
+import { commercialPlanName } from "@/core/commercial-display";
 
 export default function NewBusinessPage() {
   const legacy = useTranslations("legacy");
@@ -16,8 +18,10 @@ export default function NewBusinessPage() {
   const [ownerEmail, setOwnerEmail] = useState("");
   const [ownerPassword, setOwnerPassword] = useState("");
   const [businessName, setBusinessName] = useState("");
-  const [plan, setPlan] = useState<"INDIVIDUAL" | "EQUIPO">("EQUIPO");
-  const [initialBenefit, setInitialBenefit] = useState<"NONE" | "PRIZE_12" | "PRIZE_6" | "PRIZE_3" | "PARTICIPANT_OFFER">("NONE");
+  const [plan, setPlan] = useState<CommercialPlanCode>("PURAGENDA");
+  const [professionalTotal, setProfessionalTotal] = useState(1);
+  const [billingCycle, setBillingCycle] = useState<CommercialBillingCycle>("MONTHLY");
+  const quote = quoteCommercialContract({ plan, professionalTotal, billingCycle, catalogVersion: COMMERCIAL_CATALOG_VERSION });
   const [error, setError] = useState<string | null>(null);
   const [loading, setLoading] = useState(false);
   const [success, setSuccess] = useState(false);
@@ -34,7 +38,8 @@ export default function NewBusinessPage() {
         ownerPassword,
         businessName: businessName.trim(),
         plan,
-        initialBenefit,
+        professionalTotal,
+        billingCycle,
       });
 
       if (result.error) {
@@ -158,7 +163,7 @@ export default function NewBusinessPage() {
         <div className="border-4 border-black bg-white p-6 shadow-[4px_4px_0_#000]">
           <h3 className="mb-4 text-xs font-black uppercase tracking-wider text-black"><LocalizedText id="zUaeys5mjq98" /></h3>
           <div className="grid grid-cols-2 gap-3">
-            {(["INDIVIDUAL", "EQUIPO"] as const).map((p) => (
+            {(["PURAGENDA", "PURAGENDA_PLUS"] as const).map((p) => (
               <button
                 key={p}
                 type="button"
@@ -170,46 +175,23 @@ export default function NewBusinessPage() {
                 }`}
               >
                 <p className="text-sm font-black uppercase text-black">
-                  {p === "INDIVIDUAL" ? "Individual" : "Equipo"}
+                  {commercialPlanName(p)}
                 </p>
                 <p className="mt-1 text-xs font-bold text-black/50">
-                  {p === "INDIVIDUAL" ? legacy("fD0CEPfbwqQ-") : legacy("6sVYiNpWrR5U")}
+                  {p === "PURAGENDA" ? "Agenda y gestión del negocio" : "Incluye sitio web, Puri+ y Contact Flow"}
                 </p>
               </button>
             ))}
           </div>
-        </div>
-
-        <div className="border-4 border-black bg-white p-6 shadow-[4px_4px_0_#000]">
-          <h3 className="mb-4 text-xs font-black uppercase tracking-wider text-black"><LocalizedText id="yy8m1fx5vXHM" /></h3>
-          <div className="grid gap-3 sm:grid-cols-2">
-            {[
-              { value: "NONE", title: legacy("jOU1S2HsyWeu"), detail: "Cuenta normal" },
-              { value: "PRIZE_12", title: legacy("jpbil_C9FsAB"), detail: legacy("yx3nIzs8mfeG") },
-              { value: "PRIZE_6", title: legacy("BN9ro8pt_XFw"), detail: legacy("_8OleFuDPCKV") },
-              { value: "PRIZE_3", title: legacy("o9j3WYJOL7Nz"), detail: legacy("9r1g9y8GLZAp") },
-              { value: "PARTICIPANT_OFFER", title: "Participante 2+2", detail: legacy("xxOnLBiH2u44") },
-            ].map((option) => (
-              <button
-                key={option.value}
-                type="button"
-                onClick={() => setInitialBenefit(option.value as typeof initialBenefit)}
-                className={`border-4 border-black p-4 text-left transition-all ${
-                  initialBenefit === option.value
-                    ? "bg-[#BFFCC6] shadow-[3px_3px_0_#000]"
-                    : "bg-white shadow-[3px_3px_0_#000] hover:translate-x-[2px] hover:translate-y-[2px] hover:shadow-none"
-                }`}
-              >
-                <p className="text-sm font-black uppercase text-black">{option.title}</p>
-                <p className="mt-1 text-xs font-bold text-black/50">{option.detail}</p>
-              </button>
-            ))}
+          <div className="mt-4 grid gap-3 sm:grid-cols-2">
+            <label className="text-sm font-bold">Profesionales contratados
+              <input aria-label="Profesionales contratados" type="number" min={1} max={COMMERCIAL_MAX_PROFESSIONALS} value={professionalTotal} onChange={e => setProfessionalTotal(Math.min(COMMERCIAL_MAX_PROFESSIONALS, Math.max(1, Math.floor(Number(e.target.value) || 1))))} className="mt-1 w-full border-2 border-black px-3 py-2" />
+            </label>
+            <label className="text-sm font-bold">Período
+              <select value={billingCycle} onChange={e => setBillingCycle(e.target.value as CommercialBillingCycle)} className="mt-1 w-full border-2 border-black bg-white px-3 py-2"><option value="MONTHLY">Mensual</option><option value="ANNUAL">Anual</option></select>
+            </label>
           </div>
-          {initialBenefit !== "NONE" && (
-            <div className="mt-4 border-2 border-black bg-[#FFF5BA] px-3 py-2 text-xs font-black text-black">
-              <LocalizedText id="gobJy9iyLPcp" />
-            </div>
-          )}
+          <p className="mt-4 text-sm font-bold">${quote.cycleTotal.toLocaleString("es-CL")} CLP/{billingCycle === "ANNUAL" ? "año" : "mes"} · IVA incluido. El negocio comienza con 30 días de prueba, sin cobro automático.</p>
         </div>
 
         {error && (

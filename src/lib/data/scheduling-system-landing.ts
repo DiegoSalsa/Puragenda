@@ -1,9 +1,5 @@
-import {
-  EXTRA_STAFF_COST,
-  PRICING,
-  STAFF_LIMITS,
-  TRIAL_DURATION_DAYS,
-} from "@/core/constants";
+import { PUBLIC_PLANS_PRICE_SUMMARY } from "@/lib/public-plans";
+import { TRIAL_DURATION_DAYS } from "@/core/constants";
 import type { FaqItem } from "@/lib/json-ld";
 
 export const SCHEDULING_SYSTEM_PATH = "/sistema-de-agendamiento-online";
@@ -179,9 +175,6 @@ export function formatLandingClp(amount: number) {
 }
 
 export function schedulingSystemFaqs(): FaqItem[] {
-  const individual = formatLandingClp(PRICING.INDIVIDUAL.monthly);
-  const team = formatLandingClp(PRICING.EQUIPO.monthly);
-  const extraStaff = formatLandingClp(EXTRA_STAFF_COST.EQUIPO);
 
   return [
     {
@@ -211,7 +204,7 @@ export function schedulingSystemFaqs(): FaqItem[] {
     },
     {
       question: "¿Cuánto cuesta un sistema de agendamiento como Puragenda?",
-      answer: `El plan ${PRICING.INDIVIDUAL.name} cuesta ${individual} al mes para un profesional. El plan ${PRICING.EQUIPO.name} cuesta ${team} al mes e incluye ${STAFF_LIMITS.EQUIPO} profesionales. Los profesionales extra del plan Equipo valen ${extraStaff} al mes cada uno. La prueba dura ${TRIAL_DURATION_DAYS} días y no pide tarjeta.`,
+      answer: `${PUBLIC_PLANS_PRICE_SUMMARY} La prueba de Puragenda dura ${TRIAL_DURATION_DAYS} días y no pide tarjeta.`,
     },
     {
       question: "¿Puragenda sirve para cualquier rubro?",

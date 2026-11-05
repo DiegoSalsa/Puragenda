@@ -1,6 +1,6 @@
 import { beforeEach, describe, expect, it, vi } from "vitest";
 
-const m=vi.hoisted(()=>({manager:vi.fn(),ensure:vi.fn(),save:vi.fn(),business:vi.fn(),publish:vi.fn(),lock:vi.fn(),domain:vi.fn(),primary:vi.fn(),deactivate:vi.fn(),availability:vi.fn(),media:vi.fn(),website:vi.fn()}));
+const m=vi.hoisted(()=>({access:vi.fn(),manager:vi.fn(),ensure:vi.fn(),save:vi.fn(),business:vi.fn(),publish:vi.fn(),lock:vi.fn(),domain:vi.fn(),primary:vi.fn(),deactivate:vi.fn(),availability:vi.fn(),media:vi.fn(),website:vi.fn()}));
 
 vi.mock("next/cache",()=>({revalidatePath:vi.fn()}));
 
@@ -12,6 +12,7 @@ vi.mock("@/server/websites/domains",()=>({addWebsiteDomain:vi.fn(),customHostnam
 
 vi.mock("@/server/db/prisma",()=>{const tx={websiteMedia:{findMany:m.media},$queryRaw:m.lock,business:{findUniqueOrThrow:m.business},businessWebsite:{findUniqueOrThrow:m.website,updateMany:(args: {data: {publishedConfig?: unknown}})=> args.data.publishedConfig ? m.publish(args) : m.save(args)},websiteDomain:{findFirst:m.domain,updateMany:m.deactivate,update:m.primary}};return{prisma:{...tx,businessWebsite:{updateMany:m.save,findUnique:m.availability},$transaction:(work:(tx:unknown)=>unknown)=>work(tx)}};});
 
+vi.mock("@/server/websites/commercial-access",()=>({resolveWebsiteCommercialAccess:m.access}));
 import { switchWebsiteTemplate,saveWebsiteDraft,publishWebsite,setPrimaryWebsiteDomain,websiteSubdomainAvailability } from "@/server/actions/website.actions";
 import { effectiveWebsiteHeadline } from "@/websites/publishing";
 
@@ -26,7 +27,7 @@ import { Prisma } from "@prisma/client";
 
 describe("website draft, publication and ownership",()=>{
 
- beforeEach(()=>{vi.resetAllMocks();m.manager.mockResolvedValue({business:{id:"tenant-a",slug:"tenant-a"}});m.ensure.mockResolvedValue({id:"website-a",status:"DRAFT",subdomain:"tenant-a",draftConfig:fixtureView("a").config});m.media.mockResolvedValue([]);m.save.mockResolvedValue({count:1});m.publish.mockResolvedValue({count:1});m.business.mockResolvedValue({subscription:{status:"ACTIVE"},websiteAddon:{status:"ACTIVE",validUntil:new Date(Date.now()+86400000)},website:{id:"website-a",templateKey:"bella",templateVersion:1,revision:2,draftConfig:fixtureView("a").config}});});
+ beforeEach(()=>{vi.resetAllMocks();m.access.mockResolvedValue({editor:true,publish:true,domains:true});m.manager.mockResolvedValue({business:{id:"tenant-a",slug:"tenant-a"}});m.ensure.mockResolvedValue({id:"website-a",templateKey:"bella",templateVersion:1,revision:2,status:"DRAFT",subdomain:"tenant-a",draftConfig:fixtureView("a").config});m.media.mockResolvedValue([]);m.save.mockResolvedValue({count:1});m.publish.mockResolvedValue({count:1});m.website.mockImplementation(()=>m.ensure());m.access.mockImplementation(async()=>({editor:true,domains:true,publish:!!(await m.business.mock.results.at(-1)?.value)?.websiteAddon}));m.business.mockResolvedValue({subscription:{status:"ACTIVE"},websiteAddon:{status:"ACTIVE",validUntil:new Date(Date.now()+86400000)},website:{id:"website-a",templateKey:"bella",templateVersion:1,revision:2,draftConfig:fixtureView("a").config}});});
 
  it("saves only the authenticated tenant draft with optimistic concurrency",async()=>{await saveWebsiteDraft(fixtureView("a").config,2,"tenant-a");expect(m.save).toHaveBeenCalledWith(expect.objectContaining({where:{id:"website-a",businessId:"tenant-a",revision:2},data:expect.not.objectContaining({publishedConfig:expect.anything()})}));m.save.mockResolvedValue({count:0});await expect(saveWebsiteDraft({},2,"tenant-a")).resolves.toEqual({error: "El borrador cambió en otra sesión. Recarga antes de guardar."});});
  it("saves and publishes Y2K through the existing tenant-scoped actions", async () => {
@@ -41,14 +42,14 @@ describe("website draft, publication and ownership",()=>{
  });
  it("refuses a foreign image in a Y2K draft", async () => {
   const config = pinkFixtureView().config;
-  m.ensure.mockResolvedValue({ id: "website-a", templateKey: "y2k", templateVersion: 1, draftConfig: config });
+  m.ensure.mockResolvedValue({ id: "website-a", templateKey: "y2k", templateVersion: 1, revision: 2, draftConfig: config });
   expect(await saveWebsiteDraft({ ...config, heroImage: "/website-media-qa/tenant-b/private.webp" }, 2, "tenant-a", "y2k")).toMatchObject({ error: expect.stringContaining("no pertenece") });
   expect(m.save).not.toHaveBeenCalled();
  });
 
  it("publishes one validated saved snapshot and rejects stale versions",async()=>{await publishWebsite(2);expect(m.publish).toHaveBeenCalledWith(expect.objectContaining({where:{id:"website-a",revision:2},data:expect.objectContaining({status:"PUBLISHED",publishedRevision:2,publishedConfig:expect.objectContaining({schemaVersion:2,galleryFilters:[],galleryCategories:expect.arrayContaining([expect.objectContaining({id:"cat-color"})])})})}));await expect(publishWebsite(1)).resolves.toEqual({error:"Recarga el borrador antes de publicar"});});
 
- it("refuses publication without paid access or a complete hero",async()=>{m.business.mockResolvedValue({subscription:{status:"ACTIVE"},websiteAddon:null});await expect(publishWebsite(2)).resolves.toEqual({error:"Activa el add-on y regulariza tu suscripción para publicar"});expect(m.publish).not.toHaveBeenCalled();});
+ it("refuses publication without paid access or a complete hero",async()=>{m.business.mockResolvedValue({subscription:{status:"ACTIVE"},websiteAddon:null});await expect(publishWebsite(2)).resolves.toEqual({error:"Necesitas una suscripción vigente con sitio web incluido para publicar"});expect(m.publish).not.toHaveBeenCalled();});
  it("uses the effective fallback headline for publication requirements",()=>{expect(effectiveWebsiteHeadline({headline:" Título " ,copy:{hero:{fallbackHeadline:"Fallback"}}})).toBe("Título");expect(effectiveWebsiteHeadline({headline:"   ",copy:{hero:{fallbackHeadline:"Fallback"}}})).toBe("Fallback");expect(effectiveWebsiteHeadline({headline:"\t",copy:{hero:{fallbackHeadline:"  "}}})).toBe("");});
  it.each(["coral", "plum", "forest"] as const)("publishes the approved %s preset", async accent => {
   const config={...fixtureView("a").config,accent};
@@ -91,7 +92,7 @@ describe("website draft, publication and ownership",()=>{
  it("keeps revision, entitlement and media ownership checks when contrast is accepted", async () => {
   await expect(publishWebsite(1, { ignoreContrast: true })).resolves.toEqual({ error: "Recarga el borrador antes de publicar" });
   m.business.mockResolvedValueOnce({ subscription: { status: "ACTIVE" }, websiteAddon: null });
-  await expect(publishWebsite(2, { ignoreContrast: true })).resolves.toEqual({ error: "Activa el add-on y regulariza tu suscripción para publicar" });
+  await expect(publishWebsite(2, { ignoreContrast: true })).resolves.toEqual({ error: "Necesitas una suscripción vigente con sitio web incluido para publicar" });
   const config = { ...pinkFixtureView().config, heroImage: "/website-media-qa/tenant-b/private.webp", colors: { ...pinkFixtureView().config.colors, accent: "#e78eb8" } };
   m.media.mockResolvedValue([{ websiteId: "website-b", deletedAt: null }]);
   m.business.mockResolvedValue({ subscription: { status: "ACTIVE" }, websiteAddon: { status: "ACTIVE", validUntil: new Date(Date.now() + 86400000) }, website: { id: "website-a", templateKey: "y2k", templateVersion: 1, revision: 2, draftConfig: config } });
@@ -117,7 +118,7 @@ describe("website draft, publication and ownership",()=>{
 });
 
 describe("template switching",()=>{
- beforeEach(()=>{vi.resetAllMocks();m.manager.mockResolvedValue({business:{id:"tenant-a",slug:"tenant-a"}});m.website.mockResolvedValue({id:"website-a",businessId:"tenant-a",templateKey:"bella",templateVersion:1,revision:2,draftConfig:fixtureView("a").config,templateConfigs:{}});m.media.mockResolvedValue([]);m.save.mockResolvedValue({count:1});});
+ beforeEach(()=>{vi.resetAllMocks();m.access.mockResolvedValue({editor:true,publish:true,domains:true});m.manager.mockResolvedValue({business:{id:"tenant-a",slug:"tenant-a"}});m.website.mockResolvedValue({id:"website-a",businessId:"tenant-a",templateKey:"bella",templateVersion:1,revision:2,draftConfig:fixtureView("a").config,templateConfigs:{}});m.media.mockResolvedValue([]);m.save.mockResolvedValue({count:1});});
  it("saves the prior draft without modifying published identity or business data",async()=>{expect(await switchWebsiteTemplate("matchday",1,2)).toEqual({revision:3});expect(m.save).toHaveBeenCalledWith(expect.objectContaining({where:{id:"website-a",businessId:"tenant-a",revision:2},data:expect.objectContaining({templateKey:"matchday",templateConfigs:expect.objectContaining({"bella@1":expect.anything()})})}));expect(m.save.mock.calls[0][0].data).not.toHaveProperty("publishedConfig");expect(m.save.mock.calls[0][0].data).not.toHaveProperty("publishedTemplateKey");});
  it("selects Y2K without importing demo media or changing the live identity", async () => {
   expect(await switchWebsiteTemplate("y2k", 1, 2)).toEqual({ revision: 3 });
@@ -129,6 +130,6 @@ describe("template switching",()=>{
  });
  it("rejects stale switch revisions before writing",async()=>{expect(await switchWebsiteTemplate("matchday",1,1)).toHaveProperty("error");expect(m.save).not.toHaveBeenCalled();});
  it("rejects unsupported versions before the transaction",async()=>{expect(await switchWebsiteTemplate("matchday",2,2)).toHaveProperty("error");expect(m.website).not.toHaveBeenCalled();});
- it("rejects a stale editor saving a different template",async()=>{m.ensure.mockResolvedValue({templateKey:"matchday",templateVersion:1});expect(await saveWebsiteDraft(fixtureView("a").config,2,"tenant-a","bella")).toHaveProperty("error");expect(m.save).not.toHaveBeenCalled();});
+ it("rejects a stale editor saving a different template",async()=>{m.website.mockResolvedValue({id:"website-a",revision:2,templateKey:"matchday",templateVersion:1});expect(await saveWebsiteDraft(fixtureView("a").config,2,"tenant-a","bella")).toHaveProperty("error");expect(m.save).not.toHaveBeenCalled();});
  it("explains a missing migration without changing the draft",async()=>{m.website.mockRejectedValue(new Prisma.PrismaClientKnownRequestError("Missing column",{code:"P2022",clientVersion:"7"}));expect(await switchWebsiteTemplate("matchday",1,2)).toEqual({error:"La base de datos necesita la migración de diseños web. No se aplicó el cambio."});expect(m.save).not.toHaveBeenCalled();});
 });

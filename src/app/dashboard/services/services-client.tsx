@@ -1,4 +1,5 @@
 "use client";
+import { ServiceIdentityFields } from "@/components/dashboard/service-identity-fields";
 import { useTranslations } from "next-intl";
 
 import { LocalizedText } from "@/components/i18n/localized-text";
@@ -82,6 +83,8 @@ interface CustomProductionWindowForm extends Omit<CustomProductionWindow, "capac
 }
 
 interface Service {
+  isActive: boolean;
+  catalogVersion: number;
   id: string;
   name: string;
   position: number;
@@ -479,6 +482,7 @@ export function ServicesClient({
     setNewQuestion("");
     setOptionCategories([]);
     setDialogOpen(true);
+    window.dispatchEvent(new CustomEvent("learning:action", { detail: "service-form-opened" }));
   }
 
   function openEdit(service: Service) {
@@ -561,13 +565,16 @@ export function ServicesClient({
       const { imageUrl: _imageUrl, ...formWithoutImage } = form;
       void _imageUrl;
       const payload = {
+        ...(editingService ? { expectedCatalogVersion: editingService.catalogVersion } : {}),
         ...(editingService ? formWithoutImage : form),
         optionCategories: optionCategories
           .map((category) => ({
+            id: category.id,
             name: category.name.trim(),
             isRequired: category.isRequired,
             maxSelections: category.maxSelections,
             alternatives: category.alternatives.map((alternative) => ({
+              id: alternative.id,
               name: alternative.name.trim(),
               priceDelta: alternative.priceDelta,
               durationDelta: alternative.durationDelta,
@@ -686,14 +693,16 @@ export function ServicesClient({
     if (serviceImageInputRef.current) serviceImageInputRef.current.value = "";
   }
 
-  async function handleDelete(id: string) {
-    if (!confirm(legacy("qXDI8YuwJX_1"))) return;
-
+  async function handleDelete(service: Service) {
+    if (service.isActive && !confirm("¿Archivar servicio? Dejará de aceptar nuevas reservas. Se conservarán el historial y las reservas existentes.")) return;
     try {
-      await fetch(`/api/dashboard/services/${id}`, { method: "DELETE" });
+      const response = await fetch(`/api/dashboard/services/${service.id}`, service.isActive
+        ? { method: "DELETE" }
+        : { method: "PATCH", headers: { "Content-Type": "application/json" }, body: JSON.stringify({ isActive: true }) });
+      if (!response.ok) throw new Error((await response.json()).error || "No se pudo cambiar el estado del servicio");
       await Promise.all([fetchServices(), fetchCategories()]);
     } catch (error) {
-      console.error("Error deleting service:", error);
+      alert(error instanceof Error ? error.message : "No se pudo cambiar el estado del servicio");
     }
   }
 
@@ -1020,16 +1029,7 @@ export function ServicesClient({
               <div className="overflow-y-auto flex-1 p-6 space-y-4">
 
                 {/* ── Base fields ── */}
-                <div className="space-y-1.5">
-                  <label className="text-sm text-muted-foreground"><LocalizedText id="ViuxV1eotZPW" /></label>
-                  <input
-                    value={form.name}
-                    onChange={(e) => setForm({ ...form, name: e.target.value })}
-                    placeholder={legacy("JlT8wJtHHSkO")}
-                    required
-                    className="w-full rounded-xl border border-border bg-muted px-4 py-2.5 text-sm outline-none transition-colors focus:border-[#7C3AED]/30"
-                  />
-                </div>
+                <ServiceIdentityFields name={form.name} description={form.description} field="name" onChange={value => setForm(current => ({ ...current, ...value }))} />
                 <div className="space-y-1.5">
                   <label className="text-sm text-muted-foreground"><LocalizedText id="2HOUnzPlsTVu" /></label>
                   <select
@@ -1050,16 +1050,7 @@ export function ServicesClient({
                     </p>
                   )}
                 </div>
-                <div className="space-y-1.5">
-                  <label className="text-sm text-muted-foreground"><LocalizedText id="xAYlrZz8MTts" /></label>
-                  <textarea
-                    value={form.description}
-                    onChange={(e) => setForm({ ...form, description: e.target.value })}
-                    placeholder={legacy("c9HBi_6jNlD5")}
-                    rows={3}
-                    className="w-full rounded-xl border border-border bg-muted px-4 py-2.5 text-sm outline-none transition-colors focus:border-[#7C3AED]/30"
-                  />
-                </div>
+                <ServiceIdentityFields name={form.name} description={form.description} field="description" onChange={value => setForm(current => ({ ...current, ...value }))} />
                 <div className="rounded-xl border border-border p-4">
                   <div className="flex items-start gap-4">
                     <div className="relative flex h-24 w-24 shrink-0 items-center justify-center overflow-hidden rounded-xl border border-border bg-muted">
@@ -1910,7 +1901,7 @@ export function ServicesClient({
       )}
 
       {/* Services Table */}
-      <div className="rounded-2xl border border-border bg-card">
+      <div data-tour="services-list" className="rounded-2xl border border-border bg-card">
         <div className="border-b border-border p-6">
           <h2 className="text-lg font-semibold"><LocalizedText id="yOCZCoqkmrWP" /></h2>
         </div>
@@ -1959,6 +1950,7 @@ export function ServicesClient({
                       <td className="py-3.5 pr-4 font-medium">
                         <div className="flex flex-col items-start gap-1">
                           <span>{service.name}</span>
+                          {!service.isActive && <span className="text-xs text-muted-foreground">Archivado · historial conservado</span>}
                           {service.bookingMode === "PRODUCTION" && (
                             <span className="inline-flex items-center gap-1 rounded-full bg-fuchsia-500/10 px-2 py-0.5 text-[10px] font-semibold text-fuchsia-600 dark:text-fuchsia-400">
                               <CalendarRange className="h-3 w-3" /><LocalizedText id="1-L2HAv9XQki" />
@@ -2060,10 +2052,12 @@ export function ServicesClient({
                           </button>
                           <button
                             type="button"
-                            onClick={() => handleDelete(service.id)}
+                            onClick={() => handleDelete(service)}
+                            aria-label={service.isActive ? `Archivar servicio ${service.name}` : `Reactivar servicio ${service.name}`}
+                            title={service.isActive ? "Archivar servicio" : "Reactivar servicio"}
                             className="rounded-lg p-2 text-muted-foreground transition-colors hover:bg-red-500/10 hover:text-red-500 dark:hover:text-red-400"
                           >
-                            <Trash2 className="h-3.5 w-3.5" />
+                            {service.isActive ? <Trash2 className="h-3.5 w-3.5" /> : "Reactivar"}
                           </button>
                         </div>
                       </td>

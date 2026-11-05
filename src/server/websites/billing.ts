@@ -6,6 +6,7 @@ import { getPaddleEnvironment, getPaddleServerClient } from "@/server/lib/paddle
 import { requireWebsiteManager } from "./service";
 import { hasWebsiteEntitlement } from "@/websites/policy";
 import { WEBSITE_CATALOG, WEBSITE_TRIAL_MS, websitePriceTier } from "@/websites/offers";
+import { assertStandaloneWebsiteContract, assertWebsiteAgreementNotPrimary } from "./billing-safety";
 
 function sandboxClient() {
   if (getPaddleEnvironment() !== Environment.sandbox) throw new WebsiteError("El add-on está habilitado solo en sandbox durante esta fase");
@@ -30,6 +31,7 @@ export async function startWebsiteCheckout() {
   const client = sandboxClient();
   return prisma.$transaction(async tx => {
     await tx.$queryRaw`SELECT id FROM "Business" WHERE id = ${business.id} FOR UPDATE`;
+    await assertStandaloneWebsiteContract(business.id, tx);
     const addon = await tx.websiteAddon.findUnique({ where: { businessId: business.id } });
     if (hasWebsiteEntitlement(addon, new Date(), offer) || addon?.paddleSubscriptionId && !["CANCELLED", "INACTIVE"].includes(addon.status)) throw new WebsiteError("Ya existe un add-on. Reactívalo o regulariza su pago.");
     if (addon?.checkoutTransactionId) {
@@ -49,6 +51,7 @@ export async function startWebsiteTrial() {
   const now = new Date();
   return prisma.$transaction(async tx => {
     await tx.$queryRaw`SELECT id FROM "Business" WHERE id = ${business.id} FOR UPDATE`;
+    await assertStandaloneWebsiteContract(business.id, tx);
     const offer = await tx.websiteOfferEligibility.findUnique({ where: { businessId: business.id } });
     if (!offer || offer.offerCode !== "BETA_FOUNDER") throw new WebsiteError("Esta prueba está disponible para clientes de Puragenda al lanzamiento");
     if (offer.trialConsumedAt || offer.trialStartedAt) throw new WebsiteError("La prueba gratuita ya fue utilizada");
@@ -64,6 +67,7 @@ export async function changeWebsiteBilling(operation: "cancel" | "reactivate", c
   const { business } = await requireWebsiteManager(true);
   const addon = await prisma.websiteAddon.findUniqueOrThrow({ where: { businessId: business.id } });
   if (!addon.paddleSubscriptionId || addon.provider !== "paddle") throw new WebsiteError("No hay una suscripción Paddle del add-on");
+  await assertWebsiteAgreementNotPrimary(business.id, addon);
   const client = sandboxClient();
   if (operation === "cancel") await client.subscriptions.cancel(addon.paddleSubscriptionId, { effectiveFrom: "next_billing_period" });
   else {
@@ -76,6 +80,7 @@ export async function recoverWebsitePayment() {
   const { business } = await requireWebsiteManager(true);
   const addon = await prisma.websiteAddon.findUniqueOrThrow({ where: { businessId: business.id } });
   if (addon.provider !== "paddle" || addon.status !== "PAST_DUE" || !addon.paddleSubscriptionId) throw new WebsiteError("No existe un pago pendiente del add-on");
+  await assertWebsiteAgreementNotPrimary(business.id, addon);
   const transaction = await sandboxClient().subscriptions.getPaymentMethodChangeTransaction(addon.paddleSubscriptionId);
   return { transactionId: transaction.id };
 }
@@ -132,8 +137,9 @@ export async function syncWebsiteAddon(event: EventEntity) {
     const eventName = status === "ACTIVE" && old?.status === "CANCELLED" ? "website_addon_reactivated" : status === "ACTIVE" ? (tier === "BETA_FOUNDER" ? "website_beta_activated" : "website_standard_activated") : status === "CANCELLED" ? "website_addon_cancelled" : null;
     if (eventName) await tx.websiteCommercialEvent?.create?.({ data: { key: `${businessId}:${eventName}:${event.eventId}`, businessId, event: eventName, priceTier: tier } });
     await tx.websiteBillingEvent.create({ data: { eventId: event.eventId } });
-    // Retain snapshots. Suspension is reversible with an explicit publication.
-    if (!["ACTIVE", "TRIALING"].includes(status)) await tx.businessWebsite.updateMany({ where: { businessId, status: "PUBLISHED" }, data: { status: "SUSPENDED" } });
+    // Public access is derived from all current rights at read time. An old
+    // add-on webhook must not suspend a site now included in Plus, nor erase
+    // the owner's publication choice when payment is later recovered.
   }, { timeout: 30000 });
   return true;
 }

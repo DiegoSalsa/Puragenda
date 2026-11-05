@@ -1,0 +1,469 @@
+{
+  "date": "2026-10-28",
+  "generatedAt": "2026-10-29T00:16:52.274Z",
+  "productionReleased": false,
+  "git": {
+    "commit": false,
+    "stage": false,
+    "push": false,
+    "merge": false,
+    "rebase": false,
+    "deploy": false
+  },
+  "remote": {
+    "newResources": 0,
+    "configurationMutations": 0,
+    "newTechnicalEmailRequests": 1,
+    "newCampaignEmails": 0,
+    "newCharges": 0,
+    "productionDatabaseOperations": 0
+  },
+  "contactFlow": {
+    "sender": "contacto@contacto.puragenda.cl",
+    "replyTo": "contacto@purocode.com",
+    "externalRelease": false,
+    "productionEnabled": false,
+    "productionApiCredentialsInstalled": false,
+    "routingVerified": false,
+    "approvalCreated": false,
+    "mailbox": {
+      "provider": "Zoho",
+      "operatorAttestation": "PuroCode team",
+      "probeProviderState": "delivered",
+      "checkedAt": "2026-10-28T23:06:20.172Z",
+      "campaign": false,
+      "customerData": false,
+      "inboxReadObserved": false,
+      "zohoAclInspected": false
+    },
+    "historicalCertification": {
+      "realSendRequests": 6,
+      "deliveredToOwnerMailboxes": 3,
+      "authenticatedUniqueEvents": 12,
+      "unsubscribe": true,
+      "bounce": true,
+      "complaint": true,
+      "suppression": true,
+      "newEventsInThisTask": 0
+    }
+  },
+  "mercadoPago": {
+    "authenticAutomaticSubscriptionWebhookObserved": false,
+    "productionRecoveryEnabled": false,
+    "productionModeTestProvider": "SIMULATED",
+    "checkoutRewritten": false
+  },
+  "staging": {
+    "snapshotId": "e9f91e86b420",
+    "database": "disposable-loopback",
+    "httpOrigin": "http://127.0.0.1:3128",
+    "httpsOrigin": "https://localhost:3448",
+    "httpsCertificateAndHostnameValidated": true,
+    "browserTlsBypass": false,
+    "systemTrustChanged": false,
+    "outboundTransportsBlocked": [
+      "fetch",
+      "http",
+      "https"
+    ],
+    "providerCredentialsPresent": false,
+    "aiCalls": 0,
+    "providerSendCalls": 0,
+    "uiCssViewports": [
+      {
+        "width": 1440,
+        "height": 959
+      },
+      {
+        "width": 389,
+        "height": 843
+      }
+    ],
+    "googleFonts": "fallback due to network isolation",
+    "cloudResourcesCreated": false
+  },
+  "scheduler": {
+    "provider": "Cloudflare Workers Free",
+    "configuredRemotely": false,
+    "triggerEnabled": false,
+    "cron": "not installed",
+    "dedicatedBearerVerified": true,
+    "legacyCronBearerRejected": true,
+    "requestTimeoutSeconds": 25,
+    "retries": 1,
+    "workerBudgetMs": 20000,
+    "functionMaxDurationSeconds": 60,
+    "hostingObserved": {
+      "vercelPlan": "Hobby",
+      "fluidCompute": true,
+      "commercialHostingDecisionPending": true
+    },
+    "runtimeCpuCertificationPending": true
+  },
+  "validation": {
+    "unit": {
+      "passed": 1661,
+      "skipped": 413,
+      "filesPassed": 241,
+      "filesSkipped": 16
+    },
+    "postgres": {
+      "passed": 282,
+      "skipped": 0,
+      "files": 10,
+      "lastAffectedSuitePassed": 26
+    },
+    "focusedFinal": {
+      "passed": 14
+    },
+    "http": {
+      "assertions": 19,
+      "results": {
+        "passed": true,
+        "syntheticOnly": true,
+        "httpOrigin": "http://127.0.0.1:3128",
+        "httpsCaValidated": true,
+        "externalProviderCalls": 0,
+        "aiProviderCalls": 0,
+        "checks": [
+          "HTTPS certificate and hostname validated with explicit local CA",
+          "Two independent owners authenticated through actual HTTP login",
+          "Unauthenticated dashboard rejected",
+          "Cross-origin request rejected",
+          "Basic plan cannot access Contact Flow",
+          "Puri Advanced SQL analysis detects synthetic inactive clients",
+          "Recommendation prepared, reviewed and explicitly approved via HTTP",
+          "Only consented cohort included and campaign prepared",
+          "Authorization requires explicit approval",
+          "Campaign authorization is persisted",
+          "Legacy CRON_SECRET cannot invoke commercial worker",
+          "Dedicated scheduler bearer executes whole worker without error",
+          "Worker HTTP duration 1619ms (cold development runtime)",
+          "Synthetic provider receipts reconciled to delivered",
+          "Real HTTP opt-out route accepts signed synthetic token",
+          "Opt-out replay creates one suppression",
+          "Worker replay succeeds without duplicate message creation",
+          "Other tenant cannot inspect campaign results",
+          "Worker reports last success and releases lease",
+          "UI-created widget booking exists in isolated PostgreSQL"
+        ]
+      }
+    },
+    "websites": {
+      "assertions": 12,
+      "results": {
+        "passed": true,
+        "syntheticOnly": true,
+        "externalProviderCalls": 0,
+        "checks": [
+          "UI-created Plus business has persisted website draft",
+          "Authenticated media upload uses only local mock storage",
+          "HTTP draft save validates owned image and revision",
+          "Stale second-tab save is rejected",
+          "Actual authenticated publish succeeds for Plus trial",
+          "Public tenant host serves published title and booking interface",
+          "Expired Plus trial stops public site",
+          "Expiry preserves draft, publication and appointments",
+          "Restored entitlement serves existing publication without recreation",
+          "Basic registration persists monthly 12990 CLP and exactly 30 trial days",
+          "Basic cannot publish another business website",
+          "Basic cannot upload Plus website media"
+        ]
+      }
+    },
+    "typescript": 0,
+    "eslint": {
+      "errors": 0,
+      "existingImageWarnings": 7
+    },
+    "productionBuild": {
+      "build": 0,
+      "bundler": "webpack",
+      "isolated": true,
+      "providerCredentialsPresent": false,
+      "productSnapshotMatchesCurrent": true
+    },
+    "prismaValid": true,
+    "migrations": {
+      "bootstrap": "passed",
+      "legacyUpgrade": "passed",
+      "schemaMatches": true,
+      "legacyDataUnchanged": true,
+      "historyPreserved": true,
+      "repeatedDeployUnchanged": true,
+      "databases": [
+        "puragenda_commercial_bootstrap_test_4f42da1dfca6",
+        "puragenda_commercial_legacy_test_4f42da1dfca6"
+      ]
+    },
+    "audit": {
+      "production": {
+        "info": 0,
+        "low": 0,
+        "moderate": 0,
+        "high": 0,
+        "critical": 0,
+        "total": 0
+      },
+      "all": {
+        "info": 0,
+        "low": 3,
+        "moderate": 2,
+        "high": 0,
+        "critical": 0,
+        "total": 5
+      }
+    },
+    "newApprovalGate": "SHARED_INBOX_TENANT_ROUTING_NOT_VERIFIED",
+    "networkGuard": {
+      "networkGuard": true,
+      "blockedTransports": [
+        "fetch",
+        "http",
+        "https"
+      ],
+      "externalRequestsIssued": 0
+    }
+  },
+  "mainCompatibility": {
+    "base": "34187de43a860b88b7328b5e11743da21b48db7c",
+    "main": "e74c92237e47db43425a7d47209520967e51bfb0",
+    "files": [
+      {
+        "path": "docs/audits/stories-2026-10-25.md",
+        "localEqualsBase": true,
+        "existing": false,
+        "sha256": null
+      },
+      {
+        "path": "messages/dashboard/modules/es.json",
+        "localEqualsBase": true,
+        "existing": true,
+        "sha256": "1870b1d56f307c52d57df954ead6df95a5a612ee875aa824942d04e63318fefe"
+      },
+      {
+        "path": "scripts/qa-availability-stories.mjs",
+        "localEqualsBase": true,
+        "existing": false,
+        "sha256": null
+      },
+      {
+        "path": "src/app/api/business/[slug]/production-orders/route.ts",
+        "localEqualsBase": false,
+        "existing": true,
+        "sha256": "08371be48b0280a960ed1d5079fa4a14f62b84e64f1e4eaee5c699de7344f548"
+      },
+      {
+        "path": "src/app/api/dashboard/stories/route.ts",
+        "localEqualsBase": true,
+        "existing": true,
+        "sha256": "dd24485fda1945cdbc8e7fffe37b6fb1ec941d3bd85de3af021f9ce8ff125263"
+      },
+      {
+        "path": "src/app/dashboard/orders/orders-board.tsx",
+        "localEqualsBase": true,
+        "existing": true,
+        "sha256": "d50b1c6bbc8db34779d0c68cfdd6a14b4481557ec68c410edfe73311fb61f423"
+      },
+      {
+        "path": "src/app/dashboard/stories/story-generator.tsx",
+        "localEqualsBase": true,
+        "existing": true,
+        "sha256": "b7c0c03c0a83fce9b158e5a4b1f9362fc780e1414e6d7fac097ada56800300a0"
+      },
+      {
+        "path": "src/app/encargo/[orderNumber]/page.tsx",
+        "localEqualsBase": true,
+        "existing": true,
+        "sha256": "f105f32c0ccd6c04e35b1adc501c401c3aea72d7269dd47e387268f91614afd1"
+      },
+      {
+        "path": "src/app/widget/[slug]/production-order-flow.tsx",
+        "localEqualsBase": false,
+        "existing": true,
+        "sha256": "f8690e7a3043043fbef9a76c23422a9cb7f49f4d1e26c23c7a2cf408545c9be0"
+      },
+      {
+        "path": "src/core/story-configuration.ts",
+        "localEqualsBase": true,
+        "existing": false,
+        "sha256": null
+      },
+      {
+        "path": "src/server/services/availability-story.service.ts",
+        "localEqualsBase": true,
+        "existing": true,
+        "sha256": "9665e6d92776805bc2663323b1024c57aa799434b92f9de10b16e0acba40667a"
+      },
+      {
+        "path": "src/server/services/google-calendar.service.ts",
+        "localEqualsBase": true,
+        "existing": true,
+        "sha256": "e44c434e5be149d6f117c42d3b44f46cd907dbc80951486db3a8d9680c837f86"
+      },
+      {
+        "path": "src/server/stories/availability-story-image.tsx",
+        "localEqualsBase": true,
+        "existing": true,
+        "sha256": "cf84d05d60b5d4edb867f537e442e5ed9ba400eb1a6683382661ac8dd69d26a6"
+      },
+      {
+        "path": "src/server/validations/availability-story.ts",
+        "localEqualsBase": true,
+        "existing": true,
+        "sha256": "5e3831400dc82a9f1d22909d633fb40e54527955adf7a46241a0364b315430b7"
+      },
+      {
+        "path": "src/server/validations/booking.ts",
+        "localEqualsBase": false,
+        "existing": true,
+        "sha256": "92bf093be6351f7b986c905295a6a5d95110d01ef826079ff3a272f93bfc06ce"
+      },
+      {
+        "path": "tests/server/availability-story-image.test.ts",
+        "localEqualsBase": true,
+        "existing": true,
+        "sha256": "1f76ea6a703a532d26771451517fe1f49ce759dd56aec1757ae66939c2b8abbb"
+      },
+      {
+        "path": "tests/server/availability-story-regressions.test.ts",
+        "localEqualsBase": true,
+        "existing": false,
+        "sha256": null
+      },
+      {
+        "path": "tests/server/availability-story.route.test.ts",
+        "localEqualsBase": true,
+        "existing": false,
+        "sha256": null
+      },
+      {
+        "path": "tests/server/google-calendar-multi-read.test.ts",
+        "localEqualsBase": true,
+        "existing": true,
+        "sha256": "2b0017959abbafc67adbc3ab1f2d52e7249ee130113f0aa0da27b75c0f699ca8"
+      }
+    ],
+    "conflicts": [
+      {
+        "path": "src/app/api/business/[slug]/production-orders/route.ts",
+        "localEqualsBase": false,
+        "existing": true,
+        "sha256": "08371be48b0280a960ed1d5079fa4a14f62b84e64f1e4eaee5c699de7344f548"
+      },
+      {
+        "path": "src/app/widget/[slug]/production-order-flow.tsx",
+        "localEqualsBase": false,
+        "existing": true,
+        "sha256": "f8690e7a3043043fbef9a76c23422a9cb7f49f4d1e26c23c7a2cf408545c9be0"
+      },
+      {
+        "path": "src/server/validations/booking.ts",
+        "localEqualsBase": false,
+        "existing": true,
+        "sha256": "92bf093be6351f7b986c905295a6a5d95110d01ef826079ff3a272f93bfc06ce"
+      }
+    ],
+    "backportedWithoutGitHistoryChange": true,
+    "mainBytesVerified": true,
+    "nextConsentPreserved": true,
+    "manualConflict": "src/app/widget/[slug]/production-order-flow.tsx",
+    "manualConflictResolved": true
+  },
+  "cleanup": {
+    "ownedStagingStopped": true,
+    "ownedPostgresStopped": true,
+    "otherClients": 0,
+    "databasesAndBackupsPreserved": true,
+    "browserQaTabsClosed": true,
+    "viewportReset": true
+  },
+  "logs": [
+    {
+      "path": "scratch/next-rc-20261028/unit-final.log",
+      "sha256": "3f68c47ce0d5a5f1de910d13436210f08437b28de2d58b9e1f8383eca2639b2b"
+    },
+    {
+      "path": "scratch/next-rc-20261028/postgres-full-final.log",
+      "sha256": "68434681b853bc9faa6d67c9c49d98907dbba77374dd860500a0eca3d704bed5"
+    },
+    {
+      "path": "scratch/next-rc-20261028/production-flow-final.log",
+      "sha256": "63f239ea7bb5ff9a2f9f0e0d5dc1e97b3cdde0ebeb3ec5b01e9c6a2e635db8c3"
+    },
+    {
+      "path": "scratch/next-rc-20261028/changed-tests-final.log",
+      "sha256": "62fd4e4cd8fab08cd8ac5f46a5702f386409679c17f31c22a7079d5d6f06ca4d"
+    },
+    {
+      "path": "scratch/next-rc-20261028/main-hotfix-tests.log",
+      "sha256": "37cb24b42711c8ea6466bf94a9f371608efcc6425034a67cb24b42ec3c24fd04"
+    },
+    {
+      "path": "scratch/next-rc-20261028/integrated-http.log",
+      "sha256": "4977b00e1645d89b492507425a62e3e5688a80df52847eb03d10441fea561bd1"
+    },
+    {
+      "path": "scratch/next-rc-20261028/integrated-website.log",
+      "sha256": "67537b62b59d4bdbabe0067479fe3576582a0b7b6b7b58b80523b4c477399642"
+    },
+    {
+      "path": "scratch/next-rc-20261028/typegen.log",
+      "sha256": "8b0db89a1e25137a4cb79143a4ea63ae347e6f5f2247f026d984e133255d3084"
+    },
+    {
+      "path": "scratch/next-rc-20261028/typecheck.log",
+      "sha256": "e3b0c44298fc1c149afbf4c8996fb92427ae41e4649b934ca495991b7852b855"
+    },
+    {
+      "path": "scratch/next-rc-20261028/eslint-final.log",
+      "sha256": "34d2ea19d7060f5cf5cfddb45e89a93109ba137dfda5a45ef5a21943e166d066"
+    },
+    {
+      "path": "scratch/next-rc-20261028/build.log",
+      "sha256": "dbf2913b532549a43fadd8dafff5081903736bd9c519cf42a6c7a3d4359809b4"
+    },
+    {
+      "path": "scratch/next-rc-20261028/migrations.log",
+      "sha256": "4c7b59446043fbb797b54447ea451b3d12f9c343d4a6c238d84fb1c60cec7a0d"
+    },
+    {
+      "path": "scratch/next-rc-20261028/prisma-validate.log",
+      "sha256": "d25d21ab6f130d6b8d8d7cb0153364adad37244144561e977ccab4c177ba6df0"
+    },
+    {
+      "path": "scratch/next-rc-20261028/npm-audit-production-final.json",
+      "sha256": "16585f22de4ca2d05472708ae1ac90f405eed2469cec65f3770dda9f8f849994"
+    },
+    {
+      "path": "scratch/next-rc-20261028/npm-audit-all-final.json",
+      "sha256": "899944f28133cfbe168f1d0eed5996bc3885712f3db2839945fee49193cbe266"
+    },
+    {
+      "path": "scratch/next-rc-20261028/routing-preflight.log",
+      "sha256": "194496cef393603f7013e39fb57083389279181a88565278ef070d0c028e5f37"
+    },
+    {
+      "path": "scratch/next-rc-20261028/network-guard.log",
+      "sha256": "e589d838d29fdecffcaa12aa7559a0c7aba1e6c00df55a903c4b59ed92560c67"
+    },
+    {
+      "path": "scratch/next-rc-20261028/diff-check.log",
+      "sha256": "331624355f42729384709c22cb7c025510c86f4a61bc4bd57a6c7fcaf7f11b7c"
+    }
+  ],
+  "screenshots": [
+    {
+      "path": "rc-website-desktop-2026-10-28.png",
+      "sha256": "e4ffc2bc0a156baeb7364008a238623967830ad2df104652a3a2e250ba385b94"
+    },
+    {
+      "path": "rc-dashboard-mobile-2026-10-28.png",
+      "sha256": "1f02954d1314fa483e7b02f6c651dd502a06b3e44dbc4c02f7813630de2d383c"
+    },
+    {
+      "path": "rc-widget-mobile-2026-10-28.png",
+      "sha256": "e96eae07e381bb54cb02029efc8ed1ed9c98d8e6dc53af74926ace72de545a6b"
+    }
+  ]
+}

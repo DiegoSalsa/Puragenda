@@ -8,6 +8,7 @@ import { publicWebsiteAcquisitionEnabled } from "@/server/websites/public-acquis
 import { WEBSITE_CATALOG, websitePriceTier } from "@/websites/offers";
 import { hasWebsitePaidAccess } from "@/websites/policy";
 import { PurchaseFlow } from "./purchase-flow";
+import { getCommercialPlanAccess } from "@/server/services/commercial-plan-access";
 
 export const metadata: Metadata = { title: "Completar contratación", robots: { index: false, follow: false } };
 export default async function WebsitePurchasePage() {
@@ -15,6 +16,7 @@ export default async function WebsitePurchasePage() {
   if (!user) redirect("/login?next=/onboarding/website");
   const business = await getBusinessForUser(user.id);
   if (!business || business.ownerId !== user.id || business.countryCode !== "CL") redirect("/dashboard");
+  if ((await getCommercialPlanAccess(business.id)).v2) redirect("/dashboard/website");
   const [base, intent, addon, offer] = await Promise.all([
     prisma.subscription.findUnique({ where: { businessId: business.id } }),
     prisma.websitePurchaseIntent.findUnique({ where: { businessId: business.id } }),

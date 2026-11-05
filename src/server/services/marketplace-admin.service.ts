@@ -70,7 +70,7 @@ export async function listMarketplaceAdminRows() {
       slug: true,
       deletedAt: true,
       marketplacePromptDismissedAt: true,
-      subscription: { select: { plan: true, status: true, isTrial: true, trialEndsAt: true, gracePeriodEndsAt: true } },
+      subscription: { select: { plan: true, currentPeriodEnd: true, status: true, isTrial: true, trialEndsAt: true, gracePeriodEndsAt: true } },
       marketplaceListings: {
         select: {
           status: true,
@@ -100,12 +100,12 @@ export async function getMarketplaceBusinessEditor(businessId: string) {
       slug: true,
       deletedAt: true,
       productionOrdersEnabled: true,
-      subscription: { select: { plan: true, status: true, isTrial: true, trialEndsAt: true, gracePeriodEndsAt: true } },
+      subscription: { select: { plan: true, currentPeriodEnd: true, status: true, isTrial: true, trialEndsAt: true, gracePeriodEndsAt: true } },
       locations: {
         orderBy: [{ isPrimary: "desc" }, { position: "asc" }, { name: "asc" }],
         select: { id: true, name: true, slug: true, isActive: true, isPrimary: true },
       },
-      services: {
+      services: { where: { isActive: true },
         select: {
           name: true,
           bookingMode: true,
@@ -155,8 +155,8 @@ export async function saveMarketplaceListing(
         slug: true,
         deletedAt: true,
         productionOrdersEnabled: true,
-        subscription: { select: { plan: true, status: true, isTrial: true, trialEndsAt: true, gracePeriodEndsAt: true } },
-        services: {
+        subscription: { select: { plan: true, currentPeriodEnd: true, status: true, isTrial: true, trialEndsAt: true, gracePeriodEndsAt: true } },
+        services: { where: { isActive: true },
           select: {
             name: true,
             bookingMode: true,

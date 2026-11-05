@@ -2,9 +2,15 @@ import { describe, expect, it } from "vitest";
 import { CHANGELOG_DATA, LATEST_CHANGELOG_VERSION } from "@/config/changelog";
 
 describe("changelog entries", () => {
-  it("prepares Website launch as the latest update", () => {
+  it("publishes Puragenda Next with its new release announcement", () => {
     const latest = CHANGELOG_DATA[0];
-    expect(LATEST_CHANGELOG_VERSION).toBe("v2.2.1");
+    expect(LATEST_CHANGELOG_VERSION).toBe("v3.0.0");
+    expect(latest).toMatchObject({date:"2026-11-05",popupVariant:"standard",title:"Llegó Puragenda Next"});
+    expect(latest.popupFeatureTitles).toHaveLength(3);
+    expect(latest.notice).toContain("no aumenta el precio");
+  });
+  it("preserves the historical Website launch", () => {
+    const latest = CHANGELOG_DATA.find(entry => entry.version === "v2.2.1")!;
     expect(latest.features.join(" ")).toContain("preconfigurada");
     expect(latest.features.join(" ")).not.toMatch(/Bella|Matchday|Ritual/);
     expect(latest.description).not.toContain("$5.990");

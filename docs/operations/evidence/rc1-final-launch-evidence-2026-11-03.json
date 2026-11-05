@@ -1,0 +1,1076 @@
+{
+  "date": "2026-11-03",
+  "base": {
+    "branch": "release/puragenda-next-rc1",
+    "sha": "a3fd2a35480d8152a33550d42e510291a49664a7"
+  },
+  "correction": {
+    "branch": "fix/puragenda-next-final-launch-blockers",
+    "baseSha": "a3fd2a35480d8152a33550d42e510291a49664a7",
+    "changes": [
+      "tsconfig.build.json",
+      "next.config.ts",
+      "vercel.json",
+      "scripts/bootstrap-next-staging-http.mjs",
+      "tests/server/rc1-deployment-safety.test.ts",
+      "scripts/certify-staging-backup.mjs",
+      ".github/workflows/security.yml"
+    ],
+    "publishedCodeSha": "1aa408fa23f711ce51c4b75085fcab5b9dff2147"
+  },
+  "build": {
+    "rootTypecheck": "passed",
+    "qaTypecheck": "passed",
+    "isolatedProductionBuild": "passed; node scripts/build-commercial-isolated.mjs at real worktree root",
+    "typescriptErrors": 0,
+    "externalProviderCalls": 0,
+    "productionDatabaseUsed": false,
+    "npmCi": {
+      "passed": true,
+      "packagesAdded": 853,
+      "postinstallPrismaGenerate": "7.10.0"
+    },
+    "runtimeTypecheck": "passed",
+    "rootProductionBuild": "passed; node scripts/vercel-build.mjs, preview, local PG17",
+    "networkBoundary": "loopback plus public Google font assets; no provider credentials",
+    "failedAttempts": [
+      "Expected fixture reproduction: 5 TS2307 with tests removed and restored",
+      "Snapshot node_modules junction: Turbopack package-root resolution failed; real worktree build passed"
+    ],
+    "node24Isolated": {
+      "passed": true,
+      "nodeVersion": "24.14.0",
+      "command": "node scripts/build-commercial-isolated.mjs",
+      "log": "scratch/final-launch/build-node24-isolated.log",
+      "remoteVercelBuild": false
+    }
+  },
+  "checks": {
+    "deploymentProtectionAndMigrationRoles": "47/47 passed",
+    "prismaValidate": "passed",
+    "eslint": "0 errors, 32 existing warnings",
+    "npmAuditOmitDev": "0 vulnerabilities",
+    "backupRestoreLocal": {
+      "passed": true,
+      "syntheticOnly": true,
+      "sourceUnchanged": true,
+      "mutationRevertedByRestore": true,
+      "tableCount": 142,
+      "constraintComparison": "FK/PK/UNIQUE definitions, RLS and CHECK names/validation; CHECK behavior covered separately",
+      "rowCount": 597,
+      "fullDataSha256": "e01d3f73ec71f603f2f342c34be22bc37cc02d7db2fa5fdfb443df84d3309f06",
+      "rlsAndConstraintsSha256": "abba026acbc92aff3b885caaace227e17c655e59ee9c8102a4f30bc001297984",
+      "archiveSha256": "dc921ddceb947e44a18824cabac5926263551b99595abafa024dd3aad44312cf",
+      "elapsedMs": 7508,
+      "postgresMajor": 17,
+      "command": "node scripts/certify-staging-backup.mjs",
+      "failedInitialAttempt": "Literal CHECK comparison rejected PostgreSQL parenthesis normalization; all data matched; scope corrected and rerun passed",
+      "previousRun": {
+        "tableCount": 142,
+        "rowCount": 541,
+        "elapsedMs": 5859
+      }
+    },
+    "migrationsLocal": {
+      "bootstrap": "passed",
+      "legacyUpgrade": "passed",
+      "schemaMatches": true,
+      "legacyDataUnchanged": true,
+      "historyPreserved": true,
+      "repeatedDeployUnchanged": true,
+      "newMigrations": 0
+    },
+    "developmentAdvisories": {
+      "total": 23,
+      "moderate": 21,
+      "low": 2,
+      "dependenciesUpdated": false
+    },
+    "secretScan": {
+      "introducedCommitsScanned": 25,
+      "credentialPatternFindings": 0,
+      "scope": "introduced lines and local tracked/untracked changes; pattern scan only"
+    }
+  },
+  "stagingLocal": {
+    "database": "PostgreSQL 17 loopback disposable",
+    "tls": "local CA validated",
+    "externalProviderCalls": 0,
+    "aiProviderCalls": 0,
+    "suites": {
+      "bootstrapHttp": "passed",
+      "integratedHttp": "passed",
+      "websitesHttp": "passed",
+      "schedulerHttp": "passed",
+      "servicesStaffHttp": "passed",
+      "agendaHttp": "passed",
+      "billingHttp": "passed with node --import tsx",
+      "clientsPrivacyHttp": "passed with node --import tsx"
+    },
+    "assertions": {
+      "bootstrap": 6,
+      "integrated": 19,
+      "websites": 12,
+      "servicesStaff": 13,
+      "agenda": 14,
+      "billing": 30,
+      "clientsPrivacy": 49,
+      "scheduler": "default-off, dedicated bearer, invalid bearer, TLS and retry passed"
+    },
+    "failedHarnessAttempts": [
+      "Initial parallel suites interfered with fixture state; recreated DB and ran sequentially",
+      "Billing/privacy plain Node lacked tsx; reran using --import tsx",
+      "Privacy output directory missing; created ignored directory and reran"
+    ],
+    "browser": {
+      "syntheticOnly": true,
+      "passed": [
+        "registration",
+        "automatic onboarding entry",
+        "business profile save",
+        "hours save",
+        "professional hours assignment",
+        "service creation",
+        "canonical availability returned slots",
+        "public booking link",
+        "completion confirmation",
+        "saved step and verification retained after reload"
+      ],
+      "notClaimed": [
+        "remote staging",
+        "Plus/yearly browser flow",
+        "actual 390px viewport",
+        "billable AI"
+      ],
+      "responsiveObservation": {
+        "requestedWidth": 390,
+        "actualInnerWidth": 582,
+        "horizontalOverflow": false
+      },
+      "screenshots": [
+        "scratch/final-launch/onboarding-disponibilidad.jpg",
+        "scratch/final-launch/onboarding-mobile.jpg"
+      ]
+    }
+  },
+  "vercel": {
+    "project": "purocode-projects/puragenda",
+    "productionBranchObserved": "main",
+    "productionShaObserved": "e74c92237e47db43425a7d47209520967e51bfb0",
+    "deployHooksObserved": 0,
+    "versionedPolicy": {
+      "**": false,
+      "main": true
+    },
+    "remotePolicyAfterCorrectionPush": {
+      "dashboardExactBranchSearch": "No matches found",
+      "githubDeploymentsForCodeSha": 0,
+      "scope": "Only the correction branch with the new allowlist; no retroactive guarantee for old branches"
+    },
+    "ignoredBuildStepObserved": "Only build production",
+    "pendingAuthorizedChange": null,
+    "remoteConfigurationChanged": true,
+    "buildMachine": "Elastic",
+    "concurrency": "Run all builds immediately on-demand",
+    "plan": "Pro",
+    "usage": {
+      "cycle": "2026-11-01/2026-12-01",
+      "teamIncludedCreditUsedUsd": 0.28,
+      "teamIncludedCreditUsd": 20
+    },
+    "savedCommand": "if [ \"$VERCEL_ENV\" == \"production\" ]; then exit 1; else exit 0; fi"
+  },
+  "github": {
+    "rulesetsObserved": 2,
+    "classicProtection": "none shown in authenticated settings",
+    "mainActions": {
+      "runId": 41501071169,
+      "status": "completed",
+      "conclusion": "failure",
+      "steps": 0,
+      "reason": "Account locked due to a billing issue",
+      "codexSecurity": "skipped"
+    },
+    "correctionBranchChecks": 0,
+    "remoteRulesApplied": true,
+    "workflowCorrection": {
+      "postgresService": "17, disposable local CI database only",
+      "bootstrap": "certified commercial-migrations bootstrap",
+      "build": "build:commercial:isolated",
+      "providerSecretsUsed": false,
+      "localCommandsPassed": true,
+      "githubExecution": "not executed; billing blocked",
+      "yamlParsed": true
+    },
+    "rulesets": [
+      {
+        "id": 26426317,
+        "active": true,
+        "branches": [
+          "main",
+          "release/puragenda-next-rc1"
+        ],
+        "rules": [
+          "deletion",
+          "non_fast_forward"
+        ],
+        "bypass": []
+      },
+      {
+        "id": 26426379,
+        "active": true,
+        "branches": [
+          "main"
+        ],
+        "requiredApprovals": 1,
+        "dismissStaleApprovals": true,
+        "conversationResolution": true,
+        "adminBypass": "pull_request",
+        "requiredChecks": []
+      }
+    ],
+    "finalVerification": "Persisted UI; first ruleset also REST. Public REST rate limit reached afterwards; no further API polling."
+  },
+  "productionMutations": [],
+  "remoteMigrations": false,
+  "realPayments": false,
+  "realEmails": false,
+  "dnsChanges": false,
+  "verdict": "NO_GO",
+  "stagingRemote": {
+    "created": true,
+    "deployed": false,
+    "isolationCertified": false,
+    "resourceIdentityVerified": true,
+    "vercelProject": "purocode-projects/puragenda-next-staging",
+    "vercelProjectId": "prj_ma5nkDSDzQGBCFMhroTTzsGi07YD",
+    "neonProjectId": "divine-glade-04170205",
+    "neonBranchId": "br-quiet-fog-bebr4tlj",
+    "databaseName": "puragenda_next_staging",
+    "postgresVersion": 17,
+    "plan": "Free",
+    "region": "AWS US East 2 (Ohio)",
+    "gitConnected": false,
+    "projectVariables": 0,
+    "sharedVariablesLinked": 0,
+    "protection": "Vercel Authentication enabled, Standard Protection, no automation bypass or shared links",
+    "credentialsRetrieved": false,
+    "remoteSqlExecuted": false,
+    "configuration": "docs/operations/rc1-final-launch-external-plan-2026-11-03.json"
+  },
+  "providers": {
+    "mercadoPago": {
+      "session": "authenticated",
+      "application": "PuragendaSubs",
+      "integration": "Suscripciones",
+      "testAccounts": "exist; credential values not used",
+      "testWebhookRoot": "https://www.puragenda.cl/",
+      "productionWebhookRoot": "https://www.puragenda.cl/",
+      "v2Handler": "/api/webhooks/mercadopago-v2",
+      "perOperationNotificationUrl": "supported in code",
+      "sandboxEndToEnd": "not executed",
+      "notificationsSent": 0,
+      "settingsSaved": false
+    },
+    "resend": {
+      "domains": {
+        "puragenda.cl": "Verified",
+        "contacto.puragenda.cl": "Verified"
+      },
+      "plan": "Free",
+      "monthlyUsed": 94,
+      "monthlyLimit": 3000,
+      "dailyUsed": 3,
+      "dailyLimit": 100,
+      "domainsUsed": 2,
+      "domainsLimit": 3,
+      "requestsPerSecond": 10,
+      "existingWebhook": "disabled, transient; never invoked",
+      "emailsSent": 0
+    },
+    "googleCalendar": {
+      "project": "puragenda-production",
+      "oauthClient": "Puragenda Web Production",
+      "verification": "app verified",
+      "oauthTestAccount": "not authorized or exercised",
+      "calendarReadsOrWrites": 0
+    },
+    "openai": {
+      "visibleOrganization": "Personal / Default project; not correlated with the Vercel credential",
+      "observedLimitUsd": 100,
+      "enforcement": "Limit not enforced",
+      "remoteModel": "masked; not verified",
+      "codeDefaultModel": "gpt-6-luna",
+      "inferences": 0
+    },
+    "mcp": {
+      "enabledInStaging": false,
+      "keyAlert": "looks like a secret; consider rotating and saving as Secret",
+      "variableType": "Config",
+      "scope": "Production",
+      "valueRead": false,
+      "compromiseProven": false,
+      "rotationPerformed": false,
+      "compatibility": "AES-256-GCM envelopes lack key id/fallback; direct replacement can break pending receipts",
+      "retentionPolicy": "07-20 still requires approval before AI/MCP launch"
+    },
+    "neon": {
+      "organization": "PuroCode",
+      "plan": "Free",
+      "monthlyPlanUsd": 0,
+      "observedGbPerProject": 1,
+      "observedComputeHoursPerProject": 100,
+      "observedBranchesPerProject": 10,
+      "puragendaStagingCreated": true
+    }
+  },
+  "rollback": {
+    "syntheticRestore": "passed",
+    "correctionSchemaEqualsRc1": true,
+    "historicalMainOnPostNextSchema": "not exercised; direct rollback not recommended until validated",
+    "productionRestoreExecuted": false
+  },
+  "pendingAuthorizations": [
+    "First protected Preview only after staging variables, migrations and isolation review; not authorized by resource creation"
+  ],
+  "authorizedRemoteConfigurationChanges": [
+    "Vercel ignored build step only; no production deployment or data change",
+    "GitHub two rulesets",
+    "New isolated Vercel project and Neon PG17 Free"
+  ],
+  "previousEvidenceScope": "Existing sections describe earlier preproduction work; finalCertification below supersedes current remote status without relabeling historical tests.",
+  "finalCertification": {
+    "date": "2026-11-03",
+    "primaryReport": "docs/operations/PURAGENDA-NEXT-LAUNCH-READY.md",
+    "artifactSourceSha": "40b455b095dce882967e308c8839e23c1611f840",
+    "vercel": {
+      "checkedAt": "2026-11-03T20:32:12.430Z",
+      "production": {
+        "id": "prj_4fJ3eJ9v7fyPSsPNl5pvIdi8W2Ti",
+        "sha": "e74c92237e47db43425a7d47209520967e51bfb0",
+        "state": "READY",
+        "buildCommand": null,
+        "ignoredBuild": "if [ \"$VERCEL_ENV\" == \"production\" ]; then exit 1; else exit 0; fi",
+        "gitRepo": "Puragenda",
+        "gitOwner": "DiegoSalsa"
+      },
+      "staging": {
+        "id": "prj_ma5nkDSDzQGBCFMhroTTzsGi07YD",
+        "node": "24.x",
+        "gitConnected": false,
+        "protection": {
+          "deploymentType": "all"
+        },
+        "buildMachine": "basic",
+        "selection": "fixed",
+        "output": null,
+        "deployment": {
+          "id": "dpl_BkxGsTrcMTeQ1oWrLiRgf5RtYpz8",
+          "state": "READY",
+          "target": "staging",
+          "source": "40b455b095dce882967e308c8839e23c1611f840"
+        }
+      }
+    },
+    "neon": {
+      "database": "puragenda_next_staging",
+      "role": "puragenda_next_staging_owner",
+      "version": 170011,
+      "public_tables": 0,
+      "roles": [
+        {
+          "rolname": "puragenda_next_staging_owner",
+          "rolsuper": false,
+          "rolcreatedb": true,
+          "rolcreaterole": true,
+          "rolbypassrls": true
+        }
+      ],
+      "tlsCertificateVerified": true,
+      "endpointVerifiedInConsole": true,
+      "status": "up to date",
+      "schemaDrift": false,
+      "migrations": 17,
+      "idempotent": true,
+      "fk": 205,
+      "indexes": 559,
+      "rls_tables": 120,
+      "pg_cron": 0,
+      "pooledIdentityVerified": true,
+      "credentialsPrinted": false,
+      "runtimeRole": {
+        "created": true,
+        "roles": [
+          {
+            "role": "puragenda_next_staging_app",
+            "rolsuper": false,
+            "rolcreatedb": false,
+            "rolcreaterole": false,
+            "rolbypassrls": true
+          }
+        ],
+        "migrationHistoryAccess": false,
+        "ddlGranted": false
+      },
+      "effectivePrivileges": {
+        "rlsProbe": true,
+        "ownerRows": 2,
+        "restrictedRows": 0,
+        "roleAndGrantsRolledBack": true,
+        "runtimePrivileges": {
+          "role": "puragenda_next_staging_app",
+          "schema_create": false,
+          "history_read": false,
+          "history_write": false,
+          "businesses": 2
+        }
+      },
+      "backup": {
+        "passed": true,
+        "syntheticOnly": true,
+        "remoteStagingSource": true,
+        "restoreTarget": "owned disposable loopback clone",
+        "ownershipAndGrantsRestored": false,
+        "sourceUnchanged": true,
+        "mutationRevertedByRestore": true,
+        "tableCount": 142,
+        "constraintComparison": "FK/PK/UNIQUE definitions, RLS and CHECK names/validation; CHECK behavior covered separately",
+        "rowCount": 130,
+        "fullDataSha256": "36ee74d6bc7146f0e7e7bd9334700b67b6670e82a3913010da021812ef0faca9",
+        "rlsAndConstraintsSha256": "abba026acbc92aff3b885caaace227e17c655e59ee9c8102a4f30bc001297984",
+        "archiveSha256": "267bed60c46c22033d3a7d6f94b592542a83656c08db7b738e42a2bf3037c912",
+        "elapsedMs": 93708,
+        "postgresMajor": 17
+      }
+    },
+    "environment": {
+      "runtimeRole": "puragenda_next_staging_app",
+      "exactStagingHost": true,
+      "fingerprintMatches": true,
+      "previewOptIn": "1",
+      "authSecretsMatch": true,
+      "noLiveCredentials": true,
+      "workerEnabled": "0",
+      "workerKilled": "1",
+      "allVariablesPreviewOnly": true
+    },
+    "deploymentAttempts": [
+      {
+        "id": "dpl_6LF3hg9YwPZSsX6chj4Rgxs1LisZ",
+        "projectId": "prj_ma5nkDSDzQGBCFMhroTTzsGi07YD",
+        "target": "production",
+        "readyState": "ERROR",
+        "errorCode": "BUILD_UTILS_SPAWN_1",
+        "errorMessage": "Command \"npm ci\" exited with 1",
+        "builds": [],
+        "production": {
+          "id": "prj_4fJ3eJ9v7fyPSsPNl5pvIdi8W2Ti",
+          "latestSha": "e74c92237e47db43425a7d47209520967e51bfb0",
+          "latestState": "READY"
+        },
+        "authorization": "first protected Preview; first project upload unexpectedly classified Production on isolated staging; never Ready"
+      },
+      {
+        "id": "dpl_3A41EfrP3Cx5Ki5S1PdddjatPYhs",
+        "target": "staging",
+        "readyState": "ERROR",
+        "errorCode": "NEXT_OUTPUT_DIR_MISSING",
+        "errorMessage": "The Next.js output directory \".next\" was not found at \"/vercel/path1/.next\". This is usually caused by one of the following:\n\n1. The \"Output Directory\" setting in your project is misconfigured. Check your project settings and ensure the output directory matches your Next.js configuration.\n\n2. If using Turborepo, ensure your task outputs include the Next.js build directory. Add \".next/**\" to the \"outputs\" array in your turbo.json for the build task.\n\n3. The build command did not complete successfully. Check the build logs above for errors.",
+        "url": "puragenda-next-staging-e4b1d32t5-purocode-projects.vercel.app",
+        "alias": [
+          "puragenda-next-staging-purocode-projects.vercel.app"
+        ],
+        "meta": {
+          "sourceCommit": "1f49388375a96504dddf0fa99aeb97a9a0e8df78",
+          "certification": "isolated-puragenda-next"
+        },
+        "authorization": "one explicit retry"
+      },
+      {
+        "id": "dpl_BkxGsTrcMTeQ1oWrLiRgf5RtYpz8",
+        "projectId": "prj_ma5nkDSDzQGBCFMhroTTzsGi07YD",
+        "target": "staging",
+        "readyState": "INITIALIZING",
+        "url": "puragenda-next-staging-ohzylu884-purocode-projects.vercel.app",
+        "sourceSha": "40b455b095dce882967e308c8839e23c1611f840",
+        "outputDirectory": ".next-websites-qa",
+        "inlineFiles": [
+          ".staging/manifest.json",
+          "scripts/prepare-rc1-staging-release.mjs",
+          "vercel.json"
+        ],
+        "state": "READY",
+        "authorization": "explicit third build",
+        "nodeEnvironment": "preview confirmed by guarded install/build"
+      }
+    ],
+    "artifactGuardChecks": {
+      "passed": true,
+      "sourceSha": "1f49388375a96504dddf0fa99aeb97a9a0e8df78",
+      "checks": [
+        {
+          "stage": "install",
+          "environment": "production",
+          "projectAllowed": true,
+          "allowed": false,
+          "passed": true
+        },
+        {
+          "stage": "install",
+          "environment": "preview",
+          "projectAllowed": false,
+          "allowed": false,
+          "passed": true
+        },
+        {
+          "stage": "install",
+          "environment": "preview",
+          "projectAllowed": false,
+          "allowed": false,
+          "passed": true
+        },
+        {
+          "stage": "install",
+          "environment": "preview",
+          "projectAllowed": true,
+          "allowed": true,
+          "passed": true
+        },
+        {
+          "stage": "build",
+          "environment": "production",
+          "projectAllowed": true,
+          "allowed": false,
+          "passed": true
+        },
+        {
+          "stage": "build",
+          "environment": "preview",
+          "projectAllowed": false,
+          "allowed": false,
+          "passed": true
+        },
+        {
+          "stage": "build",
+          "environment": "preview",
+          "projectAllowed": false,
+          "allowed": false,
+          "passed": true
+        },
+        {
+          "stage": "build",
+          "environment": "preview",
+          "projectAllowed": true,
+          "allowed": true,
+          "passed": true
+        }
+      ]
+    },
+    "outputPreflight": {
+      "sourceSha": "40b455b095dce882967e308c8839e23c1611f840",
+      "loadedNextDistDir": ".next-websites-qa",
+      "artifactOutputDirectory": ".next-websites-qa",
+      "match": true,
+      "adapterRule": "@vercel/next uses config.outputDirectory || .next before required-server-files.json"
+    },
+    "lockRepair": {
+      "before": {
+        "status": 1,
+        "missingRuntime": true,
+        "missingCore": true
+      },
+      "after": {
+        "status": 0,
+        "missingLockEntries": false
+      },
+      "scope": "npm 12 lock validation on Windows; remote Linux installation remains pending",
+      "changedExistingVersions": 0,
+      "addedOptionalEntries": 2
+    },
+    "mcpCrypto": {
+      "passed": true,
+      "source": "actual staging key and remote Neon runtime role",
+      "cipher": "AES-256-GCM",
+      "persistReadDecrypt": true,
+      "tamperRejected": true,
+      "wrongKeyRejected": true,
+      "explicitTenantFilter": true,
+      "transactionRolledBack": true,
+      "externalMcpEnabled": false,
+      "scope": "local application crypto module against remote staging DB; no remote OAuth or MCP transport certification"
+    },
+    "websiteAutosave": {
+      "websiteExists": true,
+      "revision": 1,
+      "draftHasChange": true,
+      "publishedUnchanged": true,
+      "status": "DRAFT"
+    },
+    "websitePublication": {
+      "status": "DRAFT",
+      "revision": 1,
+      "publishedRevision": null,
+      "publishedMatchesDraft": false,
+      "publishedHasChange": false,
+      "externalProviderWrites": false
+    },
+    "browserRuns": [
+      {
+        "run": 2,
+        "at": "2026-11-03T20:12:41.907Z",
+        "origin": "https://project-8xjzo.vercel.app",
+        "results": [
+          {
+            "scenario": "C: Natural-language hours → identified deterministic mode → real editor fields → no domain writes until confirmation → saved business/professional hours",
+            "status": "passed"
+          },
+          {
+            "scenario": "A: Full UI registration → automatic Setup without promotions → reviewed schedules and three services → real availability → public widget → copied link → finish → Today on reload",
+            "status": "passed"
+          },
+          {
+            "scenario": "Browser run",
+            "status": "failed",
+            "detail": "locator.getAttribute: Timeout 30000ms exceeded.\nCall log:\n\u001b[2m  - waiting for locator('[data-tour=\\'setup-conversation\\']')\u001b[22m\n\n    at askSetup (C:\\Users\\diego\\.codex\\worktrees\\puragenda-next-final-launch-blockers\\agenda\\scratch\\launch-final\\onboarding-remote.mjs:60:24)\n    at main (C:\\Users\\diego\\.codex\\worktrees\\puragenda-next-final-launch-blockers\\agenda\\scratch\\launch-final\\onboarding-remote.mjs:130:11)"
+          }
+        ],
+        "errors": [],
+        "network": {
+          "origin": "https://project-8xjzo.vercel.app",
+          "limit": 370,
+          "requests": 316,
+          "externalBlocked": 1,
+          "limitReached": false,
+          "viewports": [
+            {
+              "width": 1440,
+              "height": 1000
+            },
+            {
+              "width": 1440,
+              "height": 1000
+            }
+          ]
+        }
+      },
+      {
+        "run": 3,
+        "at": "2026-11-03T20:21:35.799Z",
+        "origin": "https://project-8xjzo.vercel.app",
+        "results": [
+          {
+            "scenario": "Browser run",
+            "status": "failed",
+            "detail": "locator.getAttribute: Timeout 30000ms exceeded.\nCall log:\n\u001b[2m  - waiting for locator('[data-tour=\\'setup-conversation\\']')\u001b[22m\n\n    at askSetup (C:\\Users\\diego\\.codex\\worktrees\\puragenda-next-final-launch-blockers\\agenda\\scratch\\launch-final\\onboarding-remote-resume.mjs:60:24)\n    at main (C:\\Users\\diego\\.codex\\worktrees\\puragenda-next-final-launch-blockers\\agenda\\scratch\\launch-final\\onboarding-remote-resume.mjs:82:11)"
+          }
+        ],
+        "errors": [],
+        "network": {
+          "origin": "https://project-8xjzo.vercel.app",
+          "limit": 450,
+          "requests": 153,
+          "externalBlocked": 0,
+          "limitReached": false,
+          "viewports": [
+            {
+              "width": 1440,
+              "height": 1000
+            },
+            {
+              "width": 1440,
+              "height": 1000
+            }
+          ]
+        }
+      },
+      {
+        "run": 4,
+        "at": "2026-11-03T20:28:33.986Z",
+        "origin": "https://project-8xjzo.vercel.app",
+        "results": [
+          {
+            "scenario": "B: Natural-language business/team proposals → two professionals → schedules and shared service → functional agenda without exceeding the granted contract",
+            "status": "passed"
+          },
+          {
+            "scenario": "Browser run",
+            "status": "failed",
+            "detail": "page.goto: net::ERR_BLOCKED_BY_CLIENT at https://project-8xjzo.vercel.app/dashboard/setup\nCall log:\n\u001b[2m  - navigating to \"https://project-8xjzo.vercel.app/dashboard/setup\", waiting until \"load\"\u001b[22m\n\n    at main (C:\\Users\\diego\\.codex\\worktrees\\puragenda-next-final-launch-blockers\\agenda\\scratch\\launch-final\\onboarding-remote-resume.mjs:107:23)"
+          }
+        ],
+        "errors": [],
+        "network": {
+          "origin": "https://project-8xjzo.vercel.app",
+          "limit": 270,
+          "requests": 270,
+          "externalBlocked": 0,
+          "limitReached": true,
+          "viewports": [
+            {
+              "width": 1440,
+              "height": 1000
+            },
+            {
+              "width": 1440,
+              "height": 1000
+            },
+            {
+              "width": 390,
+              "height": 844
+            }
+          ]
+        }
+      },
+      {
+        "run": 4,
+        "at": "2026-11-03T20:28:33.986Z",
+        "origin": "https://project-8xjzo.vercel.app",
+        "results": [
+          {
+            "scenario": "B: Natural-language business/team proposals → two professionals → schedules and shared service → functional agenda without exceeding the granted contract",
+            "status": "passed"
+          },
+          {
+            "scenario": "Browser run",
+            "status": "failed",
+            "detail": "page.goto: net::ERR_BLOCKED_BY_CLIENT at https://project-8xjzo.vercel.app/dashboard/setup\nCall log:\n\u001b[2m  - navigating to \"https://project-8xjzo.vercel.app/dashboard/setup\", waiting until \"load\"\u001b[22m\n\n    at main (C:\\Users\\diego\\.codex\\worktrees\\puragenda-next-final-launch-blockers\\agenda\\scratch\\launch-final\\onboarding-remote-resume.mjs:107:23)"
+          }
+        ],
+        "errors": [],
+        "network": {
+          "origin": "https://project-8xjzo.vercel.app",
+          "limit": 270,
+          "requests": 270,
+          "externalBlocked": 0,
+          "limitReached": true,
+          "viewports": [
+            {
+              "width": 1440,
+              "height": 1000
+            },
+            {
+              "width": 1440,
+              "height": 1000
+            },
+            {
+              "width": 390,
+              "height": 844
+            }
+          ]
+        }
+      }
+    ],
+    "trialFixtures": {
+      "syntheticOnly": true,
+      "fixtureTrials": 2,
+      "days": 30,
+      "sameIpAntiFraudPreserved": true,
+      "realRegistrationTrialResult": "first allowed; repeat rejected",
+      "providerCalls": 0
+    },
+    "requestBudget": {
+      "ownerAcceptedTotal": 1000,
+      "countsIncludeBrowserAssets": true,
+      "observedRequests": 979,
+      "observedPeriodEnd": "2026-11-03T20:45:00.000Z",
+      "finalAnonymousVerificationRequests": 2,
+      "moreCertificationTrafficStopped": true,
+      "metricLagPossible": true,
+      "observedPlusFinalChecks": 981,
+      "instantaneousHardMeter": false
+    },
+    "audit": {
+      "productive": {
+        "info": 0,
+        "low": 0,
+        "moderate": 0,
+        "high": 0,
+        "critical": 0,
+        "total": 0
+      },
+      "development": {
+        "info": 0,
+        "low": 2,
+        "moderate": 21,
+        "high": 0,
+        "critical": 0,
+        "total": 23
+      },
+      "packages": [
+        "@eslint-community/eslint-utils",
+        "@eslint/config-array",
+        "@eslint/eslintrc",
+        "@next/eslint-plugin-next",
+        "@shadcn/registry",
+        "@ts-morph/common",
+        "@typescript-eslint/eslint-plugin",
+        "@typescript-eslint/parser",
+        "@typescript-eslint/type-utils",
+        "@typescript-eslint/typescript-estree",
+        "@typescript-eslint/utils",
+        "@vitest/mocker",
+        "deepmerge",
+        "eslint",
+        "eslint-config-next",
+        "eslint-plugin-import",
+        "eslint-plugin-jsx-a11y",
+        "eslint-plugin-react",
+        "minimatch",
+        "shadcn",
+        "ts-morph",
+        "typescript-eslint",
+        "vitest"
+      ]
+    },
+    "rollback": {
+      "main": {
+        "mainSha": "e74c92237e47db43425a7d47209520967e51bfb0",
+        "database": "synthetic Next schema",
+        "code": "P2023",
+        "reason": "\nInvalid `prisma.subscription.findFirst()` invocation:\n\n\nValue 'PURAGENDA_PLUS' not found in enum 'SubscriptionPlan'",
+        "directRollbackSafe": false
+      },
+      "compatibleNext": {
+        "compatibilityCandidate": "ce9d5dc7e162612d6e0ddd10430a480667d2224d",
+        "runtimeAndSchemaEqual": true,
+        "modelsRead": 140,
+        "failures": [],
+        "transactionChecks": [
+          "subscription read/write retains plan and identity",
+          "client update preserves tenant and identity",
+          "reservation cancel/restore retains links"
+        ],
+        "syntheticOnly": true,
+        "transactionRolledBack": true,
+        "directOldMainRollbackAllowed": false,
+        "scope": "ORM/schema compatibility; remote application smoke remains required"
+      }
+    },
+    "calendar": {
+      "productionConfigurationChanged": false,
+      "disabled": false,
+      "authorizedTestAccount": false,
+      "newExternalCertification": "not verified; not evidence of regression or reason by itself to disable existing integration"
+    },
+    "github": {
+      "mainSha": "e74c92237e47db43425a7d47209520967e51bfb0",
+      "rc1Sha": "a3fd2a35480d8152a33550d42e510291a49664a7",
+      "rulesetsActive": [
+        26426317,
+        26426379
+      ],
+      "actions": {
+        "runId": 41501071169,
+        "job": "baseline",
+        "stepsRun": 0,
+        "result": "failure",
+        "reason": "The job was not started because your account is locked due to a billing issue."
+      },
+      "productionProjectDeploymentsAfterPush": [
+        {
+          "id": "dpl_HcXve2Tnze5uCf7fM6KHhx6ui4sR",
+          "state": "ERROR",
+          "created": 1793679129362,
+          "target": null,
+          "sha": "3f9bbaddfdf6f1bfd106cf3fc90f7dcbced612b6",
+          "branch": "release/puragenda-next-preproduction-readiness"
+        },
+        {
+          "id": "dpl_3N4chkDiibVSaBUURZaFYTMDURnz",
+          "state": "ERROR",
+          "created": 1793678862839,
+          "target": null,
+          "sha": "5af07f587fabe0696357cdc8bc0a3c863e2a9a74",
+          "branch": "release/puragenda-next-preproduction-readiness"
+        },
+        {
+          "id": "dpl_GMx6UpcdjLCqUwLFRxt3ibuqy56A",
+          "state": "ERROR",
+          "created": 1793674646931,
+          "target": null,
+          "sha": "a3fd2a35480d8152a33550d42e510291a49664a7",
+          "branch": "integration/puragenda-next-onboarding-rc1-final"
+        },
+        {
+          "id": "dpl_DtsikE158TtrppQJVgHfnzNmGKv5",
+          "state": "ERROR",
+          "created": 1793150070900,
+          "target": null,
+          "sha": "8d28501c55c876ffee18f7c5513aa8ecdd0c3fe8",
+          "branch": "feature/puragenda-next"
+        },
+        {
+          "id": "dpl_C29ToGLShM1ba5KedPkPchToUYLg",
+          "state": "READY",
+          "created": 1793044972641,
+          "target": "production",
+          "sha": "e74c92237e47db43425a7d47209520967e51bfb0",
+          "branch": "main"
+        },
+        {
+          "id": "dpl_FX1p3pmuYpXpjAN1ZCf3LAcujCVP",
+          "state": "READY",
+          "created": 1793044803559,
+          "target": null,
+          "sha": "13838010e14d90830551f2ba56479d204acbe60d",
+          "branch": "hotfix/sanando-widget-availability"
+        }
+      ]
+    },
+    "productionDataOrDeployChanged": false,
+    "newMigrations": 0,
+    "verdict": "NO_GO",
+    "regression": {
+      "executedAt": "2026-11-03T20:32:37.927Z",
+      "uniqueTests": 100,
+      "passed": 100,
+      "failed": 0,
+      "skipped": 0,
+      "suites": 11,
+      "prismaValidate": "passed",
+      "completeTypecheck": "passed",
+      "eslintAffectedFiles": "passed",
+      "existingHistoricalTestsRerun": false
+    },
+    "vercelCost": {
+      "currentSpendUsd": 0,
+      "budgetUsd": 10,
+      "pause": false,
+      "thresholds": [
+        50,
+        75,
+        100
+      ],
+      "hardPreviewCap": false,
+      "observedAt": "2026-11-03T20:32:12Z"
+    },
+    "publicBooking": {
+      "passed": true,
+      "requests": 5,
+      "statuses": [
+        200,
+        409,
+        201,
+        201,
+        200
+      ],
+      "checks": [
+        "Remote public availability returns real configured slots",
+        "Concurrent remote booking has one winner and one conflict",
+        "Remote public idempotency replay succeeds",
+        "Concurrent requests persist exactly one reservation",
+        "Concurrent requests persist exactly one linked client",
+        "Booked slot is removed from subsequent public availability"
+      ],
+      "syntheticOnly": true,
+      "source": "actual Preview HTTP + remote Neon assertions",
+      "providerCalls": 0
+    },
+    "publicTenantIsolation": {
+      "passed": true,
+      "status": 401,
+      "syntheticTenants": true,
+      "foreignApiKeyCannotReadCatalog": true
+    },
+    "remoteBookingManagement": {
+      "passed": true,
+      "requests": 14,
+      "statuses": [
+        200,
+        200,
+        404,
+        200,
+        409,
+        200,
+        200,
+        403,
+        503,
+        200,
+        404,
+        404,
+        404,
+        404
+      ],
+      "checks": [
+        "Dashboard rejects another tenant reservation",
+        "Remote dashboard reschedules through central service",
+        "Stale reservation edits are rejected",
+        "Remote dashboard cancels synthetic reservation",
+        "Remote cancellation replay is idempotent",
+        "Reservation retains client, professional, service and branch identities",
+        "Puri cross-origin requests rejected",
+        "Unconfigured AI fails safely",
+        "Unsupported AI writes return guidance without inference",
+        "MCP external transport is disabled (404)",
+        "Commercial worker remains disabled (404 before authorization)"
+      ],
+      "retryAfter": null,
+      "initialHarnessFailures": [
+        "Empty disabled MCP response initially parsed as JSON",
+        "Expected worker 401 corrected to actual disabled contract 404; reran worker only"
+      ],
+      "executedWorkerTick": false
+    },
+    "mobileSmoke": {
+      "passed": false,
+      "requests": 50,
+      "prefetchBlocked": 1,
+      "viewports": [],
+      "checks": [],
+      "errors": [],
+      "error": "locator.waitFor: Timeout 30000ms exceeded.\nCall log:\n\u001b[2m  - waiting for getByRole('heading', { name: 'Horarios', exact: true }) to be visible\u001b[22m\n"
+    },
+    "automationRevocation": {
+      "revoked": true,
+      "projectId": "prj_ma5nkDSDzQGBCFMhroTTzsGi07YD",
+      "generatedOnlyForBoundedCertification": true,
+      "remainingAutomationBypasses": 0,
+      "protection": {
+        "deploymentType": "all"
+      },
+      "productionSecretChanged": false
+    },
+    "finalAnonymousProtection": [
+      {
+        "host": "project-8xjzo.vercel.app",
+        "status": 302,
+        "protected": true
+      },
+      {
+        "host": "puragenda-next-staging-ohzylu884-purocode-projects.vercel.app",
+        "status": 302,
+        "protected": true
+      }
+    ],
+    "mercadoPago": {
+      "sandboxSettingsAccessible": true,
+      "selectedMode": "test",
+      "testUrlRootProduction": true,
+      "secretPresent": true,
+      "settingsChanged": false,
+      "liveModeOpened": false,
+      "notificationSent": false,
+      "credentialUsableInProcess": false,
+      "sandboxEndToEnd": false,
+      "ownerReauthenticated": true
+    },
+    "integration": {
+      "preparedLocally": true,
+      "prCreated": false,
+      "rc1Changed": false,
+      "reason": "CI/sandbox/mobile gates not satisfied; no bypass or premature integration"
+    },
+    "secretScan": {
+      "introducedCommitsScanned": 45,
+      "findings": 0,
+      "scope": "introduced lines and working/untracked files, credential patterns only; repeat after final documentation commit"
+    },
+    "providerCalls": {
+      "billableAI": 0,
+      "realPayments": 0,
+      "realEmails": 0,
+      "productionCalendarReadsOrWrites": 0,
+      "cloudinaryWrites": 0
+    }
+  }
+}

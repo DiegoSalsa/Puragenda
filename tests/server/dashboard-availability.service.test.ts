@@ -11,6 +11,8 @@ const mocks = vi.hoisted(() => ({
   permissions: vi.fn(),
   agendaScope: vi.fn(),
   googleBusy: vi.fn(),
+  blockedDates: vi.fn(),
+  releaseHolds: vi.fn(),
 }));
 
 vi.mock("@/server/db/prisma", () => ({
@@ -21,8 +23,10 @@ vi.mock("@/server/db/prisma", () => ({
     staff: { findMany: mocks.staffFindMany },
     appointment: { findMany: mocks.appointmentFindMany },
     scheduleBlock: { findMany: mocks.scheduleBlockFindMany },
+    blockedDate: { findMany: mocks.blockedDates },
   },
 }));
+vi.mock("@/server/services/payment-hold.service", () => ({ releaseExpiredPaymentHolds: mocks.releaseHolds }));
 
 vi.mock("@/server/services/permissions.service", () => ({
   getEffectiveBusinessPermissions: mocks.permissions,
@@ -103,9 +107,33 @@ describe("dashboard availability service", () => {
     mocks.appointmentFindMany.mockResolvedValue([]);
     mocks.scheduleBlockFindMany.mockResolvedValue([]);
     mocks.googleBusy.mockResolvedValue([]);
+    mocks.blockedDates.mockResolvedValue([]);
+    mocks.releaseHolds.mockResolvedValue(0);
   });
 
   afterEach(() => vi.useRealTimers());
+
+  const query = { mode: "services" as const, locationId: "location-1", serviceIds: ["service-1"], selectedOptionAlternativeIds: [], fromDate: "2026-08-14", days: 1 };
+  it("clips the final queried day to the same 90-day public horizon", async () => {
+    const result = await getDashboardAvailability(user, businessContext, { ...query, fromDate: "2026-11-11", days: 7 });
+    expect(result.days.map(d => d.date)).toEqual(["2026-11-11"]);
+  });
+  it("does not expose a business blocked day internally", async () => {
+    mocks.blockedDates.mockResolvedValue([{ date: new Date("2026-08-14T00:00:00Z") }]);
+    expect((await getDashboardAvailability(user, businessContext, query)).days[0].slots).toEqual([]);
+  });
+  it("applies service-specific availability just like the public engine", async () => {
+    mocks.serviceFindMany.mockResolvedValue([{ ...service("service-1", 60), availabilityType: "SPECIAL", specialWeekDays: [1] }]);
+    expect((await getDashboardAvailability(user, businessContext, query)).days[0].slots).toEqual([]);
+  });
+  it("honors global unassigned appointments and the business Google connection", async () => {
+    mocks.appointmentFindMany.mockResolvedValue([{ staffId: null, startTime: new Date("2026-08-14T09:00Z"), endTime: new Date("2026-08-14T10:00Z") }]);
+    const result = await getDashboardAvailability(user, businessContext, query);
+    expect(result.days[0].slots.map(s => s.time)).not.toContain("09:00");
+    expect(mocks.googleBusy).toHaveBeenCalledWith("staff-1", expect.any(Date), expect.any(Date), businessContext.id);
+    expect(mocks.appointmentFindMany).toHaveBeenCalledWith(expect.objectContaining({ where: expect.objectContaining({ paymentStatus: { not: "REJECTED" } }) }));
+    expect(mocks.releaseHolds).toHaveBeenCalled();
+  });
 
   it("returns only genuinely free times and batches appointment/block queries", async () => {
     mocks.appointmentFindMany.mockResolvedValue([{

@@ -345,6 +345,9 @@ export function TodayScreen({ data, userName }: { data: TodayDashboardData; user
 
       {selected && (
         <AppointmentDetailDialog
+          canViewInternalNotes={data.canViewInternalNotes}
+          locationId={data.selectedLocationId ?? undefined}
+          locationName={data.locations.find(item => item.id === data.selectedLocationId)?.name}
           appointment={toDialogAppointment(selected, homeT("unassigned"))}
           onClose={() => setSelectedId(null)}
           canManageAppointments={data.canManageAppointments}
@@ -358,6 +361,9 @@ export function TodayScreen({ data, userName }: { data: TodayDashboardData; user
       )}
       {creating && (
         <AppointmentEditor
+          canViewInternalNotes={data.canViewInternalNotes}
+          locationId={data.selectedLocationId ?? undefined}
+          locationName={data.locations.find(item => item.id === data.selectedLocationId)?.name}
           timeZone={data.timeZone}
           services={data.services}
           staff={data.staff}

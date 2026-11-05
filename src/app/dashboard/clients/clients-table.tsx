@@ -33,6 +33,7 @@ function ClientSearchBox({ initialSearch, limit }: { initialSearch: string; limi
       <input
         type="search"
         aria-label={t("searchPlaceholder")}
+        data-tour="client-search"
         placeholder={t("searchPlaceholder")}
         value={search}
         onChange={(e) => setSearch(e.target.value)}
@@ -131,7 +132,7 @@ export function ClientsTable({
       <ClientSearchBox initialSearch={searchFromServer} limit={pagination.limit} />
 
       {/* Table */}
-      <div className="min-w-0 max-w-full overflow-hidden rounded-2xl border border-border bg-card">
+      <div data-tour="clients-list" className="min-w-0 max-w-full overflow-hidden rounded-2xl border border-border bg-card">
         {clients.length === 0 ? (
           <div className="flex flex-col items-center justify-center py-12 text-center">
             <Users className="h-8 w-8 text-muted-foreground/30 mb-3" />

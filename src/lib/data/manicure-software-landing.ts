@@ -1,6 +1,6 @@
-import { EXTRA_STAFF_COST, PRICING, STAFF_LIMITS, TRIAL_DURATION_DAYS } from "@/core/constants";
+import { PUBLIC_PLANS_PRICE_SUMMARY } from "@/lib/public-plans";
+import { TRIAL_DURATION_DAYS } from "@/core/constants";
 import type { FaqItem } from "@/lib/json-ld";
-import { formatLandingClp } from "@/lib/data/scheduling-system-landing";
 
 export const MANICURE_SOFTWARE_PATH = "/software-agenda-manicure";
 
@@ -27,14 +27,14 @@ export const manicureCatalogExample = [
 export const manicureProblems = [
   { title: "El retiro que no se contó", description: "Si la clienta llega con un esmaltado anterior, el trabajo puede necesitar otro bloque. Define qué incluye cada servicio y publica una alternativa con retiro cuando corresponda." },
   { title: "Un diseño no ocupa siempre lo mismo", description: "Separa diseños y mantenimientos según los tiempos que hayas definido. Si necesitas evaluar el diseño antes de darle duración y precio, acuerda esos detalles antes de reservar." },
-  { title: "La técnica y la profesional adecuada", description: "No todas las integrantes del estudio realizan los mismos servicios. Asigna cada servicio a quienes lo ofrecen y configura su disponibilidad en el plan Equipo." },
+  { title: "La técnica y la profesional adecuada", description: "No todas las integrantes del estudio realizan los mismos servicios. Asigna cada servicio a quienes lo ofrecen y configura su disponibilidad en Puragenda." },
   { title: "Disponibilidad entre una atención y otra", description: "Mientras estás esmaltando, las consultas por horario siguen llegando. Comparte el catálogo con horas disponibles y deja las dudas sobre la técnica para una conversación contigo." },
 ];
 
 export const manicureWorkflow = [
   { title: "Define qué incluye cada servicio", description: "Crea el catálogo de esmaltado, retiro, mantenimiento y diseño que realmente ofreces. Explica si el retiro está incluido y configura duración y precio completos para cada servicio." },
   { title: "Configura las opciones que correspondan", description: "Puedes ofrecer alternativas de precio dentro de un servicio. Para este recorrido, usa opciones que mantengan su duración; si una variante necesita más tiempo, publícala como otro servicio con su duración completa." },
-  { title: "Asigna profesionales y jornadas", description: "En Equipo, relaciona los servicios con cada manicurista y configura sus horarios. Si trabajas con Individual, la disponibilidad usa el horario del negocio. Añade bloqueos para los períodos que no atenderás." },
+  { title: "Asigna profesionales y jornadas", description: "Relaciona los servicios con cada manicurista y configura los horarios de atención. Ambos planes permiten elegir la cantidad de profesionales. Añade bloqueos para los períodos que no atenderás." },
   { title: "Comparte y recibe la reserva", description: "Publica el enlace en Instagram o integra el widget en tu web. La clienta elige servicio, las opciones disponibles, profesional cuando corresponda y una hora; completa sus datos y paga el abono si está configurado." },
   { title: "Gestiona la cita y la siguiente visita", description: "El recordatorio llega por email. Gestiona cancelaciones o cambios según las condiciones de la cita y consulta el historial administrativo para revisar qué servicio se reservó anteriormente." },
 ];
@@ -43,11 +43,11 @@ export function manicureSoftwareFaqs(): FaqItem[] {
   return [
     { question: "¿Cómo organizo servicios de uñas con duraciones diferentes?", answer: "Crea cada servicio con su duración y precio completos. Por ejemplo, separa esmaltado de esmaltado con retiro. Puragenda utiliza la duración del servicio, la jornada y las reservas o bloqueos existentes para determinar qué horarios se pueden ofrecer." },
     { question: "¿Puedo añadir opciones a un servicio de manicure?", answer: "Sí, puedes configurar opciones y alternativas de precio. En el recorrido descrito aquí, las opciones mantienen la duración del servicio. Si el retiro o un diseño requiere más tiempo, crea un servicio separado con la duración completa para reservar el bloque correspondiente." },
-    { question: "¿Cada manicurista puede tener su propio horario?", answer: "Sí, en el plan Equipo puedes asignar servicios y horarios a cada profesional. En el plan Individual, la disponibilidad de quien atiende se organiza con el horario del negocio. Los bloqueos permiten marcar períodos no disponibles." },
+    { question: "¿Cada manicurista puede tener su propio horario?", answer: "Sí. Ambos planes permiten organizar servicios y horarios de atención por profesional. Los bloqueos permiten marcar períodos no disponibles." },
     { question: "¿Se puede pedir un abono para una reserva de manicure?", answer: "Sí. Activa los abonos, configura el monto del servicio y conecta Mercado Pago para usar ese medio de pago. La clienta ve el abono antes de pagarlo. Si una cita ya tiene un abono aprobado, su cancelación o cambio requiere contactar al negocio; no se resuelve automáticamente desde el enlace." },
     { question: "¿Cómo reserva una clienta desde Instagram o mi web?", answer: "Abre tu enlace de reservas o el widget integrado en tu web, selecciona servicio y opciones disponibles, elige profesional cuando corresponde y una hora, y completa sus datos. El flujo funciona en el navegador y no le exige instalar una aplicación." },
     { question: "¿Cómo funcionan los recordatorios y los cambios de hora?", answer: "Puragenda envía recordatorios por email para las citas del día siguiente. El reagendamiento por enlace depende de que el negocio lo habilite, de su plazo de anticipación y de la disponibilidad. Las citas con abono aprobado requieren coordinación con el negocio para cambiarse o cancelarse." },
     { question: "¿Qué puedo consultar antes de un mantenimiento?", answer: "Puedes revisar el historial administrativo de citas de la clienta y los servicios reservados anteriormente. Si necesitas acordar un nuevo diseño o conocer el estado actual de sus uñas, conversa con ella: el historial no determina por sí solo qué servicio necesita." },
-    { question: "¿Cuánto cuesta Puragenda para una manicurista o un nail studio?", answer: `El plan ${PRICING.INDIVIDUAL.name} cuesta ${formatLandingClp(PRICING.INDIVIDUAL.monthly)} CLP al mes e incluye ${STAFF_LIMITS.INDIVIDUAL} profesional. El plan ${PRICING.EQUIPO.name} cuesta ${formatLandingClp(PRICING.EQUIPO.monthly)} CLP al mes e incluye ${STAFF_LIMITS.EQUIPO} profesionales; cada profesional adicional cuesta ${formatLandingClp(EXTRA_STAFF_COST.EQUIPO)} CLP al mes. La prueba dura ${TRIAL_DURATION_DAYS} días. Consulta los planes y condiciones vigentes en Precios.` },
+    { question: "¿Cuánto cuesta Puragenda para una manicurista o un nail studio?", answer: `${PUBLIC_PLANS_PRICE_SUMMARY} La prueba de Puragenda dura ${TRIAL_DURATION_DAYS} días y no pide tarjeta.` },
   ];
 }

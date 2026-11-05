@@ -1,3 +1,4 @@
+import { getCommercialPlanAccess } from "@/server/services/commercial-plan-access";
 import { DASHBOARD_PERMISSIONS } from "@/core/permissions";
 import { prisma } from "@/server/db/prisma";
 import { getBusinessForUser, getStaffAgendaScope } from "@/server/services/business.service";
@@ -5,21 +6,32 @@ import { getEffectiveBusinessPermissions } from "@/server/services/permissions.s
 import { PuriAccessError, type PuriContext } from "./types";
 
 export async function createPuriContext(
-  user: { id: string; role: string },
-  input: { pathname: string; locationSlug?: string; agenda?: string; period?: "week" | "month"; locale: string },
+  user: { id: string; role: string; tokenVersion?: number },
+  input: { pathname: string; locationSlug?: string; agenda?: string; period?: "week" | "month"; locale: string; businessId?: string },
 ): Promise<PuriContext> {
-  const business = await getBusinessForUser(user.id);
+  // Only trusted server callers can select an explicit tenant (e.g. an OAuth
+  // consent). The browser schema never accepts businessId; membership is still
+  // resolved from the current user, including for an explicitly selected tenant.
+  const business = input.businessId
+    ? await prisma.business.findFirst({ where: { id: input.businessId, OR: [{ ownerId: user.id }, { staff: { some: { userId: user.id, isActive: true } } }] } })
+    : await getBusinessForUser(user.id);
   if (!business) throw new PuriAccessError("BUSINESS_NOT_FOUND");
-  const [permissions, scope, locations] = await Promise.all([
+  const access = await getCommercialPlanAccess(business.id);
+  if (!access.has("puri.standard")) throw new PuriAccessError("FORBIDDEN");
+  const [permissions, scope, locations, locationCount] = await Promise.all([
     getEffectiveBusinessPermissions(user, business),
     getStaffAgendaScope(user, business),
     prisma.businessLocation.findMany({
-      where: { businessId: business.id, isActive: true },
+      where: { businessId: business.id, isActive: true,
+        ...(business.ownerId !== user.id ? { staff: { some: { isActive: true, staff: { userId: user.id, businessId: business.id, isActive: true } } } } : {}),
+      },
       select: { id: true, slug: true, name: true, timezone: true, isPrimary: true },
       orderBy: [{ isPrimary: "desc" }, { position: "asc" }],
     }),
+    prisma.businessLocation.count({ where: { businessId: business.id, isActive: true } }),
   ]);
   if (permissions.length === 0) throw new PuriAccessError("FORBIDDEN");
+  if (business.ownerId !== user.id && locations.length === 0) throw new PuriAccessError("LOCATION_FORBIDDEN");
   const requested = input.locationSlug
     ? locations.find((location) => location.slug === input.locationSlug)
     : null;
@@ -27,14 +39,15 @@ export async function createPuriContext(
   const location = requested ?? locations[0] ?? null;
   const canSeeAllAgendas = permissions.includes(DASHBOARD_PERMISSIONS.APPOINTMENTS_VIEW_ALL);
   return {
-    user,
+    user: { id: user.id, role: user.role, ...(user.tokenVersion !== undefined ? { tokenVersion: user.tokenVersion } : {}) },
     business,
+    commercialV2: access.v2,
     permissions,
     staffId: scope.ownStaffId,
     canSeeAllAgendas,
     ownAgenda: !canSeeAllAgendas || (input.agenda === "mine" && !!scope.ownStaffId),
     location,
-    locationCount: locations.length,
+    locationCount,
     locale: input.locale,
     pathname: input.pathname.startsWith("/dashboard") ? input.pathname.slice(0, 100) : "/dashboard",
     selectedPeriod: input.period ?? "week",

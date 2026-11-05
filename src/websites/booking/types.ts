@@ -1,4 +1,5 @@
 /** Neutral booking and catalog contracts shared by all website templates. */
+import type { DepositPaymentStatus } from "@/core/booking-deposit";
 export type BookingMode = "demo" | "preview" | "connected";
 export type ServiceOption = { id: string; name: string; priceDelta: number; durationDelta: number; isHomeService: boolean };
 export type OptionCategory = { id: string; name: string; isRequired: boolean; maxSelections: number; alternatives: ServiceOption[] };
@@ -6,13 +7,14 @@ export type StudioService = {
   id: string; name: string; description: string; duration: number; price: number;
   image: string; category: string; categoryId: string; categoryPosition: number;
   optionCategories: OptionCategory[]; locationIds: string[]; depositAmount?: number;
+  depositPaymentStatus?: DepositPaymentStatus;
 };
 export type StudioStaff = { id: string; name: string; image: string | null; serviceIds: string[]; locationIds: string[] };
 export type StudioLocation = { id: string; name: string; timezone: string };
 export type Catalog = {
   mode: BookingMode; business: { name: string; timezone: string; currency: string };
   services: StudioService[]; staff: StudioStaff[]; locations: StudioLocation[]; supportsAnyStaff: boolean;
-  rules?: { staffSelection: "NONE" | "REQUIRED"; allowSameDayBookings: boolean; maxDaysAhead: number; depositEnabled: boolean; maxServicesPerBooking: number };
+  rules?: { staffSelection: "NONE" | "REQUIRED"; allowSameDayBookings: boolean; maxDaysAhead: number; depositEnabled: boolean; depositPaymentStatus?: DepositPaymentStatus; maxServicesPerBooking: number };
 };
 export type Selection = { serviceId: string; serviceIds?: string[]; optionIds: string[]; staffId: string; locationId: string };
 export type AvailabilityQuery = Selection & { date: string };

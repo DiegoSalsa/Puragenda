@@ -27,7 +27,7 @@ export async function POST(request: NextRequest) {
   if (!parsed.success) return Response.json({ error: parsed.error.issues[0]?.message || "Datos inválidos" }, { status: 400 });
   const data = parsed.data;
   const uniqueIds = [...new Set(data.services.map((item) => item.serviceId))];
-  const services = await prisma.service.findMany({ where: { id: { in: uniqueIds }, businessId: ctx.business.id, bookingMode: "APPOINTMENT" }, select: { id: true } });
+  const services = await prisma.service.findMany({ where: { isActive: true, id: { in: uniqueIds }, businessId: ctx.business.id, bookingMode: "APPOINTMENT" }, select: { id: true } });
   if (services.length !== uniqueIds.length) return Response.json({ error: "Uno de los servicios no pertenece a tu negocio" }, { status: 400 });
   const template = await prisma.giftCardTemplate.create({ data: {
     businessId: ctx.business.id, name: data.name, description: data.description || null, type: data.type,

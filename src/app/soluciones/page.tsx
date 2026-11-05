@@ -8,6 +8,7 @@ import { TrackedLink } from "@/components/analytics/tracked-link";
 import { featureSolutions } from "@/lib/data/feature-solutions";
 import { industriesData } from "@/lib/data/industries";
 import { createPageMetadata } from "@/lib/seo";
+import { PuragendaPlusHomeSection } from "@/components/puragenda-plus-section";
 
 export const metadata: Metadata = createPageMetadata({
   title: "Soluciones de reservas online para negocios",
@@ -77,6 +78,8 @@ export default async function SolucionesPage() {
           .
         </p>
       </section>
+
+      <PuragendaPlusHomeSection />
 
       {/* Zig Zag Layouts */}
       <section className="mx-auto w-full max-w-6xl px-6 space-y-24 py-12">

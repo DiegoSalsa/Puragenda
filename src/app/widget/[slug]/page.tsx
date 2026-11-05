@@ -1,5 +1,8 @@
+import { publicConsentEnabled } from "@/server/contact-flow/public-consent";
+import { depositPaymentStatus } from "@/core/booking-deposit";
 
 import { LocalizedText } from "@/components/i18n/localized-text";
+import { healthFormRevision } from "@/server/services/health-consent";
 import { prisma } from "@/server/db/prisma";
 import { WidgetClient } from "./widget-client";
 import type { Metadata, Viewport } from "next";
@@ -79,7 +82,7 @@ export default async function WidgetPage({
     bg?: string; text?: string; textSecondary?: string; fontSize?: string;
     radius?: string; shadow?: string; headerAlign?: string; location?: string;
     service?: string; staff?: string; date?: string; story?: string;
-    preview?: string;
+    preview?: string; cf_ref?: string;
   }>;
 }) {
   const { slug } = await params;
@@ -94,18 +97,19 @@ export default async function WidgetPage({
           plan: true,
           status: true,
           isTrial: true,
+          currentPeriodEnd: true,
           trialEndsAt: true,
           gracePeriodEndsAt: true,
         },
       },
-      services: {
+      services: { where: { isActive: true },
         orderBy: [{ position: "asc" }, { name: "asc" }],
         include: {
           category: true,
           recurringPlan: true,
-          optionCategories: {
+          optionCategories: { where: { isActive: true },
             orderBy: { position: "asc" },
-            include: { alternatives: { orderBy: { position: "asc" } } },
+            include: { alternatives: { where: { isActive: true }, orderBy: { position: "asc" } } },
           },
           locations: { select: { locationId: true } },
         },
@@ -256,7 +260,7 @@ export default async function WidgetPage({
       services={business.services
         .filter((service) => service.bookingMode !== "PRODUCTION" || business.productionOrdersEnabled)
         .map((s) => ({
-        id: s.id, name: s.name, description: s.description, imageUrl: s.imageUrl, duration: s.duration, price: s.price, depositAmount: s.depositAmount,
+        id: s.id, name: s.name, description: s.description, imageUrl: s.imageUrl, duration: s.duration, price: s.price, depositAmount: s.depositAmount, depositPaymentStatus: depositPaymentStatus(business, s),
         bookingMode: s.bookingMode,
         productionScheduleMode: s.productionScheduleMode,
         weeklyProductionCapacity: s.weeklyProductionCapacity,
@@ -301,6 +305,7 @@ export default async function WidgetPage({
           requiresApproval: s.recurringPlan.requiresApproval,
           requiresHealthForm: s.recurringPlan.requiresHealthForm,
           healthQuestions: s.recurringPlan.healthQuestions,
+          healthFormRevision: healthFormRevision(s.recurringPlan.healthQuestions),
           requiresRut: s.recurringPlan.requiresRut,
           renewalMessage: s.recurringPlan.renewalMessage,
           expirationWarningDays: s.recurringPlan.expirationWarningDays,
@@ -344,7 +349,7 @@ export default async function WidgetPage({
       }))}
       maxServicesPerBooking={business.maxServicesPerBooking}
       groupServicesByCategory={business.groupServicesByCategory}
-      depositRequired={business.depositRequired && (business.depositPaymentMode === "MANUAL_LINK" || !!business.mpAccessToken)}
+      depositRequired={business.depositRequired}
       allowSameDayBookings={business.allowSameDayBookings}
       slotInterval={business.slotInterval}
       minAdvanceBookingMinutes={business.minAdvanceBookingMinutes}
@@ -378,6 +383,8 @@ export default async function WidgetPage({
       initialStaffId={sp.staff}
       initialDate={sp.date}
       storyCampaignToken={sp.story}
+      contactFlowToken={sp.cf_ref}
+      commercialConsentEnabled={publicConsentEnabled()}
       previewMode={previewMode}
       useBusinessScheduleOnly={(business.subscription?.plan ?? "INDIVIDUAL") === "INDIVIDUAL"}
       availableRewards={availableRewards.map((reward) => ({ ...reward, expiresAt: reward.expiresAt?.toISOString() ?? null }))}

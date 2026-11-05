@@ -2,7 +2,7 @@
 import { useTranslations } from "next-intl";
 
 import { useCallback, useEffect, useRef, useState } from "react";
-import { useRouter } from "next/navigation";
+import { usePathname, useRouter, useSearchParams } from "next/navigation";
 import { CHANGELOG_DATA, type ChangelogSpotlight } from "@/config/changelog";
 import { WebsiteLaunchPopup } from "./website-launch-popup";
 import type { WebsiteLaunchContext } from "@/websites/launch";
@@ -15,28 +15,29 @@ import { markChangelogSeenAction } from "@/server/actions/dashboard.actions";
 import { X, Sparkles, ArrowRight, ShieldCheck } from "@/components/icons/hover-icons";
 import { track } from "@/lib/analytics/client";
 
-const POPUP_FEATURE_TITLES = [
-  "Preguntas con contexto",
-  "Tu día, de un vistazo",
-  "Información con permiso",
-];
-
-export function ChangelogPopup({ websiteLaunch, websiteReminder }: {
+export function ChangelogPopup({ websiteLaunch, websiteReminder, releaseAnnouncementPending = true }: {
   websiteLaunch?: WebsiteLaunchContext | null;
   websiteReminder?: WebsiteTrialReminderContext | null;
+  releaseAnnouncementPending?: boolean;
 }) {
   const legacy = useTranslations("legacy");
-  const { isChangelogOpen, setChangelogOpen } = useDashboardOverlay();
+  const pathname = usePathname();
+  const learn = useSearchParams().has("learn");
+  const { isChangelogOpen, setChangelogOpen, setupPriority, activeHelp } = useDashboardOverlay();
+  const setupActive = pathname === "/dashboard/setup" || setupPriority || !!activeHelp || learn;
   const router = useRouter();
   const latestUpdate = CHANGELOG_DATA[0];
   const LATEST_CHANGELOG_VERSION = latestUpdate.version;
   const viewedLaunch = useRef(false);
   const previousFocus = useRef<HTMLElement | null>(null);
+  const [releaseDismissed, setReleaseDismissed] = useState(false);
+  const releasePending = releaseAnnouncementPending && !releaseDismissed;
   const [reminderHandled, setReminderHandled] = useState(false);
   const [checkedReminderKey, setCheckedReminderKey] = useState<string | null>(null);
   const reminderKey = websiteReminder?.dismissalKey;
-  const reminderChecked = !reminderKey || checkedReminderKey === reminderKey;
-  const reminderOpen = !!websiteReminder && reminderChecked && !reminderHandled;
+  const reminderChecked = releasePending || !reminderKey || checkedReminderKey === reminderKey;
+  const reminderOpen = !releasePending && !!websiteReminder && reminderChecked && !reminderHandled;
+  const websiteAnnouncementOpen = !releasePending && !!websiteLaunch;
 
   const handleDismiss = useCallback(() => {
     if (reminderOpen) {
@@ -44,8 +45,9 @@ export function ChangelogPopup({ websiteLaunch, websiteReminder }: {
       setReminderHandled(true);
     }
     setChangelogOpen(false);
-    // Closing never waits for the network. The server record syncs across devices;
-    // the browser record prevents a reload from reopening it if that save fails.
+    setReleaseDismissed(true);
+    // Closing never waits for the network. The server action stores the version
+    // in this browser's HttpOnly cookie, independently of other browsers.
     void Promise.allSettled([
       ...(reminderOpen ? [dismissWebsiteTrialReminder()] : []),
       markChangelogSeenAction(LATEST_CHANGELOG_VERSION),
@@ -53,7 +55,7 @@ export function ChangelogPopup({ websiteLaunch, websiteReminder }: {
   }, [setChangelogOpen, LATEST_CHANGELOG_VERSION, reminderOpen, reminderKey]);
 
   useEffect(() => {
-    if (!reminderKey) return;
+    if (setupActive || releasePending || !reminderKey) return;
     const frame = window.requestAnimationFrame(() => {
       let dismissed = false;
       try { dismissed = localStorage.getItem(reminderKey) === "dismissed"; } catch { /* Server dismissal still applies. */ }
@@ -63,10 +65,10 @@ export function ChangelogPopup({ websiteLaunch, websiteReminder }: {
       if (dismissed) void dismissWebsiteTrialReminder().catch(() => {});
     });
     return () => window.cancelAnimationFrame(frame);
-  }, [reminderKey, setChangelogOpen]);
+  }, [reminderKey, setChangelogOpen, setupActive, releasePending]);
 
   useEffect(() => {
-    if (!isChangelogOpen) return;
+    if (setupActive || !isChangelogOpen) return;
 
     previousFocus.current = document.activeElement instanceof HTMLElement ? document.activeElement : null;
     const focusFrame = window.requestAnimationFrame(() => {
@@ -74,7 +76,7 @@ export function ChangelogPopup({ websiteLaunch, websiteReminder }: {
     });
 
     function handleKeyDown(event: KeyboardEvent) {
-      if (websiteLaunch || reminderOpen) return; // Native <dialog> owns Escape and focus.
+      if (websiteAnnouncementOpen || reminderOpen) return; // Native <dialog> owns Escape and focus.
       if (event.key === "Escape" || event.key === "Esc") void handleDismiss();
     }
 
@@ -84,15 +86,15 @@ export function ChangelogPopup({ websiteLaunch, websiteReminder }: {
       window.removeEventListener("keydown", handleKeyDown);
       previousFocus.current?.focus();
     };
-  }, [handleDismiss, isChangelogOpen, websiteLaunch, reminderOpen]);
+  }, [handleDismiss, isChangelogOpen, websiteAnnouncementOpen, reminderOpen, setupActive]);
 
   useEffect(() => {
-    if (!isChangelogOpen || latestUpdate.popupVariant !== "launch" || viewedLaunch.current) return;
+    if (setupActive || !isChangelogOpen || latestUpdate.popupVariant !== "launch" || viewedLaunch.current) return;
     viewedLaunch.current = true;
     track("changelog_launch_viewed");
-  }, [isChangelogOpen, latestUpdate.popupVariant]);
+  }, [isChangelogOpen, latestUpdate.popupVariant, setupActive]);
 
-  if (!reminderChecked || !isChangelogOpen) return null;
+  if (setupActive || !reminderChecked || !isChangelogOpen) return null;
 
   async function handleViewDetails() {
     if (latestUpdate.popupVariant === "launch") track("changelog_launch_cta_clicked", { feature: "changelog" });
@@ -108,7 +110,7 @@ export function ChangelogPopup({ websiteLaunch, websiteReminder }: {
     router.push(spotlight.href);
   }
 
-  if (reminderOpen || websiteLaunch) return <WebsiteLaunchPopup
+  if (reminderOpen || websiteAnnouncementOpen) return <WebsiteLaunchPopup
     context={reminderOpen ? websiteReminder! : websiteLaunch!}
     reminder={reminderOpen ? websiteReminder : null}
     onDismiss={handleDismiss}
@@ -198,7 +200,7 @@ export function ChangelogPopup({ websiteLaunch, websiteReminder }: {
                 >
                   <span className="flex h-9 w-9 shrink-0 items-center justify-center rounded-xl border-2 border-black bg-[#E9D8FF] text-xs font-black text-[#5B21B6] shadow-[2px_2px_0_#000]">{String(index + 1).padStart(2, "0")}</span>
                   <div className="min-w-0">
-                    <p className="text-sm font-black leading-5">{POPUP_FEATURE_TITLES[index]}</p>
+                    {latestUpdate.popupFeatureTitles?.[index] && <p className="text-sm font-black leading-5">{latestUpdate.popupFeatureTitles[index]}</p>}
                     <p className="mt-1 text-sm font-semibold leading-6 text-black/65">{feature}</p>
                   </div>
                 </div>

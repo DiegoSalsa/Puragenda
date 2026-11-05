@@ -8,6 +8,9 @@ export const DASHBOARD_PERMISSIONS = {
   STAFF_MANAGE: "staff.manage",
   SERVICES_MANAGE: "services.manage",
   CLIENTS_MANAGE: "clients.manage",
+  APPOINTMENT_NOTES_VIEW: "appointments.notes.view",
+  HEALTH_VIEW_OWN: "health.view_own",
+  HEALTH_VIEW_ALL: "health.view_all",
   RECURRING_MANAGE: "recurring.manage",
   LOYALTY_MANAGE: "loyalty.manage",
   GIFT_CARDS_MANAGE: "gift_cards.manage",
@@ -38,6 +41,9 @@ export const PERMISSION_CATALOG: {
   { code: DASHBOARD_PERMISSIONS.STAFF_MANAGE, group: "Gestión", label: "Gestionar profesionales y roles", description: "Crear equipo, horarios y perfiles de acceso.", critical: true },
   { code: DASHBOARD_PERMISSIONS.SERVICES_MANAGE, group: "Gestión", label: "Gestionar servicios", description: "Crear y editar servicios, opciones e imágenes." },
   { code: DASHBOARD_PERMISSIONS.CLIENTS_MANAGE, group: "Gestión", label: "Gestionar clientes", description: "Consultar y editar el CRM de clientes." },
+  { code: DASHBOARD_PERMISSIONS.APPOINTMENT_NOTES_VIEW, group: "Privacidad", label: "Consultar notas internas", description: "Consultar notas de las citas y planes dentro de su alcance de Agenda.", critical: true },
+  { code: DASHBOARD_PERMISSIONS.HEALTH_VIEW_OWN, group: "Privacidad", label: "Consultar salud de sus atenciones", description: "Consultar formularios de salud asignados a este profesional.", critical: true },
+  { code: DASHBOARD_PERMISSIONS.HEALTH_VIEW_ALL, group: "Privacidad", label: "Consultar salud del negocio", description: "Consultar formularios de salud dentro de las agendas autorizadas.", critical: true },
   { code: DASHBOARD_PERMISSIONS.RECURRING_MANAGE, group: "Gestión", label: "Gestionar suscripciones", description: "Administrar reservas y planes recurrentes." },
   { code: DASHBOARD_PERMISSIONS.LOYALTY_MANAGE, group: "Crecimiento", label: "Gestionar fidelización", description: "Configurar sellos, premios y códigos." },
   { code: DASHBOARD_PERMISSIONS.GIFT_CARDS_MANAGE, group: "Crecimiento", label: "Gestionar Gift Cards", description: "Crear, vender, reenviar y anular Gift Cards." },
@@ -50,6 +56,8 @@ export const PERMISSION_CATALOG: {
 
 const ALL = PERMISSION_CATALOG.map((permission) => permission.code);
 const RECEPTIONIST_EXCLUDED = new Set<DashboardPermission>([
+  DASHBOARD_PERMISSIONS.HEALTH_VIEW_OWN,
+  DASHBOARD_PERMISSIONS.HEALTH_VIEW_ALL,
   DASHBOARD_PERMISSIONS.WEBSITE_MANAGE,
   DASHBOARD_PERMISSIONS.SETTINGS_MANAGE,
   DASHBOARD_PERMISSIONS.REFERRALS_VIEW,

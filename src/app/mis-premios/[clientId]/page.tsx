@@ -21,7 +21,7 @@ export default async function MisPremiosPage({ params }: { params: Promise<{ cli
   if (!email) redirect(`/mi-agenda?returnTo=${encodeURIComponent(`/mis-premios/${clientId}`)}`);
 
   const client = await prisma.client.findFirst({
-    where: { id: clientId, email: { equals: email, mode: "insensitive" } },
+    where: { id: clientId, portalOwnerEmail: email },
     select: {
       id: true, name: true, currentStamps: true,
       business: { select: {

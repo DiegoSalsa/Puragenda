@@ -1,7 +1,8 @@
 import { NextRequest, NextResponse } from "next/server";
 import {
   CLIENT_PORTAL_COOKIE_NAME,
-  createClientPortalAccountSession,
+  consumeClientPortalAccessSession,
+  issueClientPortalMagicToken,
   getClientPortalCookieOptions,
   getClientPortalAppUrl,
   hasClientPortalRecords,
@@ -22,10 +23,15 @@ export async function GET(request: NextRequest) {
     return NextResponse.redirect(destination, { status: 303 });
   }
 
+  // Use the same atomic token-consumption path as legacy customers. The
+  // shortcut remains local-only and cannot bypass credential-generation checks.
+  const magic = await issueClientPortalMagicToken(email);
+  const session = await consumeClientPortalAccessSession(magic.token);
+  if (!session) return NextResponse.redirect(destination, { status: 303 });
   const response = NextResponse.redirect(destination, { status: 303 });
   response.cookies.set(
     CLIENT_PORTAL_COOKIE_NAME,
-    await createClientPortalAccountSession(email),
+    session,
     getClientPortalCookieOptions(),
   );
   return response;

@@ -8,7 +8,7 @@ export function createWebsiteApi(catalog: Catalog, preview: boolean, demonstrati
     catch (error) { if (init?.method !== "POST" && error instanceof Error && error.name === "AbortError") throw error; throw new BookingError(init?.method === "POST" ? "UNCERTAIN" : "NETWORK", "No pudimos verificar la respuesta. Consulta al negocio antes de reenviar una reserva."); }
     let body;
     try { body = await response.json(); } catch { throw new BookingError(init?.method === "POST" ? "UNCERTAIN" : "UPSTREAM", "Respuesta sin resultado verificable."); }
-    if (!response.ok) throw new BookingError(response.status === 409 ? "CONFLICT" : response.status >= 500 && init?.method === "POST" ? "UNCERTAIN" : "UPSTREAM", body.error ?? "No pudimos consultar la agenda.", response.status);
+    if (!response.ok) throw new BookingError(response.status === 503 && body.code === "DEPOSIT_UNAVAILABLE" ? "DEPOSIT_UNAVAILABLE" : response.status === 409 ? "CONFLICT" : response.status >= 500 && init?.method === "POST" ? "UNCERTAIN" : "UPSTREAM", body.error ?? "No pudimos consultar la agenda.", response.status);
     return body as T;
   }
   return {

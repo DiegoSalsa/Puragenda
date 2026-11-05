@@ -1,3 +1,4 @@
+import { verifiedModelMicros } from "./growth/pricing";
 export const PURI_ANALYTICS_TIMEZONE = "America/Santiago";
 export const PURI_HABITUAL_DAYS = 3;
 export const PURI_HABITUAL_WINDOW_DAYS = 7;
@@ -18,6 +19,8 @@ export type PuriTelemetry = {
   promptTokens: number;
   completionTokens: number;
   cachedTokens: number;
+  cacheWriteTokens?: number;
+  serviceTier?: string | null;
   toolCalls: PuriToolTelemetry[];
 };
 
@@ -75,7 +78,11 @@ export function requestStatus(calls: PuriToolTelemetry[]): PuriRequestStatus {
 }
 
 type ModelPrice = { input: number; output: number; cachedInput?: number };
-export function estimatePuriCostUsd(usage: Pick<PuriTelemetry, "model" | "promptTokens" | "completionTokens" | "cachedTokens">): number | null {
+export function estimatePuriCostUsd(usage: Pick<PuriTelemetry, "model" | "promptTokens" | "completionTokens" | "cachedTokens" | "cacheWriteTokens" | "serviceTier">): number | null {
+  if (usage.serviceTier === "default") {
+    const verified = verifiedModelMicros(usage.model, usage.promptTokens, usage.completionTokens, usage.cachedTokens, usage.cacheWriteTokens);
+    if (verified !== null) return verified / 1e6;
+  }
   // Exact model prices are configured centrally; missing prices remain unknown.
   let prices: Record<string, ModelPrice>;
   try { prices = JSON.parse(process.env.PURI_MODEL_PRICES_USD_PER_MILLION ?? "{}") as Record<string, ModelPrice>; }

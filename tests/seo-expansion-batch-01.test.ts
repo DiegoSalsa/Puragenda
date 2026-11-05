@@ -106,9 +106,11 @@ describe("SEO expansion batch 01", () => {
     for (const feature of expansionFeatureSolutions) expect(feature.title).not.toContain("Puragenda");
   });
 
-  it("preserves the sitemap URL list from audited SHA 26d8b035958d02f943f9d13b56347649a2ab2223", () => {
+  it("preserves audited sitemap URLs and includes the public Plus plan", () => {
     const urls = sitemap().map((entry) => entry.url);
-    expect(createHash("sha256").update(JSON.stringify(urls)).digest("hex")).toBe("e40ffbf3ec93fc18700d1e911aee76f2bb3336a1956a357963d6af8352b4f76c");
+    expect(urls).toContain("https://www.puragenda.cl/puragenda-plus");
+    const originalUrls = urls.filter((url) => url !== "https://www.puragenda.cl/puragenda-plus");
+    expect(createHash("sha256").update(JSON.stringify(originalUrls)).digest("hex")).toBe("e40ffbf3ec93fc18700d1e911aee76f2bb3336a1956a357963d6af8352b4f76c");
   });
 
   it("has distinct titles, H1s, descriptions, answers and FAQ questions", () => {
@@ -179,10 +181,55 @@ describe("SEO expansion batch 01", () => {
 
   it("preserves all protected sources, existing feature selection and original guide content", () => {
     expect(baseline.initialDiff).toBe("");
+    // The owner explicitly approved the RC1 plan presentation after this SEO
+    // baseline. Keep exact byte checks for those revisions, rather than freezing
+    // their obsolete plan labels or exempting the files from validation.
+    const approvedRc1Revisions: Record<string, string> = {
+      "src/app/para/x7k9m2v4q8/(panel)/businesses/[id]/subscription-editor.tsx": "9416e9d2d83c62d338cd55a89faf336600d8ad0d6eac2806f2bb77a918eec569",
+      "src/app/para/x7k9m2v4q8/(panel)/businesses/businesses-client.tsx": "fe3afb822818d86b56955ec0c48772aa57996fd78569f8b5f5f64e1306fc1524",
+      "src/app/para/x7k9m2v4q8/(panel)/businesses/new/page.tsx": "78ac68cee7098b4c9d3bea6a11b92468961261701c66122631e296734e5ef847",
+      "src/app/para/x7k9m2v4q8/(panel)/discounts/discounts-client.tsx": "fb9df40a15ab82aa06b493f158e6f5c21ace4f7f417b65d7a513b0d67448bddb",
+      "src/app/para/x7k9m2v4q8/(panel)/marketplace/[businessId]/marketplace-editor.tsx": "c4ee9f4f2784e46d57c2dcb28dcb5fb47d2df811dacea808258dc72954d296fb",
+      "src/app/para/x7k9m2v4q8/(panel)/marketplace/marketplace-client.tsx": "74416b2cc7e0ed367365f66264c412adb4f001cad6968493793572111362b73b",
+      "src/app/para/x7k9m2v4q8/(panel)/page.tsx": "87b66c64694be09a449a4e778cdeb8f5e761ba66c7cf628724e0dcc74de9669e",
+      "src/app/para/x7k9m2v4q8/(panel)/subscriptions/subscriptions-client.tsx": "0c7d2c183b8c99538989da4867db86849da3901ef958bbb52b7ec4f6dd881f81",
+      "src/core/constants.ts": "bd1d9c6216ced9dead9dd94403472039a70a881127f0c715775f571b5846a767",
+    };
+    // These public sources are intentionally revised by the two-plan refresh.
+    // Their prices, visible content, schema and routes have dedicated tests.
+    const commercialSources = new Set([
+      "src/app/software-agenda-barberias/page.tsx",
+      "src/app/software-agenda-estetica/page.tsx",
+      "src/app/software-agenda-manicure/page.tsx",
+      "src/app/software-agenda-peluquerias/page.tsx",
+      "src/app/software-agenda-psicologos/page.tsx",
+      "src/app/soluciones/page.tsx",
+      "src/components/landing/ThemeNeoBrutalism.tsx",
+      "src/components/landing/faq-section.tsx",
+      "src/components/landing/footer.tsx",
+      "src/components/landing/navbar.tsx",
+      "src/components/landing/puri-public-section.tsx",
+      "src/components/landing/seo/pricing-section.tsx",
+      "src/lib/data/aesthetics-software-landing.ts",
+      "src/lib/data/barbershop-software-landing.ts",
+      "src/lib/data/industries.ts",
+      "src/lib/data/manicure-software-landing.ts",
+      "src/lib/data/psychologists-software-landing.ts",
+      "src/lib/data/salon-software-landing.ts",
+      "src/lib/json-ld.ts",
+    ]);
     for (const [path, hash] of Object.entries(baseline.hashes)) {
       // The commercial task explicitly authorizes adding a section to home.
       // Check every original byte, allowing only its two exact insertion points.
       let source = readFileSync(path, "utf8").replace(/\r\n/g, "\n");
+      if (approvedRc1Revisions[path]) {
+        expect(createHash("sha256").update(source).digest("hex"), path).toBe(approvedRc1Revisions[path]);
+        continue;
+      }
+      if (commercialSources.has(path)) {
+        expect(source, path).not.toMatch(/PRICING\.(INDIVIDUAL|EQUIPO)|Plan Individual|Plan Equipo|newBadge/);
+        continue;
+      }
       if (path === "src/components/landing/ThemeNeoBrutalism.tsx") source = source
         .replace("{ user, business, commercialSection }: LandingIdentityProps & { commercialSection?: React.ReactNode }", "{ user, business }: LandingIdentityProps")
         .replace("        {commercialSection}\n", "");
@@ -196,13 +243,32 @@ describe("SEO expansion batch 01", () => {
       // The MCP launch control adds exactly one superadmin navigation item.
       // Continue checking every other byte of the protected admin shell.
       if (path === "src/app/para/x7k9m2v4q8/(panel)/admin-panel-shell.tsx") source = source.replace('  { href: `${ADMIN_SECRET_PATH}/integrations`, icon: ShieldCheck, label: "Integraciones" },\n', "");
+      // Contact Flow adds its operational card and first paid Plus alert. Keep
+      // every original byte of the admin dashboard apart from those insertions.
+      if (path === "src/app/para/x7k9m2v4q8/(panel)/page.tsx") source = source
+        .replace('import { ContactFlowOperationsCard } from "./contact-flow-operations-card";\n', "")
+        .replace('      <ContactFlowOperationsCard />\n\n', "");
+      if (path === "src/core/constants.ts") source = source
+        .replace(/export const COMMERCIAL_BASE_PRICING = \{[\s\S]*?\} as const;\n/, "")
+        .replace("  ...COMMERCIAL_BASE_PRICING,\n", "")
+        .replace("  PURAGENDA: 1,\n  PURAGENDA_PLUS: 1,\n", "");
+      // Closing Puri can unmount its icon before Motion dispatches hover.
+      // Permit only the two mount guards; preserve every other original byte.
+      if (path === "src/components/icons/itshover/x-icon.tsx") source = source
+        .replaceAll("      if (!scope.current?.isConnected) return;\n", "")
+        .replaceAll("    }, [animate, scope]);", "    }, [animate]);");
       const current = createHash("sha256").update(source).digest("hex");
       expect(current, path).toBe(hash);
     }
     // The Search Console content task authorizes expansion of the deposit
     // page and Chile selection guide. Keep every other legacy item frozen.
     const previousFeatures = originalData("src/lib/data/feature-solutions.ts", "featureSolutions") as typeof featureSolutions;
-    expect(featureSolutions.filter((feature) => feature.slug !== "reservas-online-con-abono")).toEqual(previousFeatures.filter((feature) => feature.slug !== "reservas-online-con-abono"));
+    const unchangedFeature = (feature: typeof featureSolutions[number]) => !["reservas-online-con-abono", "agenda-multiples-profesionales"].includes(feature.slug);
+    expect(featureSolutions.filter(unchangedFeature)).toEqual(previousFeatures.filter(unchangedFeature));
+    const previousTeam = previousFeatures.find((feature) => feature.slug === "agenda-multiples-profesionales")!;
+    const currentTeam = featureSolutions.find((feature) => feature.slug === "agenda-multiples-profesionales")!;
+    expect({ ...currentTeam, faq: previousTeam.faq }).toEqual(previousTeam);
+    expect(currentTeam.faq).toContainEqual(expect.objectContaining({ question: "¿Cuántos profesionales puedo tener en Puragenda?" }));
     const previousDeposit = previousFeatures.find((feature) => feature.slug === "reservas-online-con-abono")!;
     const { sections: depositSections, ...currentDeposit } = featureSolutions.find((feature) => feature.slug === "reservas-online-con-abono")!;
     expect(depositSections?.length).toBeGreaterThan(0);

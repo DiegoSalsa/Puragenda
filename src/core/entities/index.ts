@@ -3,7 +3,7 @@
 // ═══════════════════════════════════════════
 
 export type UserRole = "ADMIN" | "RECEPTIONIST" | "STAFF" | "SUPERADMIN";
-export type SubscriptionPlan = "INDIVIDUAL" | "EQUIPO" | "TEST";
+export type SubscriptionPlan = "INDIVIDUAL" | "EQUIPO" | "TEST" | "PURAGENDA" | "PURAGENDA_PLUS";
 export type SubscriptionStatus = "ACTIVE" | "TRIALING" | "PAST_DUE" | "INACTIVE" | "CANCELLED";
 export type BillingCycle = "MONTHLY" | "ANNUAL";
 export type AppointmentStatus = "PENDING" | "AWAITING_PAYMENT" | "CONFIRMED" | "CANCELLED" | "CHECKED_IN" | "COMPLETED" | "NO_SHOW";
@@ -83,10 +83,20 @@ export interface MarketingCampaign {
   sentAt: Date;
 }
 
+export interface MarketingAvailability {
+  state: "LEGACY_PAUSED" | "SUBSCRIPTION_INACTIVE" | "CONTACT_FLOW_NOT_INCLUDED" | "CONTACT_FLOW_DISABLED" | "CONTACT_FLOW_FORBIDDEN" | "CONTACT_FLOW_REVIEW";
+  contactFlowHref: "/dashboard/puri-plus" | null;
+  contactFlowDeliveryEnabled: boolean;
+}
+
 export interface MarketingStatus {
   campaignsSentThisMonth: number;
   maxCampaignsPerMonth: number;
   maxAudienceSize: number;
   plan: SubscriptionPlan;
   lastCampaign: { subject: string; audienceSize: number; sentAt: string } | null;
+  /** Effective capacity of the paused legacy endpoint, never historical quotas. */
+  legacySendingPaused: true;
+  sendingEnabled: false;
+  availability: MarketingAvailability;
 }

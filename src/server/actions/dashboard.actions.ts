@@ -1,4 +1,6 @@
 "use server";
+import { writeBusinessHours } from "@/server/services/business-hours.service";
+import { resolveAppointmentVenue, appointmentVenueSelect } from "@/server/services/appointment-venue";
 
 import { prisma } from "@/server/db/prisma";
 import { getCurrentSessionUser } from "@/server/auth/user-session";
@@ -8,6 +10,7 @@ import { cookies } from "next/headers";
 import bcrypt from "bcrypt";
 import crypto from "crypto";
 import { SALT_ROUNDS } from "@/core/constants";
+import { changeStaffActive, StaffLifecycleError, resolveNewStaffLocations, initialStaffSchedule } from "@/server/services/staff.service";
 import { assertStaffCapacity, StaffLimitError, withStaffCapacityLock } from "@/server/services/staff-capacity.service";
 import { usesBusinessScheduleOnly } from "@/core/subscription-plan";
 import { sendStaffInviteEmail } from "@/server/email/send";
@@ -26,6 +29,8 @@ import {
   isValidTimeZone,
 } from "@/core/countries";
 import { createBusinessLocation, getLocationForBusiness, updateBusinessLocation } from "@/server/services/location.service";
+import { isRegistrationV2Contract } from "@/server/services/commercial-plan-access";
+import { registrationMarketSchema } from "@/core/registration-market";
 
 type DailyHours = {
   dayOfWeek: number;
@@ -116,44 +121,17 @@ export async function saveBusinessHoursAction(hours: { dayOfWeek: number; startT
   }
   const validationError = validateDailyHours(hours);
   if (validationError) return { error: validationError };
-  if (locationId) {
-    const location = await prisma.businessLocation.findFirst({ where: { id: locationId, businessId: business.id, isActive: true }, select: { id: true } });
-    if (!location) return { error: "Sucursal no encontrada" };
-    await prisma.$transaction(hours.map((h) => prisma.locationHours.upsert({
-      where: { locationId_dayOfWeek: { locationId: location.id, dayOfWeek: h.dayOfWeek } },
-      create: { locationId: location.id, dayOfWeek: h.dayOfWeek, startTime: h.startTime, endTime: h.endTime, isOpen: h.isOpen, breakStart: h.breakStart || null, breakEnd: h.breakEnd || null },
-      update: { startTime: h.startTime, endTime: h.endTime, isOpen: h.isOpen, breakStart: h.breakStart || null, breakEnd: h.breakEnd || null },
-    })));
-    revalidatePath("/dashboard/settings");
-    revalidatePath(`/widget/${business.slug}`);
-    return { success: true };
-  }
-  const ops = hours.map((h) =>
-    prisma.businessHours.upsert({
-      where: { businessId_dayOfWeek: { businessId: business.id, dayOfWeek: h.dayOfWeek } },
-      create: { businessId: business.id, dayOfWeek: h.dayOfWeek, startTime: h.startTime, endTime: h.endTime, isOpen: h.isOpen, breakStart: h.breakStart || null, breakEnd: h.breakEnd || null },
-      update: { startTime: h.startTime, endTime: h.endTime, isOpen: h.isOpen, breakStart: h.breakStart || null, breakEnd: h.breakEnd || null },
-    })
-  );
-  const primaryLocation = await prisma.businessLocation.findFirst({
-    where: { businessId: business.id, isPrimary: true },
-    select: { id: true },
-  });
-  const locationOps = primaryLocation
-    ? hours.map((h) => prisma.locationHours.upsert({
-        where: { locationId_dayOfWeek: { locationId: primaryLocation.id, dayOfWeek: h.dayOfWeek } },
-        create: { locationId: primaryLocation.id, dayOfWeek: h.dayOfWeek, startTime: h.startTime, endTime: h.endTime, isOpen: h.isOpen, breakStart: h.breakStart || null, breakEnd: h.breakEnd || null },
-        update: { startTime: h.startTime, endTime: h.endTime, isOpen: h.isOpen, breakStart: h.breakStart || null, breakEnd: h.breakEnd || null },
-      }))
-    : [];
-  await prisma.$transaction([...ops, ...locationOps]);
+  try {
+    await prisma.$transaction(tx => writeBusinessHours(tx, business.id, hours, locationId));
+  } catch { return { error: "No se pudieron guardar los horarios de esta sucursal" }; }
   revalidatePath("/dashboard/settings");
+  revalidatePath(`/widget/${business.slug}`);
   return { success: true };
 }
 
 // â”€â”€â”€ Staff CRUD â”€â”€â”€
 
-export async function createStaffAction(data: { name: string; email: string; role?: "ADMIN" | "RECEPTIONIST" | "STAFF"; serviceIds?: string[] }) {
+export async function createStaffAction(data: { name: string; email: string; role?: "ADMIN" | "RECEPTIONIST" | "STAFF"; serviceIds?: string[]; locationIds?: string[] }) {
   const user = await getCurrentSessionUser();
   if (!user) return { error: "No autenticado" };
   const business = await getBusinessForUser(user.id);
@@ -163,6 +141,7 @@ export async function createStaffAction(data: { name: string; email: string; rol
     return { error: "No tienes permisos para agregar profesionales" };
   }
 
+  if (!data.name.trim() || data.name.trim().length > 100) return { error: "Escribe un nombre válido" };
   // Validate email
   const email = data.email.trim().toLowerCase();
   if (!email || !/^[^\s@]+@[^\s@]+\.[^\s@]+$/.test(email)) {
@@ -208,6 +187,8 @@ export async function createStaffAction(data: { name: string; email: string; rol
     // Create User + Staff in a transaction
     await withStaffCapacityLock(business.id, async (tx) => {
       await assertStaffCapacity(business.id, tx);
+      const locationIds = await resolveNewStaffLocations(tx, business.id, data.locationIds);
+      if (await tx.service.count({ where: { businessId: business.id, id: { in: serviceIds }, isActive: true } }) !== serviceIds.length) throw new StaffLifecycleError("Selecciona servicios activos de este negocio");
       const staffUser = await tx.user.create({
         data: {
           email,
@@ -225,6 +206,8 @@ export async function createStaffAction(data: { name: string; email: string; rol
           userId: staffUser.id,
           isActive: true,
           ...(serviceConnect ? { services: serviceConnect } : {}),
+          locations: { create: locationIds.map(locationId => ({ locationId })) },
+          ...(locationIds.length ? { schedule: { create: initialStaffSchedule() } } : {}),
         },
       });
 
@@ -233,7 +216,7 @@ export async function createStaffAction(data: { name: string; email: string; rol
     // Send invite email with temporary password (fire and forget)
     sendStaffInviteEmail(email, data.name.trim(), business.name, tempPassword, resolveLocale(business.locale)).catch(() => {});
   } catch (error) {
-    if (error instanceof StaffLimitError) return { error: error.message };
+    if (error instanceof StaffLimitError || error instanceof StaffLifecycleError) return { error: error.message };
     return { error: "Error al crear. ¿Email duplicado?" };
   }
 
@@ -241,7 +224,8 @@ export async function createStaffAction(data: { name: string; email: string; rol
   return { success: true };
 }
 
-export async function toggleStaffActiveAction(staffId: string) {
+export async function toggleStaffActiveAction(staffId: string, desiredActive?: boolean) {
+  if (desiredActive !== undefined && typeof desiredActive !== "boolean") return { error: "Estado inválido" };
   const user = await getCurrentSessionUser();
   if (!user) return { error: "No autenticado" };
   const business = await getBusinessForUser(user.id);
@@ -250,16 +234,9 @@ export async function toggleStaffActiveAction(staffId: string) {
     return { error: "No tienes permisos para administrar profesionales" };
   }
   try {
-    const result = await withStaffCapacityLock(business.id, async (tx) => {
-      const staff = await tx.staff.findFirst({ where: { id: staffId, businessId: business.id } });
-      if (!staff) return { error: "Staff no encontrado" };
-      if (!staff.isActive) await assertStaffCapacity(business.id, tx);
-      await tx.staff.update({ where: { id: staff.id }, data: { isActive: !staff.isActive } });
-      return { success: true };
-    });
-    if ("error" in result) return result;
+    await changeStaffActive(business.id, staffId, desiredActive);
   } catch (error) {
-    if (error instanceof StaffLimitError) return { error: error.message };
+    if (error instanceof StaffLimitError || error instanceof StaffLifecycleError) return { error: error.message };
     throw error;
   }
   revalidatePath("/dashboard/staff");
@@ -279,7 +256,7 @@ export async function saveStaffScheduleAction(staffId: string, schedule: { dayOf
     select: { plan: true },
   });
   if (usesBusinessScheduleOnly(subscription?.plan)) {
-    return { error: "El plan Individual usa automáticamente el horario del negocio" };
+    return { error: "Los negocios con un profesional usan automáticamente el horario del negocio" };
   }
   const validationError = validateDailyHours(schedule);
   if (validationError) return { error: validationError };
@@ -432,27 +409,20 @@ export async function updateServiceCategoryGroupingAction(enabled: boolean) {
   return { success: true };
 }
 
-// â”€â”€â”€ Staff Deletion (Soft Delete) â”€â”€â”€
+// â”€â”€â”€ Staff deactivation (legacy action name) â”€â”€â”€
 export async function deleteStaffAction(staffId: string) {
   const user = await getCurrentSessionUser();
   if (!user) return { error: "No autenticado" };
   const business = await getBusinessForUser(user.id);
   if (!business) return { error: "No tienes un negocio" };
   if (!(await hasBusinessPermission(user, business, DASHBOARD_PERMISSIONS.STAFF_MANAGE))) {
-    return { error: "No tienes permisos para eliminar profesionales" };
+    return { error: "No tienes permisos para desactivar profesionales" };
   }
-  const staff = await prisma.staff.findFirst({ where: { id: staffId, businessId: business.id } });
-  if (!staff) return { error: "Profesional no encontrado" };
-
-  // Soft delete: deactivate + disconnect from future appointments
-  await prisma.$transaction([
-    // Nullify staffId on all appointments referencing this staff
-    prisma.appointment.updateMany({ where: { staffId }, data: { staffId: null } }),
-    // Delete schedules
-    prisma.staffSchedule.deleteMany({ where: { staffId } }),
-    // Delete the staff record
-    prisma.staff.delete({ where: { id: staffId } }),
-  ]);
+  try { await changeStaffActive(business.id, staffId, false); }
+  catch (error) {
+    if (error instanceof StaffLifecycleError || error instanceof StaffLimitError) return { error: error.message };
+    throw error;
+  }
 
   revalidatePath("/dashboard/staff");
   return { success: true };
@@ -857,6 +827,7 @@ export async function createScheduleBlockAction(data: {
         },
         include: {
           recurringBooking: { select: { id: true, customerName: true, customerEmail: true } },
+          location: { select: appointmentVenueSelect },
           service: { select: { name: true } },
           business: { select: { name: true, timezone: true } },
         },
@@ -891,7 +862,7 @@ export async function createScheduleBlockAction(data: {
             serviceName: apt.service.name,
             sessionDate: apt.startTime,
             businessName: apt.business.name,
-            timezone: apt.business.timezone,
+            ...await resolveAppointmentVenue(apt),
           });
         }
 
@@ -1015,6 +986,13 @@ export async function updateBusinessCountryAction(
   }
   if (!isValidTimeZone(data.timezone)) return { error: "La zona horaria no es válida" };
   if (!/^[A-Z]{3}$/.test(currencyCode)) return { error: "La moneda debe usar un código ISO de 3 letras" };
+  const contract = await prisma.commercialSubscription.findUnique({
+    where: { businessId: business.id },
+    select: { planCode: true, legacySubscriptionId: true, termsSnapshot: true },
+  });
+  if (isRegistrationV2Contract(contract) && !registrationMarketSchema.safeParse({ countryCode, currencyCode, timezone: data.timezone }).success) {
+    return { error: "Tu contrato de Puragenda requiere Chile (CL), moneda CLP y una zona horaria de Chile" };
+  }
   const unchanged = business.countryCode === countryCode && business.timezone === data.timezone && business.currencyCode === currencyCode;
   if (unchanged) return { success: true };
   if (business.mpAccessToken && business.countryCode !== countryCode) {

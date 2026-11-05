@@ -1,4 +1,4 @@
-export type ErrorCode = "VALIDATION" | "CONFIGURATION" | "CAPABILITY_MISSING" | "NETWORK" | "TIMEOUT" | "CONFLICT" | "RATE_LIMIT" | "ORIGIN" | "UNCERTAIN" | "UPSTREAM";
+export type ErrorCode = "VALIDATION" | "CONFIGURATION" | "CAPABILITY_MISSING" | "NETWORK" | "TIMEOUT" | "CONFLICT" | "RATE_LIMIT" | "ORIGIN" | "UNCERTAIN" | "UPSTREAM" | "DEPOSIT_UNAVAILABLE";
 export class BookingError extends Error {
   readonly code: ErrorCode;
   readonly status: number;

@@ -1,11 +1,12 @@
 import { WebsiteError } from "@/server/websites/errors";
-import { resolveTxt } from "node:dns/promises";
 import type { Prisma, WebsiteDomain } from "@prisma/client";
 import { randomBytes } from "node:crypto";
 import { prisma } from "@/server/db/prisma";
 import { normalizeHostname } from "@/websites/policy";
 import { requireWebsiteManager, websiteRootDomain } from "./service";
 import { websiteDomainProvider, type DomainProvider, type DomainResult } from "./domain-provider";
+import { websiteTxtMatches } from "./domain-ownership";
+import { resolveWebsiteCommercialAccess } from "./commercial-access";
 
 export interface WebsiteDomainAdapter {
   check(hostname: string, token: string): Promise<{ verified: boolean; active: boolean; message: string }>;
@@ -13,8 +14,7 @@ export interface WebsiteDomainAdapter {
 // DNS proves ownership; provider activation is a separate, ownership-gated step.
 export const pendingDomainAdapter: WebsiteDomainAdapter = {
   async check(hostname, token) {
-    let verified = false;
-    try { verified = (await resolveTxt(`_puragenda.${hostname}`)).some(record => record.join("") === token); } catch { /* DNS not ready */ }
+    const verified = await websiteTxtMatches(hostname, token);
     return { verified, active: false, message: verified ? "Propiedad verificada. Pendiente de conexión y SSL por soporte." : "Publica el TXT para verificar la propiedad." };
   },
 };
@@ -35,13 +35,14 @@ async function recordFailure(id: string, error: unknown, db: DomainDb) {
   await db.websiteDomain.update({ where: { id }, data: { status: "FAILED", isPrimary: false, lastError: error instanceof WebsiteError ? error.message : "No pudimos conectar este dominio. Intenta nuevamente.", checkedAt: new Date() } });
 }
 export async function addWebsiteDomain(raw: string, provider?: DomainProvider) {
-  const { business } = await requireWebsiteManager(true);
+  const { business } = await requireWebsiteManager(true, true);
   const site = await prisma.businessWebsite.findUniqueOrThrow({ where: { businessId: business.id } });
   const hostname = customHostname(raw);
   // The provider is intentionally not called until TXT ownership is verified.
   void provider;
   return prisma.$transaction(async tx => {
     await tx.$queryRaw`SELECT id FROM "Business" WHERE id = ${business.id} FOR UPDATE`;
+    if (!(await resolveWebsiteCommercialAccess(business.id, new Date(), tx)).domains) throw new WebsiteError("Necesitas acceso vigente al sitio web para conectar dominios");
     if (await tx.websiteDomain.count({ where: { websiteId: site.id } }) >= 5) throw new WebsiteError("Máximo 5 dominios");
     const verificationToken = `puragenda-verify=${randomBytes(24).toString("hex")}`;
     const domain = await tx.websiteDomain.create({ data: { websiteId: site.id, hostname, provider: "pending", verificationToken, dnsRecords: ownershipRecords(hostname, verificationToken) } });
@@ -50,10 +51,11 @@ export async function addWebsiteDomain(raw: string, provider?: DomainProvider) {
     return domain;
   }, { timeout: 30000 });
 }
-async function managedDomain<T>(id: string, work: (domain: WebsiteDomain, tx: Prisma.TransactionClient) => Promise<T>) {
-  const { business } = await requireWebsiteManager(true);
+async function managedDomain<T>(id: string, work: (domain: WebsiteDomain, tx: Prisma.TransactionClient) => Promise<T>, requireEntitlement = true) {
+  const { business } = await requireWebsiteManager(true, requireEntitlement);
   const outcome = await prisma.$transaction(async tx => {
     await tx.$queryRaw`SELECT id FROM "Business" WHERE id = ${business.id} FOR UPDATE`;
+    if (requireEntitlement && !(await resolveWebsiteCommercialAccess(business.id, new Date(), tx)).domains) throw new WebsiteError("Necesitas acceso vigente al sitio web para conectar dominios");
     const domain = await tx.websiteDomain.findFirst({ where: { id, website: { businessId: business.id } } });
     if (!domain) throw new WebsiteError("Dominio no encontrado");
     try { return { value: await work(domain, tx) }; }
@@ -92,7 +94,9 @@ export async function refreshWebsiteDomain(id: string) {
 }
 export async function removeWebsiteDomain(id: string) {
   return managedDomain(id, async (domain, tx) => {
-    if (domain.provider !== "pending" && domain.tenantVerifiedAt) await websiteDomainProvider().removeDomain(domain.hostname);
+    // A historical timestamp does not authorize deleting somebody else's
+    // current provider record after DNS ownership has changed.
+    if (domain.provider !== "pending" && domain.tenantVerifiedAt && await websiteTxtMatches(domain.hostname, domain.verificationToken)) await websiteDomainProvider().removeDomain(domain.hostname);
     await tx.websiteDomain.delete({ where: { id } });
-  });
+  }, false);
 }

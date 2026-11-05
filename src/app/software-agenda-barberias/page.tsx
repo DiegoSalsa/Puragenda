@@ -23,10 +23,9 @@ import {
   softwareApplicationNode,
 } from "@/lib/json-ld";
 import { createPageMetadata } from "@/lib/seo";
-import { PRICING, STAFF_LIMITS, TRIAL_DURATION_DAYS } from "@/core/constants";
+import { TRIAL_DURATION_DAYS } from "@/core/constants";
 import { customerTestimonials } from "@/lib/data/testimonials";
 import { caseStudyPath, getPublishedCaseStudy } from "@/lib/data/case-studies";
-import { formatLandingClp } from "@/lib/data/scheduling-system-landing";
 import {
   BARBERSHOP_SOFTWARE_PATH,
   barbershopCustomerSteps,
@@ -43,8 +42,6 @@ import { cn } from "@/lib/utils";
 export const revalidate = 3600;
 
 const faqs = barbershopSoftwareFaqs();
-const individualPrice = formatLandingClp(PRICING.INDIVIDUAL.monthly);
-const teamPrice = formatLandingClp(PRICING.EQUIPO.monthly);
 const barbershopTestimonial = customerTestimonials.find((item) => item.business === "Soccerbarber");
 const publishedBarbershopCase = getPublishedCaseStudy("soccerbarber");
 
@@ -201,7 +198,7 @@ export default async function BarbershopSoftwareLandingPage() {
         <div className={seo.section}>
           <SectionIntro id="varios-barberos" kicker="Equipo del local" title="Varios barberos, una sola reserva pública">
             <p>
-              El cliente entra por un enlace. Por detrás, cada barbero mantiene su propia disponibilidad. El plan Equipo incluye {STAFF_LIMITS.EQUIPO} profesionales; el Individual cubre a un barbero.
+              El cliente entra por un enlace. Por detrás, cada barbero mantiene su propia disponibilidad. Ambos planes parten con un profesional y permiten sumar más con una escala progresiva de precios.
             </p>
           </SectionIntro>
           <div className="mt-10 grid gap-8 md:grid-cols-2">
@@ -259,16 +256,6 @@ export default async function BarbershopSoftwareLandingPage() {
               <Link href="/pricing" className={seo.link}>precios</Link>.
             </p>
           }
-          individual={{
-            name: "Un barbero",
-            price: individualPrice,
-            detail: `Plan ${PRICING.INDIVIDUAL.name}: una agenda, reservas ilimitadas y el enlace de reserva.`,
-          }}
-          team={{
-            name: "Equipo del local",
-            price: teamPrice,
-            detail: `Plan ${PRICING.EQUIPO.name}: ${STAFF_LIMITS.EQUIPO} profesionales incluidos y roles de acceso.`,
-          }}
         />
       </div>
 
