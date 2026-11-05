@@ -224,7 +224,7 @@ async function persistPlusPayment(op: CommercialBillingOperation, payment: MpV2P
         lastPaymentStatus: "CONFIRMED", lastPaymentAt: payment.date_approved, lastPaymentEventId: event.id, lastReconciledAt: new Date(),
       }});
       await materializeCommercialEntitlements(tx, updated);
-      await tx.commercialBillingOperation.update({where: {id: op.id}, data: {status: "APPLIED", appliedAt: new Date(), failureCode: null}});
+      await tx.commercialBillingOperation.update({where: {id: op.id}, data: {status: "APPLIED", appliedAt: op.appliedAt ?? new Date(), failureCode: null}});
     } else if (["REFUNDED", "CHARGEBACK"].includes(state) && business.commercialSubscription && business.commercialSubscription.lastPaymentEventId === prior?.eventId) {
       const terms = legacyPlusTerms(business.commercialSubscription.termsSnapshot)!;
       const updated = await tx.commercialSubscription.update({where: {id: op.subscriptionId}, data: {status: "INACTIVE", lastPaymentStatus: state, termsSnapshot: commercialJson({...terms, combinedRecurring: false})}});
@@ -234,14 +234,17 @@ async function persistPlusPayment(op: CommercialBillingOperation, payment: MpV2P
   });
 }
 async function synchronizeLegacyPlusRenewal(businessId: string, provider: MpV2Provider, restoreBase = false) {
-  const business = await readLegacyPlusBusiness(businessId), s = business.subscription!, terms = legacyPlusTerms(business.commercialSubscription?.termsSnapshot);
-  if (!terms || (!terms.combinedRecurring && !restoreBase) || s.paymentMethod === "BANK_TRANSFER" || !s.mpSubscriptionId) return;
-  const base = calculateNextBillingPreview(s);
-  const expected = terms.cancelAt || restoreBase ? base.mpAmount : base.amountDue + terms.upgradeCycleAmount;
-  const remote = await legacySubscription(provider,s.mpSubscriptionId);
-  if (remote.auto_recurring.transaction_amount !== expected) await provider.port.update(remote.id, {auto_recurring: {transaction_amount: expected, currency_id: "CLP"}});
-  const canonical = await legacySubscription(provider,remote.id);
-  if (canonical.auto_recurring.transaction_amount !== expected) throw new Error("LEGACY_PLUS_RENEWAL_UNCONFIRMED");
+  await prisma.$transaction(async tx=>{
+    await tx.$queryRaw`SELECT "id" FROM "Business" WHERE "id" = ${businessId} FOR UPDATE`;
+    const business = await readLegacyPlusBusiness(businessId,tx), s = business.subscription!, terms = legacyPlusTerms(business.commercialSubscription?.termsSnapshot);
+    if (!terms || (!terms.combinedRecurring && !restoreBase) || s.paymentMethod === "BANK_TRANSFER" || !s.mpSubscriptionId) return;
+    const base = calculateNextBillingPreview(s);
+    const expected = terms.cancelAt || restoreBase ? base.mpAmount : base.amountDue + terms.upgradeCycleAmount;
+    const remote = await legacySubscription(provider,s.mpSubscriptionId);
+    if (remote.auto_recurring.transaction_amount !== expected) await provider.port.update(remote.id, {auto_recurring: {transaction_amount: expected, currency_id: "CLP"}});
+    const canonical = await legacySubscription(provider,remote.id);
+    if (canonical.auto_recurring.transaction_amount !== expected) throw new Error("LEGACY_PLUS_RENEWAL_UNCONFIRMED");
+  },{maxWait:2000,timeout:35000});
 }
 export async function reconcileLegacyPlusPreference(businessId: string, operationId: string, paymentId: string, provider = createMpV2Provider()) {
   await provider.checkAccount(); const op = await ownedOperation(businessId, operationId, provider), q = saved(op), payment = await provider.payment(paymentId);
@@ -287,14 +290,17 @@ export async function reconcileLegacyPlusInvoice(invoice: MercadoPagoInvoiceSnap
   if (remote.id !== terms.providerSubscriptionId || !invoice.payment?.id || !invoice.id) throw new Error("LEGACY_PLUS_INVOICE_BINDING_MISMATCH");
   const payment = await mp.payment(String(invoice.payment.id));
   const business = await readLegacyPlusBusiness(snapshot.businessId), s = business.subscription!;
+  const root = await prisma.commercialBillingOperation.findFirstOrThrow({where: {subscriptionId: snapshot.id, environment: mp.config.environment,
+    providerSubscriptionId: remote.id, quoteSnapshot: {path: ["origin"], equals: "legacy_plus_checkout"}}, orderBy: {createdAt: "desc"}});
+  const quote=saved(root);
+  if(+canonical.debit_date < +quote.firstChargeAt-60_000)return false;
   const extension = terms.cancelAt && canonical.debit_date >= new Date(terms.cancelAt) ? 0 : terms.upgradeCycleAmount;
   const basePreview = calculateNextBillingPreview(s), base = extension ? basePreview.amountDue : basePreview.mpAmount;
   const already = await prisma.commercialPaymentEvidence.findUnique({where: {provider_paymentId: {provider: "MERCADO_PAGO", paymentId: payment.id}}});
+  if(!already&&root.appliedAt&&canonical.debit_date<root.appliedAt&&canonical.transaction_amount===base)return false;
   if (!already && (payment.transaction_amount !== base + extension || canonical.transaction_amount !== payment.transaction_amount)) throw new Error("LEGACY_PLUS_INVOICE_AMOUNT_MISMATCH");
   if (already && already.amountMinor !== payment.transaction_amount) throw new Error("LEGACY_PLUS_EVIDENCE_CONFLICT");
-  const root = await prisma.commercialBillingOperation.findFirstOrThrow({where: {subscriptionId: snapshot.id, environment: mp.config.environment,
-    OR: [{providerSubscriptionId: remote.id}, {kind: "CONTRACT_CHANGE"}], quoteSnapshot: {path: ["origin"], equals: "legacy_plus_checkout"}}, orderBy: {createdAt: "desc"}});
-  const start = canonical.debit_date, end = endOf(start, s.billingCycle), quote=saved(root);
+  const start = canonical.debit_date, end = endOf(start, s.billingCycle);
   if (start > new Date() || +start < +quote.firstChargeAt-60_000 || (payment.external_reference&&remote.external_reference&&payment.external_reference!==remote.external_reference) || (payment.date_approved && payment.date_approved > new Date())) throw new Error("LEGACY_PLUS_PAYMENT_PERIOD_MISMATCH");
   if (confirmedPayment(payment)) {
     await processMercadoPagoInvoice({...invoice, payment: {...invoice.payment, id: payment.id, status: "approved"}}, new Date(), extension);
