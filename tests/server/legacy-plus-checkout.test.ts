@@ -43,6 +43,13 @@ describe("existing-business Plus checkout",()=>{
   const b=fixture(),p=provider();b.subscription!.currentPeriodEnd=new Date("2026-07-29T12:00:00Z");
   const offer=await legacyPlusOffer(b,"owner",p,now);expect(offer).toMatchObject({total:44990,professionalTotal:5,periodEnd:new Date("2026-11-20T12:00:00Z")});expect(p.port.subscription).toHaveBeenCalledWith("existing-agreement");
  });
+ it("accepts an old agreement without external_reference while retaining seller/application validation",async()=>{
+  const b=fixture(),p=provider();const raw=await p.port.subscription("existing-agreement") as Record<string,unknown>;
+  vi.mocked(p.port.subscription).mockResolvedValue({...raw,external_reference:null});
+  expect((await legacyPlusOffer(b,"owner",p,now)).total).toBe(44990);
+  vi.mocked(p.port.subscription).mockResolvedValue({...raw,external_reference:null,collector_id:999});
+  await expect(legacyPlusOffer(b,"owner",p,now)).rejects.toThrow("V2_PROVIDER_ACCOUNT_MISMATCH");
+ });
  it("retains a current trial deadline and temporary benefits in its first combined payment",async()=>{
   const b=fixture();Object.assign(b.subscription!,{status:"TRIALING",isTrial:true,trialEndsAt:new Date("2026-11-12T12:00:00Z"),pendingDiscountPercentage:50});
   const offer=await legacyPlusOffer(b,"owner",provider(),now);expect(offer).toMatchObject({mode:"COMBINED",trial:true,firstChargeAt:b.subscription!.trialEndsAt,baseCycleAmount:29990});expect(offer.amountDue).toBeLessThan(offer.total);

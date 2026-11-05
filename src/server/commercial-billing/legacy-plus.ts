@@ -27,6 +27,16 @@ const endOf = (start: Date, cycle: "MONTHLY" | "ANNUAL") => cycle === "ANNUAL" ?
 const startOf = (end: Date, cycle: "MONTHLY" | "ANNUAL") => cycle === "ANNUAL" ? addYears(end, -1) : addMonths(end, -1);
 const open = ["PREPARED", "EXECUTING", "UNKNOWN", "AWAITING_PAYMENT", "PAID"];
 
+/** Older pending/authorized contracts were created without external_reference.
+ * Normalize that absent field only here; tenant/account/application ownership
+ * is still verified, and V2 registration contracts keep their strict binding. */
+async function legacySubscription(provider: MpV2Provider, id: string) {
+  const raw = z.object({id:z.union([z.string(),z.number()]),external_reference:z.string().nullish()}).passthrough().parse(await provider.port.subscription(id));
+  const value = provider.validateSubscription({...raw,external_reference:raw.external_reference??""});
+  if(value.id!==id)throw new Error("LEGACY_PLUS_PROVIDER_BINDING_MISMATCH");
+  return value;
+}
+
 export function legacyPlusSourceHash(business: Business) {
   const s = business.subscription!;
   return commercialHash({businessId: business.id, ownerId: business.ownerId, country: business.countryCode, currency: business.currencyCode,
@@ -54,7 +64,7 @@ export async function legacyPlusOffer(business: Business, actorId: string, provi
   // The provider's billing anchor is authoritative when the old projection is stale.
   // A manual account's historical MP reference is never read or modified.
   if (active && !manual && s.mpSubscriptionId && provider) {
-    const remote = await provider.subscription(s.mpSubscriptionId);
+    const remote = await legacySubscription(provider,s.mpSubscriptionId);
     if (remote.next_payment_date && remote.next_payment_date > now) periodEnd = remote.next_payment_date;
   }
   let periodStart = active ? startOf(periodEnd, s.billingCycle) : now;
@@ -148,7 +158,7 @@ export async function executeLegacyPlusCheckout(businessId: string, operationId:
       const body = {reason: `Puragenda+ · ${q.selection.professionalTotal} profesionales`, external_reference: reference(op.id), payer_email: payerEmail,
         back_url: provider.config.returnUrl, auto_recurring: {frequency: q.selection.billingCycle === "ANNUAL" ? 12 : 1, frequency_type: "months" as const,
           transaction_amount: op.expectedPaymentMinor!, currency_id: "CLP", ...(q.firstChargeAt > new Date() ? {start_date: q.firstChargeAt.toISOString()} : {})}};
-      const remote = providerId ? await provider.subscription(providerId) : null;
+      const remote = providerId ? await legacySubscription(provider,providerId) : null;
       if (remote && !["pending", "authorized", "paused"].includes(remote.status)) throw new Error("LEGACY_PLUS_PROVIDER_STATE_REVIEW");
       const created = provider.validateSubscription(remote
         ? await provider.port.update(remote.id, body)
@@ -228,9 +238,9 @@ async function synchronizeLegacyPlusRenewal(businessId: string, provider: MpV2Pr
   if (!terms || (!terms.combinedRecurring && !restoreBase) || s.paymentMethod === "BANK_TRANSFER" || !s.mpSubscriptionId) return;
   const base = calculateNextBillingPreview(s);
   const expected = terms.cancelAt || restoreBase ? base.mpAmount : base.amountDue + terms.upgradeCycleAmount;
-  const remote = await provider.subscription(s.mpSubscriptionId);
+  const remote = await legacySubscription(provider,s.mpSubscriptionId);
   if (remote.auto_recurring.transaction_amount !== expected) await provider.port.update(remote.id, {auto_recurring: {transaction_amount: expected, currency_id: "CLP"}});
-  const canonical = await provider.subscription(remote.id);
+  const canonical = await legacySubscription(provider,remote.id);
   if (canonical.auto_recurring.transaction_amount !== expected) throw new Error("LEGACY_PLUS_RENEWAL_UNCONFIRMED");
 }
 export async function reconcileLegacyPlusPreference(businessId: string, operationId: string, paymentId: string, provider = createMpV2Provider()) {
@@ -273,7 +283,7 @@ export async function reconcileLegacyPlusInvoice(invoice: MercadoPagoInvoiceSnap
   const mp = provider ?? createMpV2Provider(); await mp.checkAccount();
   const canonical = z.object({id:z.union([z.string(),z.number()]).transform(String),preapproval_id:z.string(),debit_date:z.coerce.date(),currency_id:z.literal("CLP"),transaction_amount:z.number().int().nonnegative(),payment:z.object({id:z.union([z.string(),z.number()]).transform(String).nullish()}).nullish()}).parse(await mp.port.invoice(String(invoice.id)));
   if(canonical.id!==String(invoice.id)||canonical.preapproval_id!==invoice.preapproval_id||canonical.payment?.id!==String(invoice.payment?.id))throw new Error("LEGACY_PLUS_INVOICE_BINDING_MISMATCH");
-  const remote = await mp.subscription(canonical.preapproval_id);
+  const remote = await legacySubscription(mp,canonical.preapproval_id);
   if (remote.id !== terms.providerSubscriptionId || !invoice.payment?.id || !invoice.id) throw new Error("LEGACY_PLUS_INVOICE_BINDING_MISMATCH");
   const payment = await mp.payment(String(invoice.payment.id));
   const business = await readLegacyPlusBusiness(snapshot.businessId), s = business.subscription!;
@@ -339,7 +349,7 @@ export async function reconcileLegacyPlusOperation(businessId: string, operation
       await prisma.commercialSubscription.update({where: {id: op.subscriptionId}, data: {externalSubscriptionId: providerId,termsSnapshot:commercialJson(terms)}});
       if(!q.manual)await prisma.subscription.update({where:{id:q.baseSubscriptionId},data:{mpSubscriptionId:providerId}});
     }
-    const remote = await provider.subscription(providerId);
+    const remote = await legacySubscription(provider,providerId);
     if (remote.external_reference !== reference(op.id)) throw new Error("LEGACY_PLUS_PROVIDER_BINDING_MISMATCH");
     if(["pending","authorized"].includes(remote.status)&&remote.init_point&&op.status!=="APPLIED")await prisma.commercialBillingOperation.update({where:{id:op.id},data:{status:"AWAITING_PAYMENT",providerPreview:commercialJson({checkoutUrl:provider.checkoutUrl(remote.init_point,remote.id)})}});
     for (const invoice of await provider.invoices(providerId)) await reconcileLegacyPlusInvoice({...invoice, debit_date: invoice.debit_date.toISOString(), payment: invoice.payment?.id ? {id: invoice.payment.id} : undefined}, provider);
@@ -357,7 +367,7 @@ export async function handleLegacyPlusWebhook(raw: string, headers: Headers, que
     const invoice = await provider.port.invoice(notification.resourceId) as MercadoPagoInvoiceSnapshot;
     if (String(invoice.id) !== notification.resourceId || !await reconcileLegacyPlusInvoice(invoice, provider)) throw new Error("LEGACY_PLUS_OPERATION_NOT_FOUND");
   } else {
-    const remote = await provider.subscription(notification.resourceId);
+    const remote = await legacySubscription(provider,notification.resourceId);
     if (!remote.external_reference.startsWith("legacy_plus_")) throw new Error("LEGACY_PLUS_OPERATION_NOT_FOUND");
     const op = await prisma.commercialBillingOperation.findFirstOrThrow({where: {id: remote.external_reference.slice(12), environment: provider.config.environment}});
     await reconcileLegacyPlusOperation(op.businessId, op.id, provider);
