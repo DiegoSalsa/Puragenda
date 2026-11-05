@@ -6,6 +6,7 @@ import { prisma } from "@/server/db/prisma";
 import { isV2Plan } from "./commercial-plan-access";
 import { hasPendingCommercialBenefit } from "./commercial-benefit-hold";
 import { isTrialCurrentlyActive } from "@/core/subscription-access";
+import { legacyPlusRenewalAmount } from "@/server/commercial-billing/legacy-plus-state";
 
 export const MIN_MERCADOPAGO_AMOUNT_CLP = 10;
 
@@ -225,7 +226,11 @@ export async function syncMercadoPagoSubscriptionAmount(subscriptionId: string) 
     return { success: false as const, error: "Suscripcion no encontrada" };
   }
 
-  const preview = calculateNextBillingPreview(subscription);
+  const basePreview = calculateNextBillingPreview(subscription);
+  const plusAmount = await legacyPlusRenewalAmount(subscription.businessId);
+  const preview = {...basePreview, baseAmount: basePreview.baseAmount + plusAmount, amountDue: basePreview.amountDue + plusAmount,
+    mpAmount: plusAmount ? Math.max(MIN_MERCADOPAGO_AMOUNT_CLP, basePreview.amountDue + plusAmount) : basePreview.mpAmount,
+    usesMercadoPagoMinimum: plusAmount ? false : basePreview.usesMercadoPagoMinimum};
   if (isV2Plan(subscription.plan)) return {success:false as const,error:"V2_BENEFIT_PROVIDER_VALIDATION_REQUIRED",preview};
 
   if (subscription.paymentMethod === "BANK_TRANSFER") {
@@ -296,7 +301,9 @@ export async function advanceBillingBenefitAfterAuthorized(subscriptionId: strin
     if(sub.lastInvoiceId!==invoiceId || sub.lastPaymentStatus!=="approved") throw new Error("CONFIRMED_INVOICE_REQUIRED");
     const eventId=`${sub.id}:${invoiceId}`;
     if(await tx.commercialEvent.findUnique({where:{source_eventId:{source:"legacy_billing_benefit",eventId}}})) return true;
-    const expected=calculateNextBillingPreview(sub).mpAmount;
+    const plusAmount=await legacyPlusRenewalAmount(sub.businessId,tx);
+    const billingPreview=calculateNextBillingPreview(sub);
+    const expected=plusAmount ? billingPreview.amountDue : billingPreview.mpAmount;
     const reservation=sub.activePrizeId ? await tx.commercialEvent.findUnique({where:{source_eventId:{source:"legacy_benefit_reservation",eventId:sub.activePrizeId}}}) : null;
     if(hasPendingCommercialBenefit(sub) && (chargedAmount!==expected || (reservation && (!paidPeriodStart || paidPeriodStart<reservation.occurredAt)))) {
       await tx.commercialEvent.upsert({where:{source_eventId:{source:"legacy_billing_review",eventId}},update:{},create:{businessId:sub.businessId,source:"legacy_billing_review",eventId,operation:"BENEFIT_PAYMENT_REVIEW",outcome:"RECEIVED",occurredAt:new Date(),details:{invoiceId,expected,charged:chargedAmount ?? null,consumed:false}}});

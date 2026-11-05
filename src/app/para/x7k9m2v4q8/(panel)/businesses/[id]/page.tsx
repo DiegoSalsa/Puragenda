@@ -37,6 +37,7 @@ export default async function BusinessDetailPage({ params }: PageProps) {
     include: {
       owner: { select: { id: true, name: true, email: true, role: true, createdAt: true } },
       subscription: true,
+      commercialSubscription: true,
       staff: {
         select: { id: true, name: true, email: true, isActive: true, user: { select: { id: true, role: true, isSuperAdmin: true, deletedAt: true } }, accessProfile: { select: { name: true } } },
         orderBy: { createdAt: "asc" },

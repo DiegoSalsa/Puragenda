@@ -8,6 +8,8 @@ import { getStaffLimit } from "@/core/subscription-plan";
 import { COMMERCIAL_CATALOG_VERSION, quoteCommercialContract } from "@/core/commercial-catalog";
 import { contractedProfessionalsLabel } from "@/core/commercial-display";
 import { CommercialSubscriptionPanel } from "@/components/dashboard/commercial-subscription-panel";
+import {LegacyPlusSubscriptionPanel} from "@/components/dashboard/legacy-plus-subscription-panel";
+import {legacyPlusTerms} from "@/core/legacy-plus";
 
 export const dynamic = "force-dynamic";
 
@@ -21,7 +23,7 @@ export default async function UpgradePage() {
     prisma.commercialSubscription.findUnique({ where: { businessId: business.id } }),
   ]);
   if (!subscription) redirect("/dashboard/settings");
-  if (subscription.plan === "PURAGENDA_PLUS" || contract?.planCode === "PURAGENDA_PLUS") redirect("/dashboard/settings#plan");
+  if (subscription.plan === "PURAGENDA_PLUS" || contract?.planCode === "PURAGENDA_PLUS" && !legacyPlusTerms(contract.termsSnapshot)) redirect("/dashboard/settings#plan");
   const professionalTotal = contract?.professionalTotal ?? getStaffLimit(subscription);
   const billingCycle = contract?.billingCycle ?? subscription.billingCycle;
   const quote = quoteCommercialContract({ plan: "PURAGENDA_PLUS", professionalTotal, billingCycle, catalogVersion: COMMERCIAL_CATALOG_VERSION });
@@ -33,10 +35,7 @@ export default async function UpgradePage() {
       <p>{business.name} · {contractedProfessionalsLabel(professionalTotal)}</p>
       <p className="text-3xl font-bold">${quote.cycleTotal.toLocaleString("es-CL")} <span className="text-base font-medium">CLP/{billingCycle === "ANNUAL" ? "año" : "mes"}</span></p>
       <p className="text-sm text-muted-foreground">IVA incluido. Incluye tu agenda, sitio web, Puri+ y Contact Flow. Conservas los profesionales contratados.</p>
-      {supported ? <CommercialSubscriptionPanel upgradeToPlus /> : <div role="status" className="space-y-2 rounded-xl border border-amber-500/30 bg-amber-500/10 p-4 text-sm">
-        <p className="font-semibold">El pago de este cambio todavía no está habilitado para tu contrato actual.</p>
-        <p>Tu suscripción y sus condiciones se conservan. El cambio necesita conciliar el cobro existente antes de abrir un checkout nuevo, para evitar dos suscripciones simultáneas.</p>
-      </div>}
+      {supported ? <CommercialSubscriptionPanel upgradeToPlus /> : <LegacyPlusSubscriptionPanel />}
     </div>
   </section>;
 }

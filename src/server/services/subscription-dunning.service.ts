@@ -112,10 +112,15 @@ function isStaleFailureAfterRecovery(
 
 export async function processMercadoPagoInvoice(
   invoice: MercadoPagoInvoiceSnapshot,
-  now = new Date()
+  now = new Date(),
+  verifiedPlusComponent?: number,
 ) {
   if (!invoice.id || !invoice.preapproval_id) {
     return { handled: false as const, reason: "missing_invoice_identity" };
+  }
+  if (verifiedPlusComponent === undefined && process.env.PURAGENDA_NEXT_ENABLED === "1") {
+    const {reconcileLegacyPlusInvoice} = await import("@/server/commercial-billing/legacy-plus");
+    if (await reconcileLegacyPlusInvoice(invoice)) return {handled: true as const, product: "legacy_plus"};
   }
 
   const subscription = await prisma.subscription.findFirst({
@@ -223,7 +228,7 @@ export async function processMercadoPagoInvoice(
 
     if (!historicalInvoiceAlreadyAccounted) {
       const billingSync = await advanceBillingBenefitAfterAuthorized(
-        subscription.id, invoice.id, invoice.transaction_amount, debitDate
+        subscription.id, invoice.id, invoice.transaction_amount === undefined ? undefined : invoice.transaction_amount - (verifiedPlusComponent ?? 0), debitDate
       );
       if (!billingSync.success) {
         console.warn(

@@ -3,6 +3,7 @@ import { prisma } from "@/server/db/prisma";
 import { evaluateCommercialEntitlements, type CommercialEntitlementEvaluationInput } from "@/core/commercial-entitlements";
 import { getStaffLimit } from "@/core/subscription-plan";
 import { hasOperationalSubscriptionAccess } from "@/core/subscription-access";
+import { legacyPlusTerms } from "@/core/legacy-plus";
 import type { CommercialCapability } from "@/core/commercial-catalog";
 import { mpV2RenewalGraceDeadline, type RenewalGraceSnapshot } from "@/server/commercial-billing/mercadopago-v2-grace";
 
@@ -41,6 +42,15 @@ type AccessDb = Pick<Prisma.TransactionClient, "business">;
 export async function getCommercialPlanAccess(businessId: string, now = new Date(), db: AccessDb = prisma) {
   const business = await db.business.findUnique({ where: { id: businessId }, select: { deletedAt: true, subscription: true, commercialSubscription: true } });
   const snapshot = business?.commercialSubscription;
+  const extension = legacyPlusTerms(snapshot?.termsSnapshot);
+  if (extension && extension.baseSubscriptionId === business?.subscription?.id) {
+    const baseAllowed = !business.deletedAt && hasOperationalSubscriptionAccess(business.subscription, now);
+    const evaluation = snapshot && isV2Plan(snapshot.planCode) ? effectiveSnapshotAccess(snapshot, now) : null;
+    const plus = baseAllowed && !!evaluation?.commercialAccess;
+    return {v2: plus, allowed: baseAllowed, snapshot: plus ? snapshot : null, professionalTotal: getStaffLimit(business.subscription),
+      has: (capability: CommercialCapability) => baseAllowed && (plus ? !!evaluation?.capabilities.includes(capability) : !["puri.plus", "contact_flow", "website.editor", "website.hosting", "analytics.commercial"].includes(capability)),
+      reason: baseAllowed ? null : "SUBSCRIPTION_REQUIRED"};
+  }
   const v2 = isV2Plan(snapshot?.planCode) || isV2Plan(business?.subscription?.plan);
   const evaluation = snapshot && isV2Plan(snapshot.planCode) ? effectiveSnapshotAccess(snapshot, now) : null;
   const allowed = !!business && !business.deletedAt && (v2 ? !!evaluation?.commercialAccess : hasOperationalSubscriptionAccess(business.subscription, now));

@@ -10,6 +10,7 @@ export default async function BusinessesPage() {
       id: true, name: true, slug: true, countryCode: true, currencyCode: true, createdAt: true,
       owner: { select: { name: true, email: true } },
       subscription: true,
+      commercialSubscription: true,
       affiliate: {
         select: {
           referralCode: true,

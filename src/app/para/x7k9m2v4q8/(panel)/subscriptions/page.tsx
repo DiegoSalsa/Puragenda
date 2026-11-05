@@ -12,7 +12,7 @@ export default async function SubscriptionsPage() {
   const subscriptions = await prisma.subscription.findMany({
     include: {
       business: {
-        select: { id: true, name: true, slug: true, countryCode: true, currencyCode: true },
+        select: { id: true, name: true, slug: true, countryCode: true, currencyCode: true, commercialSubscription: true },
       },
     },
     orderBy: { createdAt: "desc" },

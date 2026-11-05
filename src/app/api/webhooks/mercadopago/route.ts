@@ -12,6 +12,7 @@ import { stateForCancelledProviderSubscription } from "@/server/services/subscri
 import { verifyMercadoPagoWebhookSignature } from "@/server/lib/mercadopago-webhook";
 import { syncMercadoPagoWebsitePreapproval, syncMercadoPagoWebsiteInvoice } from "@/server/websites/mercadopago-billing";
 import { handleMpV2Webhook } from "@/server/commercial-billing/mercadopago-v2";
+import {reconcileLegacyPlusInvoice, reconcileLegacyPlusOperation} from "@/server/commercial-billing/legacy-plus";
 
 async function processPreapproval(resourceId: string, reconcileV2: () => Promise<void>) {
   const preapproval = new PreApproval(mpClient);
@@ -24,6 +25,10 @@ async function processPreapproval(resourceId: string, reconcileV2: () => Promise
   if (mpSubscription.external_reference?.startsWith("v2_")) {
     await reconcileV2();
     return { handled: true, product: "commercial_v2" };
+  }
+  if (mpSubscription.external_reference?.startsWith("legacy_plus_")) {
+    const operation = await prisma.commercialBillingOperation.findFirstOrThrow({where: {id: mpSubscription.external_reference.slice(12), provider: "MERCADO_PAGO"}});
+    await reconcileLegacyPlusOperation(operation.businessId, operation.id);
   }
 
   if (await syncMercadoPagoWebsitePreapproval(mpSubscription)) return { handled: true, product: "website" };
@@ -78,6 +83,7 @@ async function isV2Invoice(invoice: MercadoPagoInvoiceSnapshot) {
   if (process.env.PURAGENDA_MP_V2_ENVIRONMENT !== "production" || !invoice.preapproval_id) return false;
   return !!await prisma.commercialBillingOperation.findFirst({ where: {
     provider: "MERCADO_PAGO", environment: "V2_PRODUCTION", kind: "NEW_SUBSCRIPTION", providerSubscriptionId: invoice.preapproval_id,
+    subscription: {legacySubscriptionId: null, termsSnapshot: {path: ["origin"], equals: "registration_v2"}},
   }, select: { id: true } });
 }
 
@@ -94,6 +100,7 @@ async function processPaymentNotification(resourceId: string, reconcileV2: () =>
     return { handled: false, reason: "subscription_invoice_not_found" };
   }
 
+  if (await reconcileLegacyPlusInvoice(invoice)) return {handled: true, product: "legacy_plus"};
   if (await isV2Invoice(invoice)) {
     await reconcileV2();
     return { handled: true, product: "commercial_v2" };
@@ -155,8 +162,8 @@ export async function POST(request: NextRequest) {
       const invoice = (await invoiceClient.get({
         id: resourceId,
       })) as MercadoPagoInvoiceSnapshot;
-      const result = await isV2Invoice(invoice)
-        ? (await reconcileV2(), { handled: true, product: "commercial_v2" })
+      const result = await reconcileLegacyPlusInvoice(invoice) ? {handled: true, product: "legacy_plus"}
+        : await isV2Invoice(invoice) ? (await reconcileV2(), { handled: true, product: "commercial_v2" })
         : await syncMercadoPagoWebsiteInvoice(invoice) ? { handled: true, product: "website" } : await processMercadoPagoInvoice(invoice);
       return NextResponse.json({ received: true, result });
     }

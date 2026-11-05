@@ -6,6 +6,8 @@ import { getBusinessHours } from "@/server/services/businessHours.service";
 import { prisma } from "@/server/db/prisma";
 import { CommercialTrialPanel } from "@/components/dashboard/commercial-trial-panel";
 import { CommercialSubscriptionPanel } from "@/components/dashboard/commercial-subscription-panel";
+import {LegacyPlusSubscriptionPanel} from "@/components/dashboard/legacy-plus-subscription-panel";
+import {legacyPlusTerms} from "@/core/legacy-plus";
 import { CommercialUsagePanel } from "@/components/dashboard/commercial-usage-panel";
 import { getCommercialPlanAccess, isRegistrationV2Contract, isV2Plan } from "@/server/services/commercial-plan-access";
 import { hasOperationalSubscriptionAccess } from "@/core/subscription-access";
@@ -89,7 +91,7 @@ export default async function SettingsPage({ searchParams }: { searchParams: Pro
   const isActive = hasOperationalSubscriptionAccess(subscription) && !subscription?.isTrial;
   const isTrial = subscription?.isTrial ?? false;
   const showUpgrade =
-    business.ownerId === user.id && subscription?.plan !== "PURAGENDA_PLUS";
+    business.ownerId === user.id && subscription?.plan !== "PURAGENDA_PLUS" && contract?.planCode !== "PURAGENDA_PLUS";
 
   const isMpConnected = !!business.mpAccessToken;
   const region = getCountryConfig(business.countryCode);
@@ -212,8 +214,8 @@ export default async function SettingsPage({ searchParams }: { searchParams: Pro
               </div>
             )}
           </div>
-          {contract && isV2Plan(contract.planCode) && contract.status === "TRIALING" && contract.trialEnd && <CommercialTrialPanel plan={contract.planCode as "PURAGENDA" | "PURAGENDA_PLUS"} professionalTotal={contract.professionalTotal} billingCycle={contract.billingCycle} trialEnd={contract.trialEnd.toISOString()} billingLocked={!!contract.externalSubscriptionId && contract.renewalCancellationStatus !== "CANCELLED_VERIFIED"} />}
-          {contract && isV2Plan(contract.planCode) && business.ownerId === user.id && <CommercialSubscriptionPanel />}
+          {contract && isRegistrationV2Contract(contract) && contract.status === "TRIALING" && contract.trialEnd && <CommercialTrialPanel plan={contract.planCode as "PURAGENDA" | "PURAGENDA_PLUS"} professionalTotal={contract.professionalTotal} billingCycle={contract.billingCycle} trialEnd={contract.trialEnd.toISOString()} billingLocked={!!contract.externalSubscriptionId && contract.renewalCancellationStatus !== "CANCELLED_VERIFIED"} />}
+          {contract && business.ownerId === user.id && (legacyPlusTerms(contract.termsSnapshot) ? <LegacyPlusSubscriptionPanel /> : isV2Plan(contract.planCode) ? <CommercialSubscriptionPanel /> : null)}
         </div>
 
         {/* ── Mercado Pago Connection ── */}

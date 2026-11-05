@@ -48,6 +48,7 @@ export default async function AdminDashboardPage() {
             createdAt: true,
             countryCode: true,
             currencyCode: true,
+            commercialSubscription: true,
             owner: { select: { name: true, email: true } },
           },
         },
