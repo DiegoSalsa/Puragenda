@@ -9,6 +9,8 @@ import { prisma } from "@/server/db/prisma";
 import { redirect } from "next/navigation";
 import { cookies } from "next/headers";
 import { PaymentWall } from "@/components/dashboard/payment-wall";
+import { ManualTransferPaymentWall } from "@/components/dashboard/manual-transfer-payment-wall";
+import { calculateSubscriptionBaseAmount } from "@/server/services/subscription-billing.service";
 import { ChangelogPopup } from "@/components/dashboard/changelog-popup";
 import { DashboardOverlayProvider } from "@/components/dashboard/dashboard-overlay-context";
 import { CHANGELOG_DATA } from "@/config/changelog";
@@ -69,7 +71,14 @@ export default async function DashboardLayout({
         <>
         {impersonationBanner}
         {business.ownerId === user.id && await prisma.websitePurchaseIntent.findUnique({ where: { businessId: business.id } }) && <Link href="/onboarding/website" className="block bg-[#FFF5BA] p-4 text-center font-bold text-black underline">Continuar contratación de Puragenda + Sitio Web</Link>}
-        <PaymentWall 
+        {subscription?.paymentMethod === "BANK_TRANSFER" ? (
+          <ManualTransferPaymentWall
+            businessName={business.name}
+            businessSlug={business.slug}
+            amountClp={calculateSubscriptionBaseAmount(subscription)}
+            billingCycle={subscription.billingCycle}
+          />
+        ) : <PaymentWall
           userEmail={user.email} 
           userName={user.name}
           businessId={business.id} 
@@ -79,7 +88,7 @@ export default async function DashboardLayout({
           paymentSimulatorEnabled={isLocalPaymentSimulatorEnabled()}
           reason={paymentWallReason}
           canManageCommercialSubscription={business.ownerId === user.id}
-        />
+        />}
         </>
         </RequestIntlProvider>
       );
