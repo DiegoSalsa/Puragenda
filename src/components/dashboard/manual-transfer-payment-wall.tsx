@@ -1,6 +1,6 @@
 "use client";
 
-import { useState, useTransition } from "react";
+import { useRef, useState, useTransition } from "react";
 import { useRouter } from "next/navigation";
 import Image from "next/image";
 import { AlertTriangle, Copy, Loader2, Mail } from "@/components/icons/hover-icons";
@@ -31,6 +31,7 @@ export function ManualTransferPaymentWall({
   billingCycle,
 }: ManualTransferPaymentWallProps) {
   const router = useRouter();
+  const dialogHeading = useRef<HTMLHeadingElement>(null);
   const [open, setOpen] = useState(true);
   const [copyStatus, setCopyStatus] = useState("");
   const [checking, startTransition] = useTransition();
@@ -114,9 +115,9 @@ export function ManualTransferPaymentWall({
         </section>
       </div>
       <Dialog open={open} onOpenChange={setOpen}>
-        <DialogContent className="max-h-[90dvh] overflow-y-auto sm:max-w-lg">
+        <DialogContent initialFocus={dialogHeading} className="max-h-[90dvh] overflow-y-auto sm:max-w-lg">
           <DialogHeader>
-            <DialogTitle className="pr-7 text-xl font-bold">Datos para renovar {businessName}</DialogTitle>
+            <DialogTitle ref={dialogHeading} tabIndex={-1} className="pr-7 text-xl font-bold outline-none">Datos para renovar {businessName}</DialogTitle>
             <DialogDescription>
               Transfiere {amount} y envía el comprobante a {MANUAL_TRANSFER_ACCOUNT.email}. Confirmaremos el pago para reactivar tu servicio.
             </DialogDescription>
