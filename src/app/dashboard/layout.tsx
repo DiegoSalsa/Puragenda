@@ -78,7 +78,7 @@ export default async function DashboardLayout({
             amountClp={calculateSubscriptionBaseAmount(subscription)}
             billingCycle={subscription.billingCycle}
           />
-        ) : <PaymentWall 
+        ) : <PaymentWall
           userEmail={user.email} 
           userName={user.name}
           businessId={business.id} 
