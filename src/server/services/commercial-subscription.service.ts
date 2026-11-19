@@ -76,32 +76,38 @@ export type ManualSubscriptionPayment = {
   expectedPeriodEnd: string | null;
 };
 
+export class ManualSubscriptionPaymentError extends Error {}
+
 function confirmedInstant(value: string): Date {
   if (!/^\d{4}-\d{2}-\d{2}T\d{2}:\d{2}:\d{2}(?:\.\d{1,3})?(?:Z|[+-]\d{2}:\d{2})$/.test(value)) {
-    throw new Error("Las fechas deben ser instantes ISO con hora y zona explícitas");
+    throw new ManualSubscriptionPaymentError("Las fechas deben ser instantes ISO con hora y zona explícitas");
   }
   const date = parseISO(value);
-  if (!isValid(date)) throw new Error("Fecha de período inválida");
+  if (!isValid(date)) throw new ManualSubscriptionPaymentError("Fecha de período inválida");
   return date;
 }
 
 /** Record an already received transfer. No provider, invoice or automatic date arithmetic. */
-export async function recordManualSubscriptionPayment(input: ManualSubscriptionPayment, apply = false) {
+export async function recordManualSubscriptionPayment(
+  input: ManualSubscriptionPayment,
+  apply = false,
+  operatorId?: string,
+) {
   const reference = input.reference.trim();
   if (!input.businessId || reference.length < 3 || reference.length > 150 || !Number.isSafeInteger(input.amountClp) || input.amountClp < 1) {
-    throw new Error("Indica negocio, referencia de pago y monto CLP positivos");
+    throw new ManualSubscriptionPaymentError("Indica negocio, referencia de pago y monto CLP positivos");
   }
   const paidFrom = confirmedInstant(input.paidFrom);
   const paidThrough = confirmedInstant(input.paidThrough);
   const expectedPeriodEnd = input.expectedPeriodEnd === null ? null : confirmedInstant(input.expectedPeriodEnd);
-  if (paidThrough <= paidFrom) throw new Error("El término exclusivo debe ser posterior al inicio del período");
+  if (paidThrough <= paidFrom) throw new ManualSubscriptionPaymentError("El término exclusivo debe ser posterior al inicio del período");
 
   return prisma.$transaction(async (tx) => {
     await tx.$queryRaw`SELECT "id" FROM "Business" WHERE "id" = ${input.businessId} FOR UPDATE`;
     await tx.$queryRaw`SELECT "id" FROM "Subscription" WHERE "businessId" = ${input.businessId} FOR UPDATE`;
     const subscription = await tx.subscription.findUnique({ where: { businessId: input.businessId } });
     const business = await tx.business.findUnique({ where: { id: input.businessId }, select: { countryCode: true } });
-    if (!subscription || !business) throw new Error("Negocio o suscripción inexistente");
+    if (!subscription || !business) throw new ManualSubscriptionPaymentError("Negocio o suscripción inexistente");
 
     // Reuse the audit table's primary key to deduplicate the same bank reference,
     // even if two operators submit it together or retry after a lost response.
@@ -111,7 +117,7 @@ export async function recordManualSubscriptionPayment(input: ManualSubscriptionP
       const evidence = JSON.parse(recorded.details ?? "{}");
       if (recorded.action !== "MANUAL_SUBSCRIPTION_PAYMENT_RECORDED" || evidence.amountClp !== input.amountClp ||
           evidence.paidFrom !== paidFrom.toISOString() || evidence.paidThrough !== paidThrough.toISOString()) {
-        throw new Error("La referencia de pago ya está registrada con otros datos; no se reutilizará");
+        throw new ManualSubscriptionPaymentError("La referencia de pago ya está registrada con otros datos");
       }
       return { subscriptionId: subscription.id, applied: false, alreadyRecorded: true, blockers: [] as string[], currentPeriodEnd: subscription.currentPeriodEnd };
     }
@@ -142,9 +148,9 @@ export async function recordManualSubscriptionPayment(input: ManualSubscriptionP
       previousStatus: subscription.status, source: "manual_transfer_operator",
     };
     if (apply) {
-      if (blockers.length) throw new Error(blockers.join(". "));
+      if (blockers.length) throw new ManualSubscriptionPaymentError(blockers.join(". "));
       await tx.subscription.update({ where: { id: subscription.id }, data: changes });
-      await tx.auditLog.create({ data: { id: auditId, action: "MANUAL_SUBSCRIPTION_PAYMENT_RECORDED", details: JSON.stringify(evidence) } });
+      await tx.auditLog.create({ data: { id: auditId, userId: operatorId, action: "MANUAL_SUBSCRIPTION_PAYMENT_RECORDED", details: JSON.stringify(evidence) } });
       if (snapshot && plusTerms && includePlus) {
         const event = await tx.commercialEvent.create({data: {businessId: input.businessId, subscriptionId: snapshot.id, source: "legacy_plus_transfer", eventId: auditId,
           operation: "MANUAL_PAYMENT_CONFIRMED", occurredAt: new Date(), outcome: "APPLIED", payloadHash: createHash("sha256").update(JSON.stringify(evidence)).digest("hex"), details: commercialJson(evidence)}});

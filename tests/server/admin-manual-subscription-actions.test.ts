@@ -1,10 +1,14 @@
 import { beforeEach, describe, expect, it, vi } from "vitest";
-const mocks = vi.hoisted(() => ({ auth: vi.fn(), findUnique: vi.fn(), update: vi.fn(), sync: vi.fn() }));
+const mocks = vi.hoisted(() => ({ auth: vi.fn(), findUnique: vi.fn(), update: vi.fn(), updateMany: vi.fn(), sync: vi.fn(), recordPayment: vi.fn() }));
 vi.mock("@/server/auth/admin-session", () => ({ requireSuperAdminSession: mocks.auth, isRecentAdminAuth: vi.fn(), revokeAllSuperAdminSessionsForUser: vi.fn(), stepUpRequiredResult: vi.fn() }));
-vi.mock("@/server/db/prisma", () => ({ prisma: { subscription: { findUnique: mocks.findUnique, update: mocks.update } } }));
+vi.mock("@/server/db/prisma", () => ({ prisma: { subscription: { findUnique: mocks.findUnique, update: mocks.update, updateMany: mocks.updateMany } } }));
 vi.mock("@/server/services/subscription-billing.service", () => ({ syncMercadoPagoSubscriptionAmount: mocks.sync }));
+vi.mock("@/server/services/commercial-subscription.service", () => ({
+  ManualSubscriptionPaymentError: class extends Error {},
+  recordManualSubscriptionPayment: mocks.recordPayment,
+}));
 vi.mock("next/cache", () => ({ revalidatePath: vi.fn() }));
-import { updateSubscriptionAction, applySubscriptionBenefitPresetAction, updateSubscriptionBillingRulesAction, clearSubscriptionBenefitAction, syncSubscriptionBillingAction, extendTrialAction } from "@/server/actions/admin.actions";
+import { updateSubscriptionAction, applySubscriptionBenefitPresetAction, updateSubscriptionBillingRulesAction, clearSubscriptionBenefitAction, syncSubscriptionBillingAction, extendTrialAction, recordManualSubscriptionPaymentAction } from "@/server/actions/admin.actions";
 
 const manual = { paymentMethod: "BANK_TRANSFER", plan: "EQUIPO", billingCycle: "MONTHLY", extraStaffCount: 0, staffLimitOverride: 2, customMonthlyPriceClp: 17990 };
 describe("superadmin preserves manual subscription agreements", () => {
@@ -34,6 +38,43 @@ describe("superadmin preserves manual subscription agreements", () => {
     expect(await updateSubscriptionAction("manual", { status: "INACTIVE" })).toEqual({ success: true });
     expect(mocks.update).toHaveBeenCalledWith({ where: { id: "manual" }, data: { status: "INACTIVE" } });
     expect(mocks.sync).not.toHaveBeenCalled();
+  });
+  it("rejects a status-only activation unless the database still has a future paid period", async () => {
+    mocks.updateMany.mockResolvedValueOnce({ count: 0 });
+    expect(await updateSubscriptionAction("manual", { status: "ACTIVE" })).toEqual({
+      error: expect.stringContaining("Registra la transferencia"),
+    });
+    expect(mocks.updateMany).toHaveBeenCalledWith({
+      where: { id: "manual", paymentMethod: "BANK_TRANSFER", currentPeriodEnd: { gt: expect.any(Date) } },
+      data: { status: "ACTIVE" },
+    });
+    expect(mocks.update).not.toHaveBeenCalled();
+    expect(mocks.sync).not.toHaveBeenCalled();
+  });
+  it("can restore an inactive manual account whose paid period is still valid", async () => {
+    mocks.updateMany.mockResolvedValueOnce({ count: 1 });
+    expect(await updateSubscriptionAction("manual", { status: "ACTIVE" })).toEqual({ success: true });
+    expect(mocks.update).not.toHaveBeenCalled();
+    expect(mocks.sync).not.toHaveBeenCalled();
+  });
+  it("records the confirmed CLP transfer with the operator and exact Santiago period", async () => {
+    const form = new FormData();
+    form.set("reference", " transfer-123 ");
+    form.set("amountClp", "17990");
+    form.set("startsOn", "2026-11-16");
+    form.set("endsOn", "2026-12-16");
+    mocks.recordPayment.mockResolvedValueOnce({ subscriptionId: "manual", alreadyRecorded: false });
+    const priorEnd = "2026-11-16T06:15:00.000Z";
+    expect(await recordManualSubscriptionPaymentAction("business", priorEnd, {}, form)).toHaveProperty("message");
+    expect(mocks.recordPayment).toHaveBeenCalledWith({
+      businessId: "business", reference: "transfer-123", amountClp: 17990,
+      paidFrom: priorEnd, paidThrough: "2026-12-16T03:00:00.000Z", expectedPeriodEnd: priorEnd,
+    }, true, "superadmin");
+  });
+  it("requires a superadmin session to confirm a manual payment", async () => {
+    mocks.auth.mockRejectedValueOnce(new Error("Acceso denegado"));
+    await expect(recordManualSubscriptionPaymentAction("business", null, {}, new FormData())).rejects.toThrow("Acceso denegado");
+    expect(mocks.recordPayment).not.toHaveBeenCalled();
   });
   it.each([
     () => applySubscriptionBenefitPresetAction("manual", "PRIZE_12"),

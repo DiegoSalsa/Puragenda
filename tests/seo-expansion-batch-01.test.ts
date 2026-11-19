@@ -181,11 +181,10 @@ describe("SEO expansion batch 01", () => {
 
   it("preserves all protected sources, existing feature selection and original guide content", () => {
     expect(baseline.initialDiff).toBe("");
-    // The owner explicitly approved the RC1 plan presentation after this SEO
-    // baseline. Keep exact byte checks for those revisions, rather than freezing
-    // their obsolete plan labels or exempting the files from validation.
-    const approvedRc1Revisions: Record<string, string> = {
-      "src/app/para/x7k9m2v4q8/(panel)/businesses/[id]/subscription-editor.tsx": "9416e9d2d83c62d338cd55a89faf336600d8ad0d6eac2806f2bb77a918eec569",
+    // Keep exact byte checks for the approved RC1 and transfer renewal changes.
+    const approvedRevisions: Record<string, string> = {
+      "src/app/para/x7k9m2v4q8/(panel)/businesses/[id]/page.tsx": "00f75f93bb62811fd1d377792430e66207ff38ba113c2e21ec37f2fa3918ca31",
+      "src/app/para/x7k9m2v4q8/(panel)/businesses/[id]/subscription-editor.tsx": "ca9666c5eeddbd936331861bdfba2525b113bf95c6aa2da5785dd6e3fef1e41f",
       "src/app/para/x7k9m2v4q8/(panel)/businesses/businesses-client.tsx": "fe3afb822818d86b56955ec0c48772aa57996fd78569f8b5f5f64e1306fc1524",
       "src/app/para/x7k9m2v4q8/(panel)/businesses/new/page.tsx": "78ac68cee7098b4c9d3bea6a11b92468961261701c66122631e296734e5ef847",
       "src/app/para/x7k9m2v4q8/(panel)/discounts/discounts-client.tsx": "fb9df40a15ab82aa06b493f158e6f5c21ace4f7f417b65d7a513b0d67448bddb",
@@ -227,8 +226,8 @@ describe("SEO expansion batch 01", () => {
       if (path === "src/app/para/x7k9m2v4q8/(panel)/page.tsx") source = source.replace("            commercialSubscription: true,\n", "");
       if (path === "src/app/para/x7k9m2v4q8/(panel)/businesses/[id]/page.tsx" || path === "src/app/para/x7k9m2v4q8/(panel)/businesses/page.tsx") source = source.replace("      commercialSubscription: true,\n", "");
       if (path === "src/app/para/x7k9m2v4q8/(panel)/subscriptions/page.tsx") source = source.replace(", commercialSubscription: true", "");
-      if (approvedRc1Revisions[path]) {
-        expect(createHash("sha256").update(source).digest("hex"), path).toBe(approvedRc1Revisions[path]);
+      if (approvedRevisions[path]) {
+        expect(createHash("sha256").update(source).digest("hex"), path).toBe(approvedRevisions[path]);
         continue;
       }
       if (commercialSources.has(path)) {
