@@ -10,13 +10,15 @@ import {
 } from "@/server/auth/admin-session";
 import bcrypt from "bcrypt";
 import crypto from "crypto";
-import { SALT_ROUNDS, API_KEY_PREFIX, SUPERADMIN_EMAILS } from "@/core/constants";
+import { SALT_ROUNDS, API_KEY_PREFIX, SUPERADMIN_EMAILS, DEFAULT_TIMEZONE } from "@/core/constants";
 import { toSlug } from "@/core/validators/slug";
 import { revalidatePath } from "next/cache";
 import { getOrCreateAffiliate } from "@/server/services/affiliate.service";
 import { syncMercadoPagoSubscriptionAmount } from "@/server/services/subscription-billing.service";
 import { createPrimaryLocation } from "@/server/services/location.service";
-import { fromZonedTime } from "date-fns-tz";
+import { formatInTimeZone, fromZonedTime } from "date-fns-tz";
+import { z } from "zod";
+import { ManualSubscriptionPaymentError, recordManualSubscriptionPayment } from "@/server/services/commercial-subscription.service";
 import { commercialSelectionSchema, createRegistrationContract } from "@/server/services/commercial-trial.service";
 
 // ═══════════════════════════════════════════
@@ -144,6 +146,17 @@ export async function updateSubscriptionAction(
       (data.extraStaffCount !== undefined && data.extraStaffCount !== current.extraStaffCount) ||
       data.isTrial === true || data.status === "TRIALING"
     )) return { error: "Conserva las condiciones del acuerdo de transferencia. Este formulario permite cambiar su estado, no reemplazar el acuerdo." };
+    if (current?.paymentMethod === "BANK_TRANSFER" && data.status === "ACTIVE") {
+      const activated = await prisma.subscription.updateMany({
+        where: { id: subscriptionId, paymentMethod: "BANK_TRANSFER", currentPeriodEnd: { gt: new Date() } },
+        data: { status: "ACTIVE" },
+      });
+      if (activated.count === 0) {
+        return { error: "Registra la transferencia recibida para activar la suscripción con un período pagado vigente." };
+      }
+      revalidateSubscriptionAdmin(subscriptionId);
+      return { success: true };
+    }
     await prisma.subscription.update({
       where: { id: subscriptionId },
       data: {
@@ -161,6 +174,58 @@ export async function updateSubscriptionAction(
   } catch (err) {
     console.error("[Admin] Error updating subscription:", err);
     return { error: "Error al actualizar la suscripción" };
+  }
+}
+
+const manualTransferFormSchema = z.object({
+  businessId: z.string().min(1),
+  expectedPeriodEnd: z.iso.datetime().nullable(),
+  reference: z.string().trim().min(3).max(150),
+  amountClp: z.string().regex(/^\d+$/).transform(Number).pipe(z.number().int().positive()),
+  startsOn: z.iso.date(),
+  endsOn: z.iso.date(),
+});
+
+export type ManualTransferActionState = { error?: string; message?: string };
+
+export async function recordManualSubscriptionPaymentAction(
+  businessId: string,
+  expectedPeriodEnd: string | null,
+  _state: ManualTransferActionState,
+  formData: FormData,
+): Promise<ManualTransferActionState> {
+  const admin = await requireSuperAdmin();
+  const parsed = manualTransferFormSchema.safeParse({
+    businessId,
+    expectedPeriodEnd,
+    reference: formData.get("reference"),
+    amountClp: formData.get("amountClp"),
+    startsOn: formData.get("startsOn"),
+    endsOn: formData.get("endsOn"),
+  });
+  if (!parsed.success) return { error: "Ingresa la referencia, el monto en pesos y las fechas del período pagado." };
+  const { reference, amountClp, startsOn, endsOn } = parsed.data;
+  const paidFrom = expectedPeriodEnd && formatInTimeZone(expectedPeriodEnd, DEFAULT_TIMEZONE, "yyyy-MM-dd") === startsOn
+    ? expectedPeriodEnd
+    : fromZonedTime(startsOn, DEFAULT_TIMEZONE).toISOString();
+  const paidThrough = fromZonedTime(endsOn, DEFAULT_TIMEZONE).toISOString();
+
+  try {
+    const result = await recordManualSubscriptionPayment(
+      { businessId, expectedPeriodEnd, reference, amountClp, paidFrom, paidThrough },
+      true,
+      admin.id,
+    );
+    revalidateSubscriptionAdmin(result.subscriptionId);
+    return {
+      message: result.alreadyRecorded
+        ? "Esta transferencia ya estaba registrada."
+        : "Transferencia registrada y suscripción activa.",
+    };
+  } catch (error) {
+    if (error instanceof ManualSubscriptionPaymentError) return { error: error.message };
+    console.error("[Admin] Error recording manual subscription payment", error);
+    return { error: "No se pudo registrar la transferencia. Vuelve a intentarlo." };
   }
 }
 

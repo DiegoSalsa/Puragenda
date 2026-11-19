@@ -11,6 +11,7 @@ import { commercialPlanName } from "@/core/commercial-display";
 import { resolveSubscriptionEndDate } from "@/lib/admin/subscription-end-date";
 import { SubscriptionBillingDetails } from "@/components/admin/subscription-billing-details";
 import type { AdminSubscriptionReport } from "@/server/services/admin-subscription-report";
+import { ManualTransferForm } from "./manual-transfer-form";
 
 interface SubscriptionData {
   id: string;
@@ -28,16 +29,20 @@ interface SubscriptionData {
   createdAt: string;
 }
 
-export function SubscriptionEditor({ subscription, billingReport, activeStaff }: { subscription: SubscriptionData; billingReport: AdminSubscriptionReport; activeStaff: number }) {
+export function SubscriptionEditor({ businessId, subscription, billingReport, activeStaff }: { businessId: string; subscription: SubscriptionData; billingReport: AdminSubscriptionReport; activeStaff: number }) {
   const legacy = useTranslations("legacy");
   const router = useRouter();
-  const [status, setStatus] = useState(subscription.status);
+  const [statusOverride, setStatusOverride] = useState<{ original: string; periodEnd: string | null; value: string }>();
   const [billingCycle, setBillingCycle] = useState(subscription.billingCycle);
   const [extraStaff, setExtraStaff] = useState(subscription.extraStaffCount);
   const [loading, setLoading] = useState(false);
   const [saved, setSaved] = useState(false);
   const [error, setError] = useState<string | null>(null);
   const subscriptionEnd = resolveSubscriptionEndDate(subscription);
+  const manualNeedsPayment = billingReport.isManual && (billingReport.manualExpired || !subscription.currentPeriodEnd);
+  const status = statusOverride?.original === subscription.status && statusOverride.periodEnd === subscription.currentPeriodEnd
+    ? statusOverride.value
+    : subscription.status;
 
   async function handleSave() {
     setLoading(true);
@@ -76,6 +81,11 @@ export function SubscriptionEditor({ subscription, billingReport, activeStaff }:
 
       <div className="space-y-4">
         <SubscriptionBillingDetails report={billingReport} activeStaff={activeStaff} />
+        {billingReport.isManual && subscription.billingCycle === "MONTHLY" && !subscription.isTrial &&
+          !subscription.paddleSubscriptionId && billingReport.currencyCode === "CLP" &&
+          ["ACTIVE", "INACTIVE"].includes(subscription.status) && (
+            <ManualTransferForm businessId={businessId} currentPeriodEnd={subscription.currentPeriodEnd} amountLabel={billingReport.amountLabel} />
+          )}
         <div className="space-y-1.5">
           <label className="text-xs font-black uppercase text-black/60"><LocalizedText id="-o7Qvavda8sc" /></label>
           <p className="border-2 border-black bg-white px-3 py-2 text-sm font-bold text-black">{commercialPlanName(subscription.plan)} · {billingReport.professionalsLabel}</p>
@@ -83,13 +93,16 @@ export function SubscriptionEditor({ subscription, billingReport, activeStaff }:
 
         <div className="space-y-1.5">
           <label className="text-xs font-black uppercase text-black/60"><LocalizedText id="mOWs3bbEaiSP" /></label>
-          <select value={status} onChange={(e) => setStatus(e.target.value)} className={selectClass}>
-            <option value="ACTIVE">Activo</option>
-            <option value="TRIALING">En trial</option>
+          <select value={status} onChange={(e) => setStatusOverride({
+            original: subscription.status, periodEnd: subscription.currentPeriodEnd, value: e.target.value,
+          })} className={selectClass}>
+            <option value="ACTIVE" disabled={manualNeedsPayment}>Activo</option>
+            <option value="TRIALING" disabled={billingReport.isManual}>En trial</option>
             <option value="PAST_DUE">Pago pendiente</option>
             <option value="INACTIVE">Inactivo</option>
             <option value="CANCELLED">Cancelado</option>
           </select>
+          {manualNeedsPayment && <p className="text-xs font-bold text-black/70">Registra la transferencia para activar la suscripción con un período pagado vigente.</p>}
         </div>
 
         <div className="space-y-1.5">
@@ -134,7 +147,6 @@ export function SubscriptionEditor({ subscription, billingReport, activeStaff }:
           <p className="text-[10px] font-bold text-black/40">
             {subscriptionEnd.context}
           </p>
-          {billingReport.isManual && <p className="mt-1 text-xs font-bold">La fecha indica el término exclusivo del período pagado. Las transferencias se registran al confirmar su recepción.</p>}
         </div>
 
         {error && (
@@ -145,7 +157,7 @@ export function SubscriptionEditor({ subscription, billingReport, activeStaff }:
 
         <button
           onClick={handleSave}
-          disabled={loading}
+          disabled={loading || (status === "ACTIVE" && manualNeedsPayment)}
           className="flex w-full items-center justify-center gap-2 border-4 border-black bg-black py-2.5 text-sm font-black uppercase text-white shadow-[3px_3px_0_#7C3AED] hover:translate-x-[2px] hover:translate-y-[2px] hover:shadow-none transition-all disabled:opacity-50"
         >
           {loading ? (

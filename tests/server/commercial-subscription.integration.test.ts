@@ -161,8 +161,12 @@ localSuite("commercial subscriptions with real local PostgreSQL", () => {
     await db.subscription.update({ where: { businessId: prefix }, data: { currentPeriodEnd: new Date("2000-01-01T00:00:00Z") } });
     await expiry.GET(new Request("http://localhost/api/cron/trial-expiry", { headers: { authorization: "Bearer commercial-local-test-only" } }));
     expect(await db.subscription.findUnique({ where: { businessId: prefix } })).toMatchObject({ status: "INACTIVE", staffLimitOverride: 2, currentPeriodEnd: new Date("2000-01-01T00:00:00Z") });
-    await db.subscription.update({ where: { businessId: prefix }, data: { status: "ACTIVE", currentPeriodEnd: paidThrough } });
-    expect(await db.subscription.findUnique({ where: { businessId: prefix } })).toMatchObject({ status: "ACTIVE", plan: "EQUIPO", staffLimitOverride: 2, paymentMethod: "BANK_TRANSFER", customMonthlyPriceClp: 17990, mpSubscriptionId: null });
+    await commercial.recordManualSubscriptionPayment(renewal({ expectedPeriodEnd: "2000-01-01T00:00:00Z" }), true);
+    await expiry.GET(new Request("http://localhost/api/cron/trial-expiry", { headers: { authorization: "Bearer commercial-local-test-only" } }));
+    expect(await db.subscription.findUnique({ where: { businessId: prefix } })).toMatchObject({
+      status: "ACTIVE", plan: "EQUIPO", staffLimitOverride: 2, paymentMethod: "BANK_TRANSFER",
+      customMonthlyPriceClp: 17990, mpSubscriptionId: null, currentPeriodEnd: new Date(renewal().paidThrough),
+    });
     expect(await capacity.getStaffLimitInfo(prefix)).toMatchObject({ maxAllowed: 2 });
   });
 

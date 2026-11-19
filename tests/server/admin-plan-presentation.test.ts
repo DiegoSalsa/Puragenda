@@ -4,7 +4,7 @@ import { renderToStaticMarkup } from "react-dom/server";
 vi.mock("next-intl", () => ({ useTranslations: () => (key: string) => key }));
 vi.mock("next/navigation", () => ({ useRouter: () => ({ push: vi.fn(), refresh: vi.fn() }) }));
 vi.mock("@/server/db/prisma", () => ({ prisma: {} }));
-vi.mock("@/server/actions/admin.actions", () => ({ extendTrialAction: vi.fn(), updateSubscriptionAction: vi.fn(), createBusinessAction: vi.fn(), applySubscriptionBenefitPresetAction: vi.fn(), clearSubscriptionBenefitAction: vi.fn(), syncSubscriptionBillingAction: vi.fn(), updateSubscriptionBillingRulesAction: vi.fn() }));
+vi.mock("@/server/actions/admin.actions", () => ({ extendTrialAction: vi.fn(), updateSubscriptionAction: vi.fn(), createBusinessAction: vi.fn(), applySubscriptionBenefitPresetAction: vi.fn(), clearSubscriptionBenefitAction: vi.fn(), syncSubscriptionBillingAction: vi.fn(), updateSubscriptionBillingRulesAction: vi.fn(), recordManualSubscriptionPaymentAction: vi.fn() }));
 import { getAdminSubscriptionReport } from "@/server/services/admin-subscription-report";
 import { BusinessesClient } from "@/app/para/x7k9m2v4q8/(panel)/businesses/businesses-client";
 import { SubscriptionEditor } from "@/app/para/x7k9m2v4q8/(panel)/businesses/[id]/subscription-editor";
@@ -32,9 +32,18 @@ describe("superadmin displays the current product and contracted professionals",
     expect(text(html)).not.toMatch(/\b(?:EQUIPO|INDIVIDUAL|Equipo|Individual)\b/);
   });
   it("the business editor retains the agreed contract instead of offering obsolete plan changes", () => {
-    const html = renderToStaticMarkup(createElement(SubscriptionEditor, { subscription: { ...subscription, createdAt: now.toISOString() }, billingReport: report, activeStaff: 2 }));
+    const html = renderToStaticMarkup(createElement(SubscriptionEditor, { businessId: business.id, subscription: { ...subscription, createdAt: now.toISOString() }, billingReport: report, activeStaff: 2 }));
     expect(text(html)).toContain("Puragenda · 2 profesionales contratados");
     expect(text(html)).not.toMatch(/\b(?:EQUIPO|INDIVIDUAL|Equipo|Individual)\b/);
+  });
+  it("offers the transfer form and disables status-only activation after the paid period ends", () => {
+    const expired = { ...subscription, paymentMethod: "BANK_TRANSFER" as const, currentPeriodEnd: "2026-11-16T03:00:00.000Z" };
+    const expiredReport = getAdminSubscriptionReport(expired, { countryCode: "CL" }, new Date("2026-11-19T12:00:00Z"));
+    const html = renderToStaticMarkup(createElement(SubscriptionEditor, {
+      businessId: business.id, subscription: { ...expired, createdAt: now.toISOString() }, billingReport: expiredReport, activeStaff: 2,
+    }));
+    expect(text(html)).toContain("Registrar pago y activar");
+    expect(html).toMatch(/<option[^>]*value="ACTIVE"[^>]*disabled|<option[^>]*disabled[^>]*value="ACTIVE"/);
   });
   it("subscription badges and revenue breakdown group normal contracts together", () => {
     const sub = { ...subscription, business: { id: business.id, name: business.name, slug: business.slug }, billingReport: report, nextBillingPreview: { baseAmount: 17990, amountDue: 17990, mpAmount: 17990, discountPercentage: null, reason: "Precio acordado", hasBenefit: false, usesMercadoPagoMinimum: false }, freeMonthsRemaining: 0, pendingDiscountPercentage: null, promoName: null, promoFreeMonthsRemaining: 0, promoDiscountPercentage: null, promoDiscountMonthsRemaining: 0, nextBillingOverrideAmount: null, billingNotes: null, lastBillingSyncAt: null, lastBillingSyncError: null };

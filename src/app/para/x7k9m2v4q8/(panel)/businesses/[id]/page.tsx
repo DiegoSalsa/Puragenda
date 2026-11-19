@@ -239,7 +239,7 @@ export default async function BusinessDetailPage({ params }: PageProps) {
             <p className="break-all text-xs font-bold">Referencia: {paymentEvidence.reference}</p>
           </div>}
           {sub ? (
-            <SubscriptionEditor subscription={{
+            <SubscriptionEditor businessId={business.id} subscription={{
               id: sub.id,
               plan: sub.plan,
               status: sub.status,
