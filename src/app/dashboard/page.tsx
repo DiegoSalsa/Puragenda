@@ -65,11 +65,13 @@ export default async function DashboardPage({
     redirect(`/dashboard/agenda?${query.toString()}`);
   }
 
+  const now = new Date();
   const [data, marketplacePrompt, websiteLaunch] = await Promise.all([
     loadTodayDashboard({
       user,
       business,
       permissions,
+      now,
       agenda: params.agenda,
       location: params.location,
     }),
@@ -85,7 +87,7 @@ export default async function DashboardPage({
       {websiteLaunch ? <WebsiteDiscoveryCard context={websiteLaunch} /> : null}
       {marketplacePrompt ? <MarketplaceConsentPrompt prompt={marketplacePrompt} /> : null}
       {setup ? <SetupActivationCard snapshot={setup} /> : null}
-      <TodayScreen data={data} userName={user.name} />
+      <TodayScreen data={data} userName={user.name} initialTime={now.getTime()} />
     </div>
   );
 }

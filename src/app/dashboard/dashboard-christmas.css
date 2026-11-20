@@ -1,0 +1,470 @@
+.dashboard-christmas {
+  --background: #fbf2e4;
+  --foreground: #172f26;
+  --card: #fffaf1;
+  --card-foreground: var(--foreground);
+  --popover: #fffaf1;
+  --popover-foreground: var(--foreground);
+  --primary: #20533e;
+  --primary-foreground: #fff9eb;
+  --secondary: #ecdfc8;
+  --secondary-foreground: var(--foreground);
+  --muted: #f1e6d5;
+  --muted-foreground: #565e4f;
+  --accent: #f3dadd;
+  --accent-foreground: #57242f;
+  --border: #cbbda5;
+  --input: #a99a82;
+  --ring: #a13349;
+  --brand-foreground: #205d44;
+  --sidebar: #103b2d;
+  --sidebar-foreground: #fff5e5;
+  --sidebar-border: #3b6250;
+  --christmas-nav-muted: #d0e4d7;
+  --christmas-nav-hover: #23513f;
+  --christmas-nav-active: #92364a;
+  --christmas-nav-active-border: #b75464;
+  --christmas-paper: #f3e4ca;
+  --christmas-paper-edge: #ad9671;
+  --christmas-shadow: #c7b393;
+  --christmas-snow-color: #fffdf8;
+  --christmas-snow-shadow: #725c48;
+  --christmas-ornament: url("/dashboard-seasonal/diciembre-en-papel.webp");
+}
+
+.dark .dashboard-christmas {
+  --background: #101d18;
+  --foreground: #fbefdc;
+  --card: #192b23;
+  --popover: #1e3329;
+  --primary: #2a664c;
+  --secondary: #2f4136;
+  --muted: #263a30;
+  --muted-foreground: #c5cdbd;
+  --accent: #61313b;
+  --accent-foreground: #ffedf0;
+  --border: #4c6556;
+  --input: #698071;
+  --ring: #f39bab;
+  --brand-foreground: #a6d6bc;
+  --sidebar: #102b22;
+  --sidebar-border: #315245;
+  --christmas-nav-hover: #234536;
+  --christmas-nav-active: #873446;
+  --christmas-nav-active-border: #ae5364;
+  --christmas-paper: #253c2f;
+  --christmas-paper-edge: #597060;
+  --christmas-shadow: #080f0c;
+  --christmas-snow-shadow: #133324;
+}
+
+.dashboard-christmas #tutorial-main {
+  background-image: radial-gradient(ellipse at top right, color-mix(in srgb, var(--christmas-paper) 64%, transparent), transparent 52rem);
+}
+
+.dashboard-christmas [data-dashboard-top-bar] {
+  position: relative;
+  border-bottom-color: var(--christmas-paper-edge);
+  background-image: linear-gradient(108deg, var(--christmas-paper), var(--background) 60%);
+}
+
+.dashboard-christmas [data-dashboard-top-bar]::before,
+.dashboard-christmas [data-dashboard-mobile-bar]::after {
+  position: absolute;
+  inset-block: 0;
+  width: 8.5rem;
+  background: var(--christmas-ornament) center / contain no-repeat;
+  pointer-events: none;
+  content: "";
+}
+
+.dashboard-christmas [data-dashboard-top-bar]::before {
+  inset-inline-start: 1rem;
+}
+
+.dashboard-christmas [data-dashboard-mobile-bar]::after {
+  inset-inline-end: max(6.5rem, calc(env(safe-area-inset-right) + 6rem));
+  width: clamp(3.5rem, 19vw, 6rem);
+  opacity: .78;
+}
+
+@media (max-width: 350px) {
+  .dashboard-christmas [data-dashboard-mobile-bar]::after {
+    display: none;
+  }
+}
+
+.dashboard-christmas :is([data-dashboard-sidebar], [data-dashboard-drawer], [data-dashboard-mobile-bar]) {
+  --foreground: var(--sidebar-foreground);
+  --muted-foreground: var(--christmas-nav-muted);
+  --brand-foreground: var(--sidebar-foreground);
+  --border: var(--sidebar-border);
+  --muted: var(--christmas-nav-hover);
+  --accent: var(--sidebar-foreground);
+  --ring: #ffb3be;
+  color: var(--sidebar-foreground);
+}
+
+.dashboard-christmas :is([data-dashboard-sidebar], [data-dashboard-drawer]) {
+  background-image: linear-gradient(160deg, #ffffff08, transparent 45%, #070e092e);
+}
+
+.dashboard-christmas :is([data-dashboard-sidebar], [data-dashboard-drawer]) > :last-child:not(button) {
+  box-shadow: inset 0 -3px 0 var(--christmas-nav-active-border);
+}
+
+.dashboard-christmas :is([data-dashboard-sidebar], [data-dashboard-drawer]) button[aria-haspopup="menu"] {
+  background-color: var(--christmas-nav-hover);
+  color: var(--sidebar-foreground);
+}
+
+.dashboard-christmas :is([data-dashboard-sidebar]:not([data-collapsed="true"]), [data-dashboard-drawer], [data-dashboard-mobile-bar]) img[src="/logos/logoPuragendaSVG.svg"] {
+  filter: brightness(0) invert(94%) sepia(19%) saturate(411%) hue-rotate(312deg);
+}
+
+.dashboard-christmas [data-dashboard-nav-active] {
+  background-color: var(--christmas-nav-active);
+  border-color: var(--christmas-nav-active-border);
+  color: var(--sidebar-foreground);
+}
+
+.dashboard-christmas :where(button, a)[class~="bg-[#7C3AED]"][class~="text-white"] {
+  background-color: var(--primary);
+  color: var(--primary-foreground);
+}
+
+.dashboard-christmas :where(button, a)[class~="bg-[#7C3AED]"][class~="text-white"]:hover {
+  background-color: color-mix(in srgb, var(--primary) 88%, black);
+}
+
+.dashboard-christmas [data-dashboard-today-hero] {
+  border-color: var(--christmas-paper-edge);
+  background: linear-gradient(105deg, var(--card), var(--christmas-paper));
+  color: var(--foreground);
+  box-shadow: 5px 5px 0 var(--christmas-shadow);
+}
+
+.dashboard-christmas [data-today-decoration] {
+  display: none;
+}
+
+.christmas-sound-button {
+  display: inline-flex;
+  align-items: center;
+  justify-content: center;
+  width: 2.25rem;
+  height: 2.25rem;
+  border: 1px solid var(--christmas-paper-edge);
+  border-radius: .65rem;
+  background: var(--card);
+  color: var(--foreground);
+  cursor: pointer;
+}
+
+.christmas-sound-button[aria-pressed="false"] {
+  color: var(--muted-foreground);
+}
+
+.christmas-sound-button:hover {
+  background: var(--secondary);
+}
+
+.christmas-sound-button:focus-visible {
+  outline: 2px solid var(--ring);
+  outline-offset: 2px;
+}
+
+.christmas-sound-button--mobile {
+  position: fixed;
+  z-index: 50;
+  inset-block-start: max(.5rem, env(safe-area-inset-top));
+  inset-inline-end: calc(max(.75rem, env(safe-area-inset-right)) + 3rem);
+  width: 2.5rem;
+  height: 2.5rem;
+}
+
+.christmas-welcome-envelope {
+  position: absolute;
+  inset-block-start: clamp(1.2rem, 2.7vw, 2rem);
+  inset-inline-end: clamp(1rem, 2.5vw, 2.75rem);
+  width: clamp(4rem, 13vw, 7.5rem);
+  aspect-ratio: 2 / 1;
+  pointer-events: none;
+  border-radius: .28rem;
+  background: #ac8860;
+  color: #78374a;
+  box-shadow: 2px 3px 0 color-mix(in srgb, var(--christmas-shadow) 65%, transparent);
+  transform: rotate(-8deg);
+}
+
+.christmas-envelope-letter {
+  position: absolute;
+  inset: 5% 12% 14%;
+  display: grid;
+  place-items: center;
+  border: 1px solid #cfb391;
+  border-radius: .15rem;
+  background: #fff7e7;
+}
+
+.christmas-envelope-letter svg {
+  width: 25%;
+  height: 65%;
+  margin-top: -14%;
+  fill: #c78e4e;
+  stroke-width: 1.6;
+}
+
+.christmas-envelope-fold {
+  position: absolute;
+  inset: 0;
+  border-radius: inherit;
+  background: linear-gradient(146deg, #ead1ab 49%, #f0dcb7 50%);
+  clip-path: polygon(0 0, 50% 63%, 100% 0, 100% 100%, 0 100%);
+}
+
+.christmas-envelope-flap {
+  position: absolute;
+  inset: 0 0 auto;
+  height: 68%;
+  background: linear-gradient(#f9e8cc, #e0bc8c);
+  clip-path: polygon(0 0, 100% 0, 50% 94%);
+  transform-origin: top center;
+}
+
+.christmas-envelope-wax {
+  position: absolute;
+  inset: 60% auto auto 50%;
+  width: 16%;
+  aspect-ratio: 1;
+  border: 1px solid #7b283c;
+  border-radius: 38% 56% 47% 51%;
+  background: radial-gradient(circle at 30% 27%, #d66672, #96374b 70%, #692c3a);
+  transform: translate(-50%, -50%);
+}
+
+.christmas-seal {
+  display: inline-grid;
+  width: 1.5rem;
+  height: 1.5rem;
+  flex: 0 0 auto;
+  place-items: center;
+  vertical-align: middle;
+  border: 1px solid #842d42;
+  border-radius: 46% 55% 45% 53%;
+  background: radial-gradient(circle at 30% 28%, #b34d60, #9a334a 52%, #7a2a3d);
+  box-shadow: inset 0 0 0 2px #f1bdab44;
+  color: #fff8eb;
+}
+
+.christmas-seal svg {
+  width: .9rem;
+  height: .9rem;
+  stroke-width: 2.5;
+}
+
+.christmas-stars {
+  display: inline-flex;
+  gap: .18rem;
+  align-items: center;
+  flex: 0 0 auto;
+  margin-inline-start: .35rem;
+  vertical-align: middle;
+  pointer-events: none;
+}
+
+.christmas-stars svg {
+  width: .84rem;
+  height: .84rem;
+  fill: #f1c671;
+  stroke: #8d5324;
+  stroke-width: 1.65;
+}
+
+.christmas-stars svg:nth-child(2) {
+  width: 1.04rem;
+  height: 1.04rem;
+  fill: #ffdf9c;
+}
+
+.dashboard-christmas [data-dashboard-today-hero] [class~="text-[#393442]"] {
+  color: var(--muted-foreground);
+}
+
+.dashboard-christmas [data-dashboard-today-hero] [class~="bg-[#FFD84D]"] {
+  border-color: var(--christmas-nav-active-border);
+  background: var(--christmas-nav-active);
+  color: var(--sidebar-foreground);
+}
+
+.dashboard-christmas [data-dashboard-paper-card] {
+  border-color: var(--christmas-paper-edge);
+  background-color: var(--christmas-paper);
+  color: var(--foreground);
+  box-shadow: 4px 4px 0 var(--christmas-shadow);
+}
+
+.dashboard-christmas [data-dashboard-paper-card] :is([class~="border-black/20"], [class~="border-black/15"]) {
+  border-color: var(--border);
+}
+
+.dashboard-christmas [data-dashboard-paper-card] [class~="text-black"] {
+  color: var(--foreground);
+}
+
+.dashboard-christmas [data-dashboard-paper-card] :is([class~="text-black/60"], [class~="text-black/65"], [class~="text-black/70"], [class~="text-[#5B21B6]"]) {
+  color: var(--muted-foreground);
+}
+
+.dashboard-christmas [data-dashboard-paper-card] > [class~="bg-white"] {
+  border-color: var(--christmas-paper-edge);
+  background-color: var(--card);
+  box-shadow: 2px 2px 0 var(--christmas-shadow);
+}
+
+.dashboard-christmas .puri-antenna {
+  display: none;
+}
+
+.dashboard-christmas .puri-christmas-hat {
+  display: inline;
+}
+
+.dashboard-christmas .puri-launcher {
+  border-color: var(--christmas-paper-edge);
+  background-color: var(--card);
+  color: var(--foreground);
+  box-shadow: 3px 3px 0 var(--christmas-shadow);
+}
+
+.dashboard-christmas.puri-dialog-backdrop [role="dialog"] {
+  border-color: var(--christmas-paper-edge);
+  background-color: var(--background);
+  color: var(--foreground);
+  box-shadow: -5px 5px 0 var(--christmas-shadow);
+}
+
+.dashboard-christmas.puri-dialog-backdrop :is(header, form) {
+  border-color: var(--christmas-paper-edge);
+  background-color: var(--christmas-paper);
+}
+
+.dashboard-christmas.puri-dialog-backdrop :is([class~="bg-white"], [class~="bg-[#E9D8FF]"], [class~="bg-[#FFF5BA]"]):not(header) {
+  border-color: var(--christmas-paper-edge);
+  background-color: var(--card);
+  box-shadow: none;
+}
+
+.dashboard-christmas.puri-dialog-backdrop :is([class~="text-[#5B486C]"], [class~="text-[#4A355E]"], [class~="text-[#534B40]"], textarea::placeholder) {
+  color: var(--muted-foreground);
+}
+
+.dashboard-christmas-snow {
+  position: absolute;
+  z-index: 45;
+  inset: 0 0 auto;
+  height: 11rem;
+  overflow: hidden;
+  pointer-events: none;
+}
+
+.dashboard-christmas-snow span {
+  position: absolute;
+  top: -9px;
+  border-radius: 50%;
+  background: var(--christmas-snow-color);
+  box-shadow: 0 0 2px var(--christmas-snow-shadow);
+  opacity: 0;
+  animation: dashboard-christmas-fall 1.7s linear both;
+}
+
+.dashboard-christmas-snow span:nth-child(3n) {
+  border-radius: 1px;
+}
+
+@keyframes dashboard-christmas-fall {
+  0% { opacity: 0; transform: translateY(0) rotate(0deg); }
+  20% { opacity: .87; }
+  64% { opacity: .66; }
+  100% { opacity: 0; transform: translate(var(--flake-drift), 10.5rem) rotate(155deg); }
+}
+
+@media (prefers-reduced-motion: no-preference) {
+  .dashboard-christmas.puri-dialog-backdrop header .puri-christmas-hat {
+    transform-box: fill-box;
+    transform-origin: 45% 88%;
+    animation: christmas-hat-nod 390ms ease-out;
+  }
+
+  .dashboard-christmas.puri-dialog-backdrop header .puri-christmas-pompom {
+    animation: christmas-pompom-hop 390ms ease-out;
+  }
+
+  .christmas-welcome-envelope[data-opening] .christmas-envelope-flap {
+    animation: christmas-envelope-open 850ms ease-in-out;
+  }
+
+  .christmas-welcome-envelope[data-opening] .christmas-envelope-letter {
+    animation: christmas-letter-lift 850ms ease-in-out;
+  }
+
+  .christmas-welcome-envelope[data-opening] .christmas-envelope-wax {
+    animation: christmas-wax-release 850ms ease-in-out;
+  }
+
+  .christmas-seal {
+    animation: christmas-seal-stamp 290ms cubic-bezier(.22, .8, .32, 1);
+  }
+
+  .christmas-stars svg {
+    animation: christmas-paper-star 440ms cubic-bezier(.22, .8, .32, 1) both;
+  }
+
+  .christmas-stars svg:nth-child(2) { animation-delay: 65ms; }
+  .christmas-stars svg:nth-child(3) { animation-delay: 130ms; }
+}
+
+@keyframes christmas-hat-nod {
+  0%, 100% { transform: rotate(0); }
+  36% { transform: rotate(12deg); }
+  71% { transform: rotate(-4deg); }
+}
+
+@keyframes christmas-pompom-hop {
+  0%, 100% { transform: translateY(0); }
+  48% { transform: translateY(-6px); }
+  76% { transform: translateY(2px); }
+}
+
+@keyframes christmas-envelope-open {
+  0%, 100% { transform: scaleY(1); }
+  42%, 66% { transform: scaleY(-.62); }
+}
+
+@keyframes christmas-letter-lift {
+  0%, 100% { transform: translateY(0); }
+  46%, 65% { transform: translateY(-58%); }
+}
+
+@keyframes christmas-wax-release {
+  0%, 100% { opacity: 1; }
+  22%, 78% { opacity: 0; }
+}
+
+@keyframes christmas-seal-stamp {
+  0% { opacity: 0; transform: scale(1.45) rotate(-13deg); }
+  64% { opacity: 1; transform: scale(.92) rotate(3deg); }
+  100% { opacity: 1; transform: scale(1) rotate(0); }
+}
+
+@keyframes christmas-paper-star {
+  0% { opacity: 0; transform: translateY(.4rem) scale(.45) rotate(-30deg); }
+  67% { opacity: 1; transform: translateY(-.1rem) scale(1.14) rotate(8deg); }
+  100% { opacity: 1; transform: translateY(0) scale(1) rotate(0); }
+}
+
+@media (prefers-reduced-motion: reduce) {
+  .dashboard-christmas-snow {
+    display: none;
+  }
+}

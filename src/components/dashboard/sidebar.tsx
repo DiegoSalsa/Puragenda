@@ -354,6 +354,7 @@ function SidebarContent({
             className={itemClass(isGroupActive)}
             title={collapsed ? (item.label === "puriPlus" ? "Puri+ y Contact Flow" : t(item.label)) : undefined}
             aria-expanded={isOpen}
+            data-dashboard-nav-active={isGroupActive || undefined}
           >
             <item.icon className="h-4 w-4 shrink-0" />
             <NavLabel collapsed={collapsed}>
@@ -378,6 +379,7 @@ function SidebarContent({
                     key={child.href}
                     href={child.href}
                     onClick={onClose}
+                    data-dashboard-nav-active={active || undefined}
                     className={itemClass(active)}
                     title={collapsed ? t(child.label) : undefined}
                   >
@@ -401,6 +403,7 @@ function SidebarContent({
         href={item.href}
         data-tour={item.href === "/dashboard/agenda" ? "nav-agenda" : undefined}
         onClick={onClose}
+        data-dashboard-nav-active={active || undefined}
         className={itemClass(active)}
         title={collapsed ? (item.label === "puriPlus" ? "Puri+ y Contact Flow" : t(item.label)) : undefined}
       >
@@ -670,7 +673,7 @@ export function DashboardSidebar({
 
   return (
     <>
-      <div className="fixed inset-x-0 top-0 z-40 flex items-center gap-3 border-b border-border bg-sidebar pb-3 pl-[max(1rem,env(safe-area-inset-left))] pr-[4.75rem] pt-[max(0.75rem,env(safe-area-inset-top))] md:hidden">
+      <div data-dashboard-mobile-bar className="relative z-40 flex shrink-0 items-center gap-3 border-b border-border bg-sidebar pb-3 pl-[max(1rem,env(safe-area-inset-left))] pr-[4.75rem] pt-[max(0.75rem,env(safe-area-inset-top))] md:hidden">
         <button
           onClick={() => setMobileOpen(true)}
           className="rounded-lg p-1.5 text-muted-foreground hover:text-foreground"
@@ -684,7 +687,6 @@ export function DashboardSidebar({
           className="h-8 w-auto"
         />
       </div>
-      <div className="h-[calc(52px+env(safe-area-inset-top))] shrink-0 md:hidden" />
 
       {mobileOpen && (
         <div className="dashboard-mobile-drawer fixed inset-0 z-50 md:hidden">
@@ -692,7 +694,7 @@ export function DashboardSidebar({
             className="absolute inset-0 bg-black/60 backdrop-blur-sm"
             onClick={() => setMobileOpen(false)}
           />
-          <aside className="relative flex h-full w-72 max-w-[86vw] flex-col bg-sidebar shadow-2xl animate-drawer-left">
+          <aside data-dashboard-drawer className="relative flex h-full w-72 max-w-[86vw] flex-col bg-sidebar shadow-2xl animate-drawer-left">
             <SidebarContent
               userName={userName}
               widgetSlug={widgetSlug}

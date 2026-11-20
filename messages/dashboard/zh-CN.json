@@ -1,4 +1,17 @@
 {
+  "christmas": {
+    "noticeTitle": "Diciembre en Papel",
+    "noticeDescription": "圣诞主题是限时设计，将持续到{date}。",
+    "noticeOptOut": "想关闭主题？<settings>前往设置</settings>。",
+    "noticeOptOutTeam": "拥有设置权限的成员可以为整个团队关闭此主题。",
+    "noticeDismiss": "知道了",
+    "sound": "圣诞音效",
+    "title": "圣诞主题",
+    "description": "在节日期间为整个团队启用「纸上十二月」。",
+    "on": "已启用",
+    "off": "已停用",
+    "error": "无法保存更改，请重试。"
+  },
   "storyDesign": {"customize":"自定义设计","background":"背景","artBackground":"艺术背景","solidBackground":"纯色","accentColor":"主色","secondaryColor":"辅助色","canvasColor":"画布","textColor":"文字","showLogo":"显示标志","showServices":"显示服务","cta":"预约行动语","defaultCta":"通过主页简介中的链接预约","ctaMode":"故事跳转方式","linkSticker":"链接贴纸","bioLink":"主页简介链接","linkStickerHint":"发布到 Instagram 时会预留干净区域，方便添加链接贴纸。","bioLinkHint":"故事将提示客户通过主页简介中的链接预约。","stickerDefaultCta":"在此预约","stickerArea":"贴纸位置","availabilityContent":"故事内容","withSchedule":"显示时间","withoutSchedule":"不显示时间","withScheduleHint":"展示可预约日期和时间。","withoutScheduleHint":"推广服务并引导客户预约。","visibleInfo":"显示的信息","showProfessional":"员工","showLocationName":"门店","showAddress":"地址","individualDefaultHint":"个人版默认隐藏员工姓名；如果符合品牌需求，也可以开启显示。"},
   "shell": {"logout":"退出登录","lightTheme":"浅色主题","darkTheme":"深色主题","systemTheme":"使用系统主题"},
   "home": {"authRequired":"请先登录后再访问管理面板。","businessRequired":"你尚未设置商家信息。","noFeatures":"你的账户尚未分配任何功能，请联系商家管理员获取权限。","title":"预约","subtitle":"{business} 的预约日历","wholeBusiness":"全部门店","mySchedule":"我的日程","unassigned":"未分配","tutorialTitle":"预约日历","tutorialDescription":"实时查看所有预约，在周视图和日视图之间切换，并打开任意预约查看详情。"},

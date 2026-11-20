@@ -15,6 +15,7 @@ import { AppointmentDetailDialog, type DashboardAppointment } from "./appointmen
 import { CopyWidgetLink } from "./copy-widget-link";
 import { ScheduleBlockForm } from "./schedule-block-form";
 import { PuriTodayPrompt } from "@/components/dashboard/puri-assistant";
+import { ChristmasWelcomeEnvelope } from "@/components/dashboard/christmas-celebrations";
 
 const surface = "rounded-[1.5rem] border-2 border-[#171717] bg-white text-[#171717] shadow-[4px_4px_0_#171717] dark:border-white dark:bg-card dark:text-foreground dark:shadow-[4px_4px_0_#fff]";
 const heroSurface = "rounded-[1.75rem] border-[3px] border-[#171717] bg-white text-[#171717] shadow-[7px_7px_0_#171717] dark:border-white dark:bg-card dark:text-foreground dark:shadow-[7px_7px_0_#fff]";
@@ -64,13 +65,17 @@ function statusChip(status: string) {
   return "bg-amber-500/10 text-amber-700 dark:text-amber-300";
 }
 
-export function TodayScreen({ data, userName }: { data: TodayDashboardData; userName: string }) {
+export function TodayScreen({ data, userName, initialTime }: {
+  data: TodayDashboardData;
+  userName: string;
+  initialTime: number;
+}) {
   const t = useTranslations("dashboard.today");
   const homeT = useTranslations("dashboard.home");
   const calendarT = useTranslations("dashboard.calendar");
   const locale = useLocale();
   const firstName = userName.trim().split(/\s+/)[0] || "";
-  const [now, setNow] = useState(() => Date.now());
+  const [now, setNow] = useState(initialTime);
   const [selectedId, setSelectedId] = useState<string | null>(null);
   const [creating, setCreating] = useState(false);
   const [blocking, setBlocking] = useState(false);
@@ -134,9 +139,10 @@ export function TodayScreen({ data, userName }: { data: TodayDashboardData; user
 
   return (
     <div className="today-screen mx-auto flex w-full min-w-0 max-w-[1440px] flex-col gap-6 2xl:max-w-[1600px] lg:grid lg:grid-cols-[minmax(0,1.68fr)_minmax(22rem,0.78fr)] lg:items-start lg:gap-6">
-      <header className="relative order-1 overflow-hidden rounded-[2rem] border-[3px] border-[#171717] bg-[#E9D8FF] p-5 text-[#171717] shadow-[8px_8px_0_#171717] sm:p-8 lg:col-span-2 lg:order-none lg:p-10">
-        <div className="pointer-events-none absolute -right-20 -top-24 h-72 w-72 rounded-full border-[34px] border-[#FF5C8A]/60" aria-hidden="true" />
-        <div className="pointer-events-none absolute bottom-5 right-[31%] hidden h-4 w-4 rounded-full bg-[#FFD84D] ring-2 ring-[#171717] lg:block" aria-hidden="true" />
+      <header data-dashboard-today-hero className="relative order-1 overflow-hidden rounded-[2rem] border-[3px] border-[#171717] bg-[#E9D8FF] p-5 text-[#171717] shadow-[8px_8px_0_#171717] sm:p-8 lg:col-span-2 lg:order-none lg:p-10">
+        <div data-today-decoration className="pointer-events-none absolute -right-20 -top-24 h-72 w-72 rounded-full border-[34px] border-[#FF5C8A]/60" aria-hidden="true" />
+        <div data-today-decoration className="pointer-events-none absolute bottom-5 right-[31%] hidden h-4 w-4 rounded-full bg-[#FFD84D] ring-2 ring-[#171717] lg:block" aria-hidden="true" />
+        <ChristmasWelcomeEnvelope dateKey={data.dateKey} />
         <div className="relative flex flex-col gap-8 lg:flex-row lg:items-end lg:justify-between">
         <div className="min-w-0">
           <p className="inline-flex rounded-full border-2 border-[#171717] bg-[#FFD84D] px-3 py-1.5 text-[11px] font-black uppercase tracking-[0.18em]">{t("yourDay")}</p>
@@ -192,7 +198,7 @@ export function TodayScreen({ data, userName }: { data: TodayDashboardData; user
       )}
 
       {data.kpis.appointments > 0 && (
-        <div className="order-6 grid grid-cols-2 overflow-hidden rounded-[1.5rem] border-[3px] border-black bg-[#FFF5BA] text-black shadow-[6px_6px_0_#000] sm:grid-cols-4 lg:col-span-2 lg:order-none dark:border-white dark:bg-[#FFF5BA] dark:shadow-[6px_6px_0_#fff]">
+        <div data-dashboard-paper-card className="order-6 grid grid-cols-2 overflow-hidden rounded-[1.5rem] border-[3px] border-black bg-[#FFF5BA] text-black shadow-[6px_6px_0_#000] sm:grid-cols-4 lg:col-span-2 lg:order-none dark:border-white dark:bg-[#FFF5BA] dark:shadow-[6px_6px_0_#fff]">
           <Kpi label={t("appointments")} value={String(data.kpis.appointments)} />
           {data.canSeeMoney && <Kpi label={t("collected")} value={formatPrice(Math.round(data.kpis.collected), data.currencyCode)} />}
           {data.canSeeMoney && <Kpi label={t("pending")} value={formatPrice(Math.round(data.kpis.pending), data.currencyCode)} hint={data.kpis.projected > data.kpis.collected ? t("projected", { amount: formatPrice(Math.round(data.kpis.projected), data.currencyCode) }) : undefined} />}
@@ -236,7 +242,7 @@ export function TodayScreen({ data, userName }: { data: TodayDashboardData; user
           </p>
         )}
         {data.dayState === "empty" ? (
-          <div className="relative min-h-[20rem] overflow-hidden rounded-[1.75rem] border-[3px] border-black bg-[#FFF5BA] p-6 text-black shadow-[7px_7px_0_#000] dark:border-white dark:bg-[#FFF5BA] dark:shadow-[7px_7px_0_#fff] sm:p-9">
+          <div data-dashboard-paper-card className="relative min-h-[20rem] overflow-hidden rounded-[1.75rem] border-[3px] border-black bg-[#FFF5BA] p-6 text-black shadow-[7px_7px_0_#000] dark:border-white dark:bg-[#FFF5BA] dark:shadow-[7px_7px_0_#fff] sm:p-9">
             <span className="absolute inset-y-0 left-0 w-3 bg-[#FF5C8A]" aria-hidden="true" />
             <span className="pointer-events-none absolute -bottom-16 -right-10 h-44 w-44 rounded-full border-[22px] border-[#E9D8FF]" aria-hidden="true" />
             <span className="relative border-2 border-black bg-white px-2.5 py-1 text-[11px] font-black uppercase tracking-[0.12em] shadow-[2px_2px_0_#000]">{t("emptyTitle")}</span>
@@ -295,7 +301,7 @@ export function TodayScreen({ data, userName }: { data: TodayDashboardData; user
         {data.attention.length === 0 ? (
           data.dayState === "empty" ? null : <div className="rounded-[1.5rem] border-[3px] border-black bg-[#BFFCC6] px-5 py-5 text-black shadow-[4px_4px_0_#171717]"><p className="text-sm font-black">✓ {t("allClearShort")}</p><p className="mt-1 text-xs font-semibold text-black/65">{t("allClear")}</p></div>
         ) : (
-          <div className="overflow-hidden rounded-[1.5rem] border-[3px] border-black bg-[#FFF5BA] text-black shadow-[5px_5px_0_#171717] dark:border-white dark:bg-[#FFF5BA] dark:shadow-[5px_5px_0_#fff]">
+          <div data-dashboard-paper-card className="overflow-hidden rounded-[1.5rem] border-[3px] border-black bg-[#FFF5BA] text-black shadow-[5px_5px_0_#171717] dark:border-white dark:bg-[#FFF5BA] dark:shadow-[5px_5px_0_#fff]">
             <h2 className="border-b-2 border-black/20 px-5 py-4 text-xs font-black uppercase tracking-[0.16em]">{t("needsAttention")}</h2>
             <ul>
               {data.attention.map((item) => {

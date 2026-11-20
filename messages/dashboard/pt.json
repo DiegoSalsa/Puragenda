@@ -1,4 +1,17 @@
 {
+  "christmas": {
+    "noticeTitle": "Diciembre en Papel",
+    "noticeDescription": "O tema de Natal é temporário e estará disponível até {date}.",
+    "noticeOptOut": "Quer desativá-lo? <settings>Acesse as configurações</settings>.",
+    "noticeOptOutTeam": "Quem tem acesso às configurações pode desativar o tema para toda a equipe.",
+    "noticeDismiss": "Entendi",
+    "sound": "Som de Natal",
+    "title": "Tema de Natal",
+    "description": "Ative Dezembro em Papel para toda a equipa durante a época festiva.",
+    "on": "Ativado",
+    "off": "Desativado",
+    "error": "Não foi possível guardar a alteração. Tente novamente."
+  },
   "storyDesign": {"customize":"Personalizar design","background":"Fundo","artBackground":"Fundo artístico","solidBackground":"Cor sólida","accentColor":"Principal","secondaryColor":"Secundária","canvasColor":"Fundo","textColor":"Texto","showLogo":"Mostrar logo","showServices":"Mostrar serviços","cta":"Chamada para reserva","defaultCta":"Reserve pelo link da nossa bio","ctaMode":"Destino da história","linkSticker":"Sticker de link","bioLink":"Link na bio","linkStickerHint":"Deixaremos um espaço limpo para você adicionar o sticker de link ao publicar no Instagram.","bioLinkHint":"A história indicará que a reserva está disponível pelo link da bio.","stickerDefaultCta":"Reserve aqui","stickerArea":"Seu sticker aqui","availabilityContent":"Conteúdo da história","withSchedule":"Com horários","withoutSchedule":"Sem horários","withScheduleHint":"Mostra dias e horários disponíveis.","withoutScheduleHint":"Promove o serviço e leva o cliente à reserva.","visibleInfo":"Informações visíveis","showProfessional":"Profissional","showLocationName":"Unidade","showAddress":"Endereço","individualDefaultHint":"No plano Individual ocultamos o profissional por padrão; você pode exibi-lo se fizer parte da sua marca."},
   "shell": {"logout":"Sair","lightTheme":"Tema claro","darkTheme":"Tema escuro","systemTheme":"Usar tema do sistema"},
   "home": {"authRequired":"Você precisa entrar para acessar o painel.","businessRequired":"Você ainda não configurou um negócio.","noFeatures":"Sua conta não tem funcionalidades atribuídas. Solicite acesso ao administrador do negócio.","title":"Agendamentos","subtitle":"Calendário de reservas de {business}","wholeBusiness":"Todo o negócio","mySchedule":"Minha agenda","unassigned":"Não atribuído","tutorialTitle":"CALENDÁRIO DE AGENDAMENTOS","tutorialDescription":"Veja todas as reservas em tempo real. Alterne entre as visualizações semanal e diária e abra qualquer agendamento para ver os detalhes."},

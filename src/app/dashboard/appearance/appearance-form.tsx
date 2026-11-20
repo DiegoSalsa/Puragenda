@@ -2,6 +2,7 @@
 import { useTranslations } from "next-intl";
 
 import { LocalizedText } from "@/components/i18n/localized-text";
+import { ChristmasSeal } from "@/components/dashboard/christmas-celebrations";
 
 import { useEffect, useRef, useState } from "react";
 import { useRouter } from "next/navigation";
@@ -724,7 +725,9 @@ export function AppearanceForm({
               <Sparkles className="h-4 w-4" /> <LocalizedText id="U_uEslczx-g5" />
             </button>
             <button onClick={handleSave} disabled={saving} className="flex h-12 items-center justify-center gap-2 rounded-xl bg-[#7C3AED] text-sm font-bold text-white hover:bg-[#6D28D9] disabled:opacity-50">
-              {saving ? <Loader2 className="h-4 w-4 animate-spin" /> : <Save className="h-4 w-4" />}
+              {saving ? <Loader2 className="h-4 w-4 animate-spin" /> : saved ? (
+                <ChristmasSeal fallback={<Save className="h-4 w-4" />} />
+              ) : <Save className="h-4 w-4" />}
               {saved ? "Cambios guardados" : legacy("FL368vrOOgfe")}
             </button>
             {saveError && <p role="alert" className="text-sm text-red-500 sm:col-span-2">{saveError}</p>}

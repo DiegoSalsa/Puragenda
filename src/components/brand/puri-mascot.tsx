@@ -16,10 +16,12 @@ export function PuriMascot({ variant = "default", compact = false, ...props }: P
 
   return (
     <svg viewBox={compact ? "8 -2 144 152" : "0 0 160 160"} fill="none" aria-hidden="true" focusable="false" {...props}>
-      <path d="M83 38 C87 25 96 16 107 13" stroke="#171717" strokeWidth="5" strokeLinecap="round" />
-      <path d="M83 38 C87 25 96 16 107 13" stroke="#9B70FF" strokeWidth="2.5" strokeLinecap="round" />
-      <circle cx="111" cy="13" r="10" fill="#FFD84D" stroke="#171717" strokeWidth="4" />
-      <circle cx="115" cy="9" r="3" fill="white" />
+      <g className="puri-antenna">
+        <path d="M83 38 C87 25 96 16 107 13" stroke="#171717" strokeWidth="5" strokeLinecap="round" />
+        <path d="M83 38 C87 25 96 16 107 13" stroke="#9B70FF" strokeWidth="2.5" strokeLinecap="round" />
+        <circle cx="111" cy="13" r="10" fill="#FFD84D" stroke="#171717" strokeWidth="4" />
+        <circle cx="115" cy="9" r="3" fill="white" />
+      </g>
 
       {!compact && <>
         <path d="M49 124 C40 129 37 138 41 143 C47 149 62 147 67 139 L67 127" fill="#A980FA" stroke="#171717" strokeWidth="4" strokeLinejoin="round" />
@@ -39,6 +41,13 @@ export function PuriMascot({ variant = "default", compact = false, ...props }: P
       <path d="M57 69 C66 59 81 56 96 59" stroke="white" strokeWidth="5" strokeLinecap="round" opacity=".8" />
       <ellipse cx="60" cy="101" rx="9" ry="5" fill="#FFB5D5" opacity=".8" />
       <ellipse cx="112" cy="100" rx="9" ry="5" fill="#FFB5D5" opacity=".8" />
+
+      <g className="puri-christmas-hat" display="none" stroke="#171717" strokeWidth="4" strokeLinejoin="round">
+        <path d="M47 39C57 25 64 8 82 6c15-2 28 6 39 14l-5 12c-12-7-23-8-29-5l16 9-6 8-50-5Z" fill="#A83247" />
+        <path d="M57 32c12-11 19-14 28-14" stroke="#DC6C79" strokeWidth="2.5" strokeLinecap="round" />
+        <path d="M49 33c14-4 35-4 51 2 5 2 7 7 4 12-2 4-7 5-11 3-13-4-29-5-43-2-6 1-10-2-10-6 0-4 4-8 9-9Z" fill="#FFF6E7" />
+        <circle className="puri-christmas-pompom" cx="122" cy="23" r="10" fill="#FFF6E7" />
+      </g>
 
       {attentive ? <>
         <circle cx="70" cy="84" r="7" fill="#171717" />

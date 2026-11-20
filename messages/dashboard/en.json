@@ -1,4 +1,17 @@
 {
+  "christmas": {
+    "noticeTitle": "Diciembre en Papel",
+    "noticeDescription": "The Christmas theme is temporary and will be available through {date}.",
+    "noticeOptOut": "Want to turn it off? <settings>Go to Settings</settings>.",
+    "noticeOptOutTeam": "Someone with access to Settings can turn off the theme for the whole team.",
+    "noticeDismiss": "Got it",
+    "sound": "Christmas sound",
+    "title": "Christmas theme",
+    "description": "Turn on December in Paper for the whole team during the holiday season.",
+    "on": "On",
+    "off": "Off",
+    "error": "We couldn’t save your change. Try again."
+  },
   "storyDesign": {"customize":"Customize design","background":"Background","artBackground":"Art background","solidBackground":"Solid color","accentColor":"Primary","secondaryColor":"Secondary","canvasColor":"Canvas","textColor":"Text","showLogo":"Show logo","showServices":"Show services","cta":"Booking call to action","defaultCta":"Book from the link in our bio","ctaMode":"Story destination","linkSticker":"Link sticker","bioLink":"Link in bio","linkStickerHint":"We’ll leave a clean space for the Instagram link sticker when you publish.","bioLinkHint":"The story will tell clients to book from the link in your bio.","stickerDefaultCta":"Book here","stickerArea":"Your sticker here","availabilityContent":"Story content","withSchedule":"With times","withoutSchedule":"Without times","withScheduleHint":"Show available days and times.","withoutScheduleHint":"Promote the service and send clients to book.","visibleInfo":"Visible information","showProfessional":"Professional","showLocationName":"Location","showAddress":"Address","individualDefaultHint":"Individual plans hide the professional by default; you can show it when it supports your brand."},
   "shell": {"logout":"Log out","lightTheme":"Light theme","darkTheme":"Dark theme","systemTheme":"Use system theme"},
   "home": {"authRequired":"You need to log in to access the dashboard.","businessRequired":"You haven't set up a business yet.","noFeatures":"Your account has no assigned features. Ask your business administrator for access.","title":"Appointments","subtitle":"Booking calendar for {business}","wholeBusiness":"Entire business","mySchedule":"My schedule","unassigned":"Unassigned","tutorialTitle":"APPOINTMENT CALENDAR","tutorialDescription":"See every booking in real time. Switch between week and day views and open any appointment for details."},

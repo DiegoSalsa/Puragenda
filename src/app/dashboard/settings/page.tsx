@@ -22,6 +22,8 @@ import { McpConnections } from "./mcp-connections";
 import { mcpEnabled } from "@/server/mcp/config";
 import { BusinessHoursEditor } from "./business-hours-editor";
 import { BusinessNameEditor } from "./business-name-editor";
+import { ChristmasThemeSetting } from "./christmas-theme-setting";
+import { getBusinessChristmasPreference, isChristmasDashboardSeason } from "@/server/services/dashboard-appearance.service";
 import { BusinessLocationEditor } from "./business-location-editor";
 import { LogoUploader } from "./logo-uploader";
 import { UpgradeButton } from "@/components/dashboard/upgrade-button";
@@ -62,7 +64,7 @@ export default async function SettingsPage({ searchParams }: { searchParams: Pro
   }
   if (!business) return <div className="py-20 text-center text-muted-foreground"><LocalizedText id="8rEGoq2nl-vn" /></div>;
 
-  const [hours, subscription, locations, services, marketplaceListing] = await Promise.all([
+  const [hours, subscription, locations, services, marketplaceListing, christmasEnabled] = await Promise.all([
     getBusinessHours(business.id),
     prisma.subscription.findUnique({ where: { businessId: business.id } }),
     prisma.businessLocation.findMany({
@@ -72,6 +74,7 @@ export default async function SettingsPage({ searchParams }: { searchParams: Pro
     }),
     prisma.service.findMany({ where: { businessId: business.id }, orderBy: [{ position: "asc" }, { name: "asc" }], select: { id: true, name: true } }),
     getPrimaryMarketplaceListingForBusiness(business.id),
+    isChristmasDashboardSeason() ? getBusinessChristmasPreference(business.id) : null,
   ]);
 
   const params = await searchParams;
@@ -144,6 +147,7 @@ export default async function SettingsPage({ searchParams }: { searchParams: Pro
       )}
 
       <div className="grid min-w-0 max-w-full gap-6 [&>*]:min-w-0 [&>*]:max-w-full [&>*]:overflow-hidden">
+        {christmasEnabled !== null && <ChristmasThemeSetting enabled={christmasEnabled} />}
         <Link
           href="/dashboard/changelog"
           className="rounded-2xl border border-[#7C3AED]/20 bg-card p-6 transition-colors hover:bg-muted/40"

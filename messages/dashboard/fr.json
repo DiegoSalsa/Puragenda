@@ -1,4 +1,17 @@
 {
+  "christmas": {
+    "noticeTitle": "Diciembre en Papel",
+    "noticeDescription": "Le thème de Noël est temporaire et restera disponible jusqu’au {date}.",
+    "noticeOptOut": "Vous voulez le désactiver ? <settings>Accédez aux paramètres</settings>.",
+    "noticeOptOutTeam": "Une personne ayant accès aux paramètres peut désactiver le thème pour toute l’équipe.",
+    "noticeDismiss": "Compris",
+    "sound": "Son de Noël",
+    "title": "Thème de Noël",
+    "description": "Activez Décembre en papier pour toute l’équipe pendant les fêtes.",
+    "on": "Activé",
+    "off": "Désactivé",
+    "error": "Impossible d’enregistrer la modification. Réessayez."
+  },
   "storyDesign": {"customize":"Personnaliser le design","background":"Arrière-plan","artBackground":"Fond artistique","solidBackground":"Couleur unie","accentColor":"Principale","secondaryColor":"Secondaire","canvasColor":"Fond","textColor":"Texte","showLogo":"Afficher le logo","showServices":"Afficher les services","cta":"Appel à la réservation","defaultCta":"Réservez depuis le lien de notre bio","ctaMode":"Destination de la story","linkSticker":"Sticker de lien","bioLink":"Lien dans la bio","linkStickerHint":"Nous laisserons un espace propre pour ajouter le sticker de lien lors de la publication sur Instagram.","bioLinkHint":"La story indiquera que la réservation se fait depuis le lien dans votre bio.","stickerDefaultCta":"Réservez ici","stickerArea":"Votre sticker ici","availabilityContent":"Contenu de la story","withSchedule":"Avec horaires","withoutSchedule":"Sans horaires","withScheduleHint":"Affiche les jours et horaires disponibles.","withoutScheduleHint":"Met en avant le service et invite à réserver.","visibleInfo":"Informations visibles","showProfessional":"Professionnel","showLocationName":"Établissement","showAddress":"Adresse","individualDefaultHint":"Avec le forfait Individuel, le professionnel est masqué par défaut ; vous pouvez l’afficher s’il fait partie de votre marque."},
   "shell": {"logout":"Se déconnecter","lightTheme":"Thème clair","darkTheme":"Thème sombre","systemTheme":"Utiliser le thème du système"},
   "home": {"authRequired":"Vous devez vous connecter pour accéder au tableau de bord.","businessRequired":"Vous n'avez pas encore configuré d'établissement.","noFeatures":"Aucune fonctionnalité n'est attribuée à votre compte. Demandez l'accès à l'administrateur de l'établissement.","title":"Rendez-vous","subtitle":"Calendrier des réservations de {business}","wholeBusiness":"Tout l'établissement","mySchedule":"Mon agenda","unassigned":"Non attribué","tutorialTitle":"CALENDRIER DES RENDEZ-VOUS","tutorialDescription":"Consultez toutes les réservations en temps réel. Passez de la vue hebdomadaire à la vue quotidienne et ouvrez un rendez-vous pour voir ses détails."},

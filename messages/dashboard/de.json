@@ -1,4 +1,17 @@
 {
+  "christmas": {
+    "noticeTitle": "Diciembre en Papel",
+    "noticeDescription": "Das Weihnachtsdesign ist vorübergehend und bleibt bis zum {date} verfügbar.",
+    "noticeOptOut": "Möchtest du es deaktivieren? <settings>Öffne die Einstellungen</settings>.",
+    "noticeOptOutTeam": "Wer Zugriff auf die Einstellungen hat, kann das Design für das gesamte Team deaktivieren.",
+    "noticeDismiss": "Verstanden",
+    "sound": "Weihnachtsklang",
+    "title": "Weihnachtsdesign",
+    "description": "Aktiviere Dezember auf Papier für das gesamte Team während der Weihnachtszeit.",
+    "on": "Aktiv",
+    "off": "Inaktiv",
+    "error": "Die Änderung konnte nicht gespeichert werden. Versuche es erneut."
+  },
   "storyDesign": {"customize":"Design anpassen","background":"Hintergrund","artBackground":"Kunsthintergrund","solidBackground":"Volltonfarbe","accentColor":"Primär","secondaryColor":"Sekundär","canvasColor":"Fläche","textColor":"Text","showLogo":"Logo anzeigen","showServices":"Leistungen anzeigen","cta":"Buchungsaufruf","defaultCta":"Buche über den Link in unserer Bio","ctaMode":"Story-Ziel","linkSticker":"Link-Sticker","bioLink":"Link in Bio","linkStickerHint":"Wir lassen beim Veröffentlichen Platz für den Instagram-Link-Sticker.","bioLinkHint":"Die Story verweist für die Buchung auf den Link in deiner Bio.","stickerDefaultCta":"Hier buchen","stickerArea":"Sticker hier","availabilityContent":"Story-Inhalt","withSchedule":"Mit Zeiten","withoutSchedule":"Ohne Zeiten","withScheduleHint":"Zeigt verfügbare Tage und Uhrzeiten.","withoutScheduleHint":"Bewirbt die Leistung und führt zur Buchung.","visibleInfo":"Sichtbare Informationen","showProfessional":"Teammitglied","showLocationName":"Standort","showAddress":"Adresse","individualDefaultHint":"Im Individual-Tarif wird das Teammitglied standardmäßig ausgeblendet; du kannst es bei Bedarf anzeigen."},
   "shell": {"logout":"Abmelden","lightTheme":"Helles Design","darkTheme":"Dunkles Design","systemTheme":"Systemdesign verwenden"},
   "home": {"authRequired":"Du musst dich anmelden, um das Dashboard aufzurufen.","businessRequired":"Du hast noch kein Unternehmen eingerichtet.","noFeatures":"Deinem Konto sind keine Funktionen zugewiesen. Bitte den Administrator deines Unternehmens um Zugriff.","title":"Termine","subtitle":"Buchungskalender für {business}","wholeBusiness":"Gesamtes Unternehmen","mySchedule":"Mein Kalender","unassigned":"Nicht zugewiesen","tutorialTitle":"TERMINKALENDER","tutorialDescription":"Sieh alle Buchungen in Echtzeit. Wechsle zwischen Wochen- und Tagesansicht und öffne einen Termin, um Details anzuzeigen."},

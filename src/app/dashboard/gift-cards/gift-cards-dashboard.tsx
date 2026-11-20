@@ -1,9 +1,11 @@
 "use client";
 
-import { FormEvent, useMemo, useState } from "react";
+import { FormEvent, useEffect, useMemo, useState } from "react";
 import { Check, CreditCard, Gift, Mail, Pencil, Plus, Send, ShoppingBag, WalletCards, X } from "lucide-react";
 import { useLocale, useTranslations } from "next-intl";
 import { GiftCardVisual } from "@/components/gift-cards/gift-card-visual";
+import { ChristmasStars } from "@/components/dashboard/christmas-celebrations";
+import { useDashboardChristmas } from "@/components/dashboard/christmas-effects";
 import { formatPrice } from "@/lib/utils";
 import { GiftCardBuilder, type GiftCardDashboardService, type GiftCardDashboardTemplate } from "./gift-card-builder";
 
@@ -67,9 +69,30 @@ export function GiftCardsDashboard({ business, metrics, templates: initialTempla
   const [busy, setBusy] = useState(false);
   const [notice, setNotice] = useState("");
   const [error, setError] = useState("");
+  const [justIssued, setJustIssued] = useState<string | null>(null);
+  const { active: christmas } = useDashboardChristmas();
+  const celebrationKey = `puragenda:christmas-gift-card:${business.widgetSlug}`;
   const selectedTemplate = useMemo(() => templates.find((item) => item.id === sale.templateId), [sale.templateId, templates]);
   const activeTemplates = templates.filter((item) => item.isActive).length;
   const discardMessage = spanish ? "Tienes cambios sin guardar. ¿Quieres descartarlos?" : "You have unsaved changes. Do you want to discard them?";
+
+  useEffect(() => {
+    if (!christmas) return;
+    const frame = window.requestAnimationFrame(() => {
+      try {
+        const receipt = sessionStorage.getItem(celebrationKey);
+        if (!receipt) return;
+        sessionStorage.removeItem(celebrationKey);
+        const [issuedAt, cardId] = receipt.split(":");
+        if (Date.now() - Number(issuedAt) < 60_000 && initialPurchases.some(({ giftCard }) => giftCard?.id === cardId)) {
+          setJustIssued(cardId);
+        }
+      } catch {
+        // Gift Card issuance works even if this browser blocks session storage.
+      }
+    });
+    return () => window.cancelAnimationFrame(frame);
+  }, [celebrationKey, christmas, initialPurchases]);
 
   function canLeaveBuilder() {
     return !builderDirty || window.confirm(discardMessage);
@@ -78,6 +101,7 @@ export function GiftCardsDashboard({ business, metrics, templates: initialTempla
   function changeTab(nextTab: "overview" | "templates" | "sales") {
     if (nextTab === tab) return;
     if (builder && !canLeaveBuilder()) return;
+    setJustIssued(null);
     setBuilder(null);
     setBuilderDirty(false);
     setTab(nextTab);
@@ -114,10 +138,21 @@ export function GiftCardsDashboard({ business, metrics, templates: initialTempla
     setBusy(true);
     setError("");
     setNotice("");
+    setJustIssued(null);
     try {
       const created = await request("/api/dashboard/gift-cards/manual", { method: "POST", body: JSON.stringify(sale) });
       setSale(blankSale);
       setNotice(created.emailWarning || t("sentNotice", { code: created.publicCode }));
+      if (christmas && typeof created.giftCardId === "string") {
+        if (created.emailWarning) setJustIssued(created.giftCardId);
+        else {
+          try {
+            sessionStorage.setItem(celebrationKey, `${Date.now()}:${created.giftCardId}`);
+          } catch {
+            // Continue with the existing refresh when session storage is blocked.
+          }
+        }
+      }
       if (!created.emailWarning) window.location.reload();
     } catch (requestError) {
       setError(requestError instanceof Error ? requestError.message : t("genericError"));
@@ -129,6 +164,7 @@ export function GiftCardsDashboard({ business, metrics, templates: initialTempla
   async function resend(cardId: string) {
     setBusy(true);
     setError("");
+    setJustIssued(null);
     try {
       await request(`/api/dashboard/gift-cards/${cardId}/resend`, { method: "POST" });
       setNotice(t("emailResent"));
@@ -144,6 +180,7 @@ export function GiftCardsDashboard({ business, metrics, templates: initialTempla
     if (!reason) return;
     setBusy(true);
     setError("");
+    setJustIssued(null);
     try {
       await request(`/api/dashboard/gift-cards/${cardId}/void`, { method: "POST", body: JSON.stringify({ reason }) });
       setPurchases((current) => current.map((item) => item.giftCard?.id === cardId ? { ...item, giftCard: { ...item.giftCard, status: "VOIDED" } } : item));
@@ -159,7 +196,10 @@ export function GiftCardsDashboard({ business, metrics, templates: initialTempla
 
   return <>
     {!business.mercadoPagoConnected && <div className="rounded-2xl border-[3px] border-black bg-[#fff5ba] p-4 font-bold shadow-[4px_4px_0_#000]">{t("connectMp")}</div>}
-    {(notice || error) && <div role={error ? "alert" : "status"} className={`rounded-xl border-2 border-black p-3 text-sm font-bold ${error ? "bg-red-100 text-red-800" : "bg-[#bffcc6]"}`}>{error || notice}</div>}
+    {(notice || error) && <div role={error ? "alert" : "status"} className={`rounded-xl border-2 border-black p-3 text-sm font-bold ${error ? "bg-red-100 text-red-800" : "bg-[#bffcc6]"}`}>
+      {error || notice}
+      {!error && justIssued && <ChristmasStars key={justIssued} />}
+    </div>}
 
     <nav className="grid grid-cols-3 gap-2 sm:flex sm:flex-wrap" aria-label={t("cards")}>
       {([['overview', t("overview")], ['templates', t("cards")], ['sales', t("sales")]] as const).map(([id, label]) => <button key={id} type="button" onClick={() => changeTab(id)} aria-current={tab === id ? "page" : undefined} className={`min-w-0 rounded-xl border-2 border-black px-2 py-2 text-xs font-black shadow-[3px_3px_0_#000] sm:px-4 sm:text-sm ${tab === id ? "bg-black text-white" : "bg-white"}`}>{label}</button>)}
@@ -174,7 +214,13 @@ export function GiftCardsDashboard({ business, metrics, templates: initialTempla
       ].map(({ label, value, Icon, color }) => <article key={label} className={`${color} rounded-2xl border-[3px] border-black p-4 shadow-[4px_4px_0_#000]`}><Icon className="h-5 w-5" /><p className="mt-3 text-2xl font-black">{value}</p><p className="text-xs font-black">{label}</p></article>)}</section>
       <section className="grid gap-5 lg:grid-cols-2">
         <div className="rounded-2xl border-[3px] border-black bg-white p-5 shadow-[5px_5px_0_#000]"><div className="flex items-start justify-between gap-4"><div><h2 className="text-xl font-black">{t("yourCards")}</h2><p className="mt-1 text-sm text-black/60">{t("templatesCount", { total: templates.length, active: activeTemplates })}</p></div><span className="rounded-full border-2 border-black bg-[#ffb5e8] px-3 py-1 text-xs font-black">{activeTemplates} {spanish ? "activas" : "active"}</span></div><button type="button" onClick={createTemplate} className="mt-5 inline-flex items-center gap-2 rounded-xl border-2 border-black bg-[#ffb5e8] px-4 py-2 font-black shadow-[3px_3px_0_#000]"><Plus className="h-4 w-4" /> {t("createCard")}</button></div>
-        <div className="rounded-2xl border-[3px] border-black bg-white p-5 shadow-[5px_5px_0_#000]"><h2 className="text-xl font-black">{t("manualSale")}</h2><p className="mt-1 text-sm text-black/60">{t("manualSaleDescription")}</p><button type="button" onClick={() => changeTab("sales")} className="mt-5 inline-flex items-center gap-2 rounded-xl border-2 border-black bg-[#bffcc6] px-4 py-2 font-black shadow-[3px_3px_0_#000]"><Send className="h-4 w-4" /> {t("issueSale")}</button></div>
+        <div className="rounded-2xl border-[3px] border-black bg-white p-5 shadow-[5px_5px_0_#000]">
+          <h2 className="text-xl font-black">{t("manualSale")} {justIssued && <ChristmasStars key={justIssued} />}</h2>
+          <p className="mt-1 text-sm text-black/60">{t("manualSaleDescription")}</p>
+          <button type="button" onClick={() => changeTab("sales")} className="mt-5 inline-flex items-center gap-2 rounded-xl border-2 border-black bg-[#bffcc6] px-4 py-2 font-black shadow-[3px_3px_0_#000]">
+            <Send className="h-4 w-4" /> {t("issueSale")}
+          </button>
+        </div>
       </section>
     </div>}
 
