@@ -7,8 +7,9 @@ afterEach(() => vi.unstubAllEnvs());
 
 describe("Christmas dashboard season", () => {
   it.each([
-    ["2026-12-01T02:59:59Z", false],
-    ["2026-12-01T03:00:00Z", true],
+    ["2026-11-20T02:59:59Z", false],
+    ["2026-11-20T03:00:00Z", true],
+    ["2026-11-20T22:30:00Z", true],
     ["2027-01-07T02:59:59Z", true],
     ["2027-01-07T03:00:00Z", false],
   ])("uses Santiago dates at %s", (date, expected) => {
@@ -20,6 +21,6 @@ describe("Christmas dashboard season", () => {
   it("allows the preview outside the season in development", () => {
     vi.stubEnv("NODE_ENV", "development");
     vi.stubEnv("DASHBOARD_CHRISTMAS_PREVIEW", "1");
-    expect(isChristmasDashboardSeason(new Date("2026-11-20T12:00:00Z"))).toBe(true);
+    expect(isChristmasDashboardSeason(new Date("2026-11-19T12:00:00Z"))).toBe(true);
   });
 });

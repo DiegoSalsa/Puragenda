@@ -9,7 +9,7 @@ export function isChristmasDashboardSeason(now = new Date()) {
   }
 
   const date = formatInTimeZone(now, "America/Santiago", "yyyy-MM-dd");
-  return date >= "2026-12-01" && date <= CHRISTMAS_DASHBOARD_END_DATE;
+  return date >= "2026-11-20" && date <= CHRISTMAS_DASHBOARD_END_DATE;
 }
 
 export async function getBusinessChristmasPreference(businessId: string) {
