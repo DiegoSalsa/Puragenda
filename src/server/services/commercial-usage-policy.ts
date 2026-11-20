@@ -1,7 +1,8 @@
 import { z } from "zod";
 import type { Prisma } from "@prisma/client";
 import { prisma } from "@/server/db/prisma";
-import { effectiveSnapshotAccess, isV2Plan } from "./commercial-plan-access";
+import { isTrialCurrentlyActive } from "@/core/subscription-access";
+import { effectiveSnapshotAccess, getCommercialPlanAccess, isRegistrationV2Contract, isV2Plan } from "./commercial-plan-access";
 
 export const usageCategories = ["STANDARD_INTERACTIVE", "PLUS_INTERACTIVE", "RECOMMENDATION", "ANALYSIS_SQL", "PROACTIVE_SQL"] as const;
 const budget = z.object({ limitMicros: z.number().int().nonnegative().safe(), limitUnits: z.number().int().nonnegative().safe() }).strict();
@@ -38,25 +39,40 @@ export async function commercialUsageContext(businessId: string, now = new Date(
 
 /** Upserts never reset spent/reserved counters, including on retry or plan change. */
 export async function ensureCommercialPuriBudgets(businessId: string, category: typeof usageCategories[number], now = new Date()) {
-  const context = await commercialUsageContext(businessId, now);
-  if (!context || (context.sub.termsSnapshot as { origin?: string } | null)?.origin !== "registration_v2") return null;
-  if (category !== "STANDARD_INTERACTIVE" && !effectiveSnapshotAccess(context.sub, now).capabilities.includes("puri.plus")) throw new Error("PLUS_ENTITLEMENT_REQUIRED");
+  const access = await getCommercialPlanAccess(businessId, now);
+  const registration = isRegistrationV2Contract(access.snapshot);
   const policy = commercialUsagePolicy();
-  const allowance = context.allocation?.puri;
+  // Keep manually provisioned buckets usable in isolated environments without a policy.
+  if (!registration && !policy) return null;
+  if (!access.has("puri.standard")) throw new Error("COMMERCIAL_ACCESS_REQUIRED");
+  const plus = access.has("puri.plus");
+  if (category !== "STANDARD_INTERACTIVE" && !plus) throw new Error("PLUS_ENTITLEMENT_REQUIRED");
+
+  let trialStart = access.snapshot?.status === "TRIALING" ? access.snapshot.trialStart : null;
+  if (!registration && !trialStart) {
+    const legacy = await prisma.subscription.findUnique({
+      where: { businessId },
+      select: { status: true, isTrial: true, trialEndsAt: true, createdAt: true },
+    });
+    if (legacy && isTrialCurrentlyActive(legacy, now)) trialStart = legacy.createdAt;
+  }
+  const allowance = policy?.[trialStart ? "trial" : "paid"][plus ? "PURAGENDA_PLUS" : "PURAGENDA"]?.puri;
   if (!policy?.global.puri || !allowance?.ALL || !allowance[category]) throw new Error("COMMERCIAL_USAGE_LIMITS_UNDEFINED");
   const month = now.toISOString().slice(0, 7);
   const globalStart = new Date(Date.UTC(now.getUTCFullYear(), now.getUTCMonth(), 1));
-  const keys = [`global:ALL:${month}`, `${businessId}:ALL:${context.period}`, `${businessId}:${category}:${context.period}`];
+  const periodStart = trialStart ?? globalStart;
+  const period = trialStart ? `trial-${trialStart.toISOString()}` : month;
+  const keys = [`global:ALL:${month}`, `${businessId}:ALL:${period}`, `${businessId}:${category}:${period}`];
   await prisma.$transaction(async tx => {
     await tx.$queryRaw`SELECT pg_advisory_xact_lock(726841901)::text`;
     const rows = [
       { key: keys[0], businessId: null, category: "ALL", periodStart: globalStart, ...policy.global.puri! },
-      { key: keys[1], businessId, category: "ALL", periodStart: context.periodStart, ...allowance.ALL! },
-      { key: keys[2], businessId, category, periodStart: context.periodStart, ...allowance[category]! },
+      { key: keys[1], businessId, category: "ALL", periodStart, ...allowance.ALL! },
+      { key: keys[2], businessId, category, periodStart, ...allowance[category]! },
     ];
     for (const row of rows) await tx.puriBudgetBucket.upsert({ where: { key: row.key }, create: row, update: { limitMicros: row.limitMicros, limitUnits: row.limitUnits } });
   });
-  return { keys, periodStart: context.periodStart };
+  return { keys, periodStart };
 }
 
 export async function ensureCommercialContactPolicy(tx: Prisma.TransactionClient, businessId: string, now: Date) {

@@ -23,7 +23,9 @@ export async function withCommercialPuriUsage<T extends ModelResult>(input: {
   try {
     reservation = await reserveGrowthUsage({ businessId: input.businessId, category: "STANDARD_INTERACTIVE", key: `standard:${randomUUID()}`, inputHash: commercialHash(input.parameters), micros });
   } catch (error) {
-    if (error instanceof Error && error.message === "COMMERCIAL_USAGE_LIMITS_UNDEFINED") throw new GrowthBudgetError(error.message);
+    if (error instanceof Error && ["COMMERCIAL_USAGE_LIMITS_UNDEFINED", "INVALID_COMMERCIAL_USAGE_POLICY"].includes(error.message)) {
+      throw new GrowthBudgetError(error.message);
+    }
     throw error;
   }
   // A reservation can wait behind another transaction. Never reuse the grant

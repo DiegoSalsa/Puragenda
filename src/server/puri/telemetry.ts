@@ -1,4 +1,4 @@
-import { verifiedModelMicros } from "./growth/pricing";
+import { configuredModelPrice, verifiedModelMicros } from "./growth/pricing";
 export const PURI_ANALYTICS_TIMEZONE = "America/Santiago";
 export const PURI_HABITUAL_DAYS = 3;
 export const PURI_HABITUAL_WINDOW_DAYS = 7;
@@ -77,19 +77,20 @@ export function requestStatus(calls: PuriToolTelemetry[]): PuriRequestStatus {
   return "SUCCESS";
 }
 
-type ModelPrice = { input: number; output: number; cachedInput?: number };
 export function estimatePuriCostUsd(usage: Pick<PuriTelemetry, "model" | "promptTokens" | "completionTokens" | "cachedTokens" | "cacheWriteTokens" | "serviceTier">): number | null {
   if (usage.serviceTier === "default") {
     const verified = verifiedModelMicros(usage.model, usage.promptTokens, usage.completionTokens, usage.cachedTokens, usage.cacheWriteTokens);
     if (verified !== null) return verified / 1e6;
   }
-  // Exact model prices are configured centrally; missing prices remain unknown.
-  let prices: Record<string, ModelPrice>;
-  try { prices = JSON.parse(process.env.PURI_MODEL_PRICES_USD_PER_MILLION ?? "{}") as Record<string, ModelPrice>; }
-  catch { return null; }
-  const price = prices[usage.model];
-  if (!price || !Number.isFinite(price.input) || !Number.isFinite(price.output) || price.input < 0 || price.output < 0
-    || (price.cachedInput !== undefined && (!Number.isFinite(price.cachedInput) || price.cachedInput < 0))) return null;
+  const price = configuredModelPrice(usage.model);
+  if (!price) return null;
   const cached = Math.min(usage.cachedTokens, usage.promptTokens);
-  return ((usage.promptTokens - cached) * price.input + cached * (price.cachedInput ?? price.input) + usage.completionTokens * price.output) / 1_000_000;
+  const uncached = usage.promptTokens - cached;
+  const writes = usage.cacheWriteTokens;
+  if (writes !== undefined && (!Number.isSafeInteger(writes) || writes < 0 || writes > uncached)) return null;
+  const cacheWritePrice = price.cacheWrite ?? price.input;
+  const inputCost = writes === undefined
+    ? uncached * Math.max(price.input, cacheWritePrice)
+    : (uncached - writes) * price.input + writes * cacheWritePrice;
+  return (inputCost + cached * (price.cachedInput ?? price.input) + usage.completionTokens * price.output) / 1_000_000;
 }

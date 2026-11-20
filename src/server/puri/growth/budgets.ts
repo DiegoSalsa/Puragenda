@@ -6,7 +6,7 @@ import {
   commercialInteger,
 } from "@/server/services/commercial-internal";
 import { estimatePuriCostUsd } from "../telemetry";
-import { PLUS_VERIFIED_PRICE, verifiedModelMicros } from "./pricing";
+import { configuredModelPrice, hasVerifiedModelPrice, PLUS_VERIFIED_PRICE, verifiedModelMicros } from "./pricing";
 import {
   assertGrowthSandbox,
   revalidateGrowthScope,
@@ -20,7 +20,6 @@ export type BudgetCategory =
   | "ANALYSIS_SQL"
   | "PROACTIVE_SQL";
 export class GrowthBudgetError extends Error {}
-const usesVerifiedPrice = (model: string) => process.env.PURI_PLUS_VERIFIED_PRICING_ENABLED === "1" && model === PLUS_VERIFIED_PRICE.model;
 export function budgetKeys(
   businessId: string,
   category: BudgetCategory,
@@ -220,7 +219,7 @@ export function knownModelMicros(
     c > i
   )
     return null;
-  if (usesVerifiedPrice(model)) {
+  if (hasVerifiedModelPrice(model)) {
     const writes = usage?.input_tokens_details?.cache_write_tokens;
     return verifiedModelMicros(model, i, o, c, writes);
   }
@@ -229,6 +228,7 @@ export function knownModelMicros(
     promptTokens: i!,
     completionTokens: o!,
     cachedTokens: c,
+    cacheWriteTokens: usage?.input_tokens_details?.cache_write_tokens,
   });
   return usd === null ? null : Math.ceil(usd * 1_000_000);
 }
@@ -238,12 +238,11 @@ export function maximumModelMicros(
   outputTokens = 1200,
 ) {
   // One input token per UTF-8 byte is a deliberately conservative bound, including tool definitions/history.
-  const value = knownModelMicros(model, {
-    input_tokens: requestBytes + 1024,
-    output_tokens: outputTokens,
-    input_tokens_details: { cached_tokens: 0, cache_write_tokens: usesVerifiedPrice(model) ? requestBytes + 1024 : 0 },
-  });
-  return value === null ? null : commercialInteger(Math.max(1, value), 1);
+  const price = hasVerifiedModelPrice(model) ? PLUS_VERIFIED_PRICE : configuredModelPrice(model);
+  if (!price) return null;
+  const inputPrice = Math.max(price.input, price.cachedInput ?? price.input, price.cacheWrite ?? price.input);
+  const value = Math.ceil((requestBytes + 1024) * inputPrice + outputTokens * price.output);
+  return commercialInteger(Math.max(1, value), 1);
 }
 export async function settleGrowthUsage(
   id: string,

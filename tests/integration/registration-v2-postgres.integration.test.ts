@@ -286,4 +286,24 @@ suite("Next registration and real local trial lifecycle", () => {
     await expect(reserveGrowthUsage({ businessId, category: "STANDARD_INTERACTIVE", key: randomUUID(), inputHash: "synthetic", micros: 1, now: sub.trialEnd! })).rejects.toThrow("COMMERCIAL_ACCESS_REQUIRED");
     expect(await prisma.puriUsageReservation.count({ where: { businessId } })).toBe(2);
   });
+  it("allocates Standard Puri budgets for a paid legacy subscription without granting Plus", async () => {
+    const owner = await prisma.user.create({ data: {
+      email: `${randomUUID()}@example.invalid`, name: "Synthetic owner", password: "local-only", role: "ADMIN",
+    } });
+    const business = await prisma.business.create({ data: {
+      name: "Synthetic legacy business", slug: randomUUID(), apiKey: randomUUID(), ownerId: owner.id,
+      subscription: { create: { plan: "EQUIPO", status: "ACTIVE", isTrial: false, paymentMethod: "BANK_TRANSFER" } },
+    } });
+    users.push(owner.id); businesses.push(business.id);
+    const budget = { limitUnits: 1, limitMicros: 1000 };
+    process.env.COMMERCIAL_USAGE_POLICY_JSON = JSON.stringify({
+      version: "synthetic-legacy", trial: {}, paid: { PURAGENDA: { puri: { ALL: budget, STANDARD_INTERACTIVE: budget } } },
+      global: { puri: { limitUnits: 1000000, limitMicros: 1000000 } },
+    });
+    const input = { businessId: business.id, category: "STANDARD_INTERACTIVE" as const, key: randomUUID(), inputHash: "puri", micros: 20 };
+    const { reservation } = await reserveGrowthUsage(input);
+    await settleGrowthUsage(reservation.id, { actualMicros: 10 });
+    await expect(reserveGrowthUsage({ ...input, key: randomUUID() })).rejects.toThrow("BUDGET_EXHAUSTED");
+    await expect(reserveGrowthUsage({ ...input, key: randomUUID(), category: "PLUS_INTERACTIVE" })).rejects.toThrow("PLUS_ENTITLEMENT_REQUIRED");
+  });
 });
