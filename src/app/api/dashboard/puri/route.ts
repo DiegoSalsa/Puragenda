@@ -46,13 +46,16 @@ export async function POST(request: NextRequest) {
     const telemetry = emptyPuriTelemetry(PURI_MODEL);
     let answer;
     let errorCode: string | undefined;
+    let budgetDenied = false;
     try {
       answer = parsed.data.context.setup
         ? await answerSetupWithPuri({ context, setup: parsed.data.context.setup, message: parsed.data.message, history: parsed.data.history, telemetry })
         : await answerLearningQuestion(context, parsed.data.message) ?? await answerWithPuri({ context, message: parsed.data.message, history: parsed.data.history, telemetry });
     } catch (error) {
-      if (error instanceof SetupError || error instanceof GrowthBudgetError || (error instanceof PuriAccessError && !["MODEL_INCOMPLETE", "INVALID_MODEL_RESULT"].includes(error.code))) throw error;
-      errorCode = error instanceof Error && error.message === "PURI_NOT_CONFIGURED" ? "NOT_CONFIGURED"
+      if (error instanceof SetupError || (error instanceof PuriAccessError && !["MODEL_INCOMPLETE", "INVALID_MODEL_RESULT"].includes(error.code))) throw error;
+      budgetDenied = error instanceof GrowthBudgetError;
+      errorCode = budgetDenied && error instanceof GrowthBudgetError ? error.message
+        : error instanceof Error && error.message === "PURI_NOT_CONFIGURED" ? "NOT_CONFIGURED"
         : error instanceof Error && ["APIConnectionTimeoutError", "TimeoutError", "AbortError"].includes(error.name) ? "MODEL_TIMEOUT"
         : "MODEL_OR_PROVIDER_ERROR";
     }
@@ -76,7 +79,9 @@ export async function POST(request: NextRequest) {
       }, select: { id: true } });
       responseId = record.id;
     } catch { console.error("[puri] telemetry write failed"); }
-    if (errorCode) return Response.json({ code: errorCode === "NOT_CONFIGURED" ? "NOT_CONFIGURED" : "UNAVAILABLE" }, { status: 503 });
+    if (errorCode) return Response.json({
+      code: budgetDenied || errorCode === "NOT_CONFIGURED" ? errorCode : "UNAVAILABLE",
+    }, { status: errorCode === "BUDGET_EXHAUSTED" ? 429 : 503 });
     return Response.json({ answer, responseId }, { headers: { "Cache-Control": "private, no-store" } });
   } catch (error) {
     if (error instanceof SetupError) return Response.json({ code: "SETUP_ERROR", error: error.message }, { status: error.status });
