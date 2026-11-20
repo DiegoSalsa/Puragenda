@@ -2,6 +2,7 @@
 import { useTranslations } from "next-intl";
 
 import { LocalizedText } from "@/components/i18n/localized-text";
+import { ChristmasSeal } from "@/components/dashboard/christmas-celebrations";
 
 import { useEffect, useRef, useState } from "react";
 import { Check, Coffee, Copy, Loader2, Save, Sparkles } from "@/components/icons/hover-icons";
@@ -293,7 +294,7 @@ export function BusinessHoursEditor({ initialHours, locations = [], onSave, onDr
         {saving ? (
           <Loader2 className="h-4 w-4 animate-spin" />
         ) : saved ? (
-          <Check className="h-4 w-4" />
+          <ChristmasSeal fallback={<Check className="h-4 w-4" />} />
         ) : (
           <Save className="h-4 w-4" />
         )}

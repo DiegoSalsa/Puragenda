@@ -962,10 +962,17 @@ model Business {
   giftCards                   GiftCard[]
   bookingFeedbacks            BookingFeedback[]
   websitePurchaseIntent       WebsitePurchaseIntent?
+  dashboardAppearance         BusinessDashboardAppearance?
 
   @@index([ownerId])
   @@index([referredByAffiliateId])
   @@index([loyaltyRewardServiceId])
+}
+
+model BusinessDashboardAppearance {
+  businessId       String   @id
+  christmasEnabled Boolean  @default(true)
+  business         Business @relation(fields: [businessId], references: [id], onDelete: Cascade)
 }
 
 // A business is the commercial account. A location is the physical place where

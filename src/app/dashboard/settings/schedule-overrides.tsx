@@ -2,6 +2,7 @@
 import { useTranslations } from "next-intl";
 
 import { LocalizedText } from "@/components/i18n/localized-text";
+import { ChristmasSeal } from "@/components/dashboard/christmas-celebrations";
 
 import { useState, useEffect, useCallback } from "react";
 import {
@@ -477,7 +478,7 @@ export function ScheduleOverridesEditor({ locations }: { locations: { id: string
               )}
               {success && (
                 <p className="flex items-center gap-1 text-xs font-medium text-emerald-500">
-                  <Check className="h-3.5 w-3.5" /> {success}
+                  <ChristmasSeal fallback={<Check className="h-3.5 w-3.5" />} /> {success}
                 </p>
               )}
 

@@ -2,6 +2,7 @@
 import { useTranslations } from "next-intl";
 
 import { LocalizedText } from "@/components/i18n/localized-text";
+import { ChristmasSeal } from "@/components/dashboard/christmas-celebrations";
 
 import { useState } from "react";
 import { Loader2, Save } from "@/components/icons/hover-icons";
@@ -127,7 +128,10 @@ export function BusinessCountryEditor({
           <LocalizedText id="E-UaIQ9F7RsJ" />
         </button>
       </div>
-      {message && <p className={`text-sm ${message.type === "success" ? "text-emerald-400" : "text-red-400"}`}>{message.text}</p>}
+      {message && <p className={`text-sm ${message.type === "success" ? "text-emerald-400" : "text-red-400"}`}>
+        {message.type === "success" && <><ChristmasSeal />{" "}</>}
+        {message.text}
+      </p>}
     </div>
   );
 }

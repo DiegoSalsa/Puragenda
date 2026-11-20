@@ -1,0 +1,9 @@
+@media (40rem <= width < 48rem) {
+  .puri-launcher.puri-launcher--hide-on-mobile-today {
+    display: none;
+  }
+
+  .dashboard-content:has(.today-screen) {
+    padding-bottom: calc(var(--floating-cookie-clearance) + 1rem);
+  }
+}

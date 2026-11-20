@@ -36,7 +36,7 @@ function cardLabel(card: PuriCard, locale: string) {
   return new Intl.DateTimeFormat(locale, { weekday: "long", day: "numeric", month: "long", timeZone: "UTC" }).format(new Date(`${card.label}T12:00:00.000Z`));
 }
 
-export function PuriAssistant() {
+export function PuriAssistant({ christmas = false }: { christmas?: boolean }) {
   const t = useTranslations("dashboard.puri");
   const locale = useLocale();
   const pathname = usePathname();
@@ -178,7 +178,7 @@ export function PuriAssistant() {
     : t("thinking");
 
   return <>
-    {open && createPortal(<div className="fixed inset-0 z-[10000] bg-black/45" onMouseDown={(event) => { if (event.target === event.currentTarget) setOpen(false); }}>
+    {open && createPortal(<div className={`puri-dialog-backdrop fixed inset-0 z-[10000] bg-black/45 ${christmas ? "dashboard-christmas" : ""}`} onMouseDown={(event) => { if (event.target === event.currentTarget) setOpen(false); }}>
       <aside ref={panelRef} role="dialog" aria-modal="true" aria-labelledby={titleId} className="absolute inset-0 flex min-h-0 flex-col overflow-hidden border-black bg-[#FFFCF5] text-[#171717] shadow-[-7px_7px_0_#171717] sm:inset-auto sm:bottom-[max(1rem,env(safe-area-inset-bottom))] sm:right-[max(1rem,env(safe-area-inset-right))] sm:h-[min(780px,calc(100dvh-2rem))] sm:w-[min(470px,calc(100vw-2rem))] sm:rounded-[1.75rem] sm:border-[3px]">
         <header className="flex shrink-0 items-center justify-between gap-3 border-b-[3px] border-black bg-[#E9D8FF] px-4 pb-3 pt-[max(0.75rem,env(safe-area-inset-top))] sm:px-5 sm:py-3">
           <div className="flex min-w-0 items-center gap-2.5"><div className="flex h-12 w-12 shrink-0 items-center justify-center rounded-xl border-2 border-black bg-white shadow-[2px_2px_0_#171717]"><PuriMascot variant="default" compact className="h-11 w-11" /></div><div><h2 id={titleId} className="text-lg font-black leading-none">Puri</h2><p className="mt-1 text-xs font-semibold text-[#5B486C]">{t("subtitle")}</p></div></div>

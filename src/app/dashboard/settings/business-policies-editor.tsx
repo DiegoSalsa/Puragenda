@@ -2,6 +2,7 @@
 import { useTranslations } from "next-intl";
 
 import { LocalizedText } from "@/components/i18n/localized-text";
+import { ChristmasSeal } from "@/components/dashboard/christmas-celebrations";
 
 import { useState, useTransition } from "react";
 import { updateBusinessPoliciesAction } from "@/server/actions/dashboard.actions";
@@ -235,7 +236,7 @@ export function BusinessPoliciesEditor({
         </button>
         {result && (
           <span className={`flex items-center gap-1.5 text-sm ${result.ok ? "text-emerald-500" : "text-red-500"}`}>
-            {result.ok ? <CheckCircle2 className="h-4 w-4" /> : <AlertCircle className="h-4 w-4" />}
+            {result.ok ? <ChristmasSeal fallback={<CheckCircle2 className="h-4 w-4" />} /> : <AlertCircle className="h-4 w-4" />}
             {result.msg}
           </span>
         )}

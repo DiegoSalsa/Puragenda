@@ -8,6 +8,7 @@ import { Coins, Trophy, Loader2, ChevronRight, ChevronLeft, Gift, Gem, Star, Awa
 import type { LucideIcon } from "@/components/icons/hover-icons";
 import { spinRouletteAction, redeemFixedDiscountAction, activatePrizeAction } from "./actions";
 import { RouletteMinigame } from "@/components/dashboard/roulette-minigame";
+import { ChristmasStars } from "@/components/dashboard/christmas-celebrations";
 
 interface PrizeData {
   id: string;
@@ -219,7 +220,7 @@ export function RewardsClient({
           <div className="mt-0.5 flex h-5 w-5 shrink-0 items-center justify-center rounded-full bg-green-500/20">
             <Trophy className="h-3 w-3 text-green-500" />
           </div>
-          <p className="flex-1 text-sm font-medium text-green-600 dark:text-green-400 leading-snug">{successMsg}</p>
+          <p className="flex-1 text-sm font-medium text-green-600 dark:text-green-400 leading-snug">{successMsg} <ChristmasStars /></p>
           <button onClick={() => setSuccessMsg(null)} className="mt-0.5 shrink-0 text-green-400 hover:text-green-600 transition-colors">
             <X className="h-4 w-4" />
           </button>

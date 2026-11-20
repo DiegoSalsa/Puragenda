@@ -28,6 +28,13 @@ import { getCommercialPlanAccess } from "@/server/services/commercial-plan-acces
 import { resolveWebsiteCommercialAccess } from "@/server/websites/commercial-access";
 import { getCurrentAdminSessionUser } from "@/server/auth/admin-session";
 import { exitImpersonationAction } from "@/server/actions/impersonate.actions";
+import { ChristmasSnow } from "@/components/dashboard/christmas-snow";
+import { ChristmasSoundToggle, DashboardChristmasProvider } from "@/components/dashboard/christmas-effects";
+import { ChristmasThemeNotice } from "@/components/dashboard/christmas-theme-notice";
+import { DASHBOARD_PERMISSIONS } from "@/core/permissions";
+import { CHRISTMAS_DASHBOARD_END_DATE, getBusinessChristmasPreference, isChristmasDashboardSeason } from "@/server/services/dashboard-appearance.service";
+import "./dashboard-layout.css";
+import "./dashboard-christmas.css";
 
 export const metadata: Metadata = {
   title: "Dashboard",
@@ -121,11 +128,15 @@ export default async function DashboardLayout({
     : null;
   const LATEST_CHANGELOG_VERSION = CHANGELOG_DATA[0].version;
   const shouldShowChangelogPopup = !setupPriority && (!!websiteReminder || changelogSeenVersion !== LATEST_CHANGELOG_VERSION);
+  const christmas = business && isChristmasDashboardSeason()
+    ? await getBusinessChristmasPreference(business.id)
+    : false;
 
   return (
     <RequestIntlProvider>
     <DashboardOverlayProvider initialChangelogOpen={shouldShowChangelogPopup} setupPriority={setupPriority}>
-      <div className="fixed inset-0 flex min-h-[100dvh] min-w-0 max-w-full overflow-hidden bg-background">
+      <DashboardChristmasProvider active={christmas} businessId={business?.id ?? ""}>
+      <div className={`fixed inset-0 flex min-h-[100dvh] min-w-0 max-w-full flex-col overflow-hidden bg-background md:flex-row ${christmas ? "dashboard-christmas" : ""}`}>
         <DashboardSidebar
           userName={user.name}
           widgetSlug={business?.slug}
@@ -137,21 +148,34 @@ export default async function DashboardLayout({
           websiteEnabled={websiteEnabled}
           upgradeToPlus={!!business && business.ownerId === user.id && commercialAccess?.snapshot?.planCode !== "PURAGENDA_PLUS"}
         />
-        <div className="flex min-w-0 flex-1 flex-col">
+        <div className="flex min-h-0 min-w-0 flex-1 flex-col">
           {impersonationBanner}
-          <header className="hidden h-14 shrink-0 items-center justify-end border-b border-border/70 bg-background/95 px-5 backdrop-blur md:flex">
+          <header data-dashboard-top-bar className="hidden h-14 shrink-0 items-center justify-end gap-2 border-b border-border/70 bg-background/95 px-5 backdrop-blur md:flex">
+            <ChristmasSoundToggle />
             <ContextualHelpButton />
           </header>
           <main id="tutorial-main" className="min-h-0 min-w-0 flex-1 overflow-x-hidden overflow-y-auto">
-            <div className="dashboard-content w-full min-w-0 max-w-full px-4 pt-[72px] sm:px-6 sm:pt-6 xl:px-8 xl:pt-8">{children}</div>
+            <div className="dashboard-content w-full min-w-0 max-w-full px-4 pt-4 sm:px-6 sm:pt-6 xl:px-8 xl:pt-8">{children}</div>
           </main>
         </div>
         <div className="md:hidden">
+          <ChristmasSoundToggle mobile />
           <ContextualHelpButton />
         </div>
-        {business ? <><PuriAssistant /><LearningProvider /></> : null}
+        {christmas && <ChristmasSnow />}
+        {business ? <><PuriAssistant christmas={christmas} /><LearningProvider /></> : null}
         <ChangelogPopup websiteLaunch={websiteLaunch} websiteReminder={websiteReminder} releaseAnnouncementPending={changelogSeenVersion !== LATEST_CHANGELOG_VERSION} />
+        {christmas && business && (
+          <ChristmasThemeNotice
+            key={`${business.id}:${user.id}`}
+            businessId={business.id}
+            userId={user.id}
+            endDate={CHRISTMAS_DASHBOARD_END_DATE}
+            canManageSettings={permissions.includes(DASHBOARD_PERMISSIONS.SETTINGS_MANAGE)}
+          />
+        )}
       </div>
+      </DashboardChristmasProvider>
     </DashboardOverlayProvider>
     </RequestIntlProvider>
   );

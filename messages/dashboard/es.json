@@ -1,4 +1,17 @@
 {
+  "christmas": {
+    "noticeTitle": "Diciembre en Papel",
+    "noticeDescription": "El diseño navideño es temporal y estará disponible hasta el {date}.",
+    "noticeOptOut": "¿Quieres desactivarlo? <settings>Ve a Configuración</settings>.",
+    "noticeOptOutTeam": "Una persona con acceso a Configuración puede desactivar el diseño para todo el equipo.",
+    "noticeDismiss": "Entendido",
+    "sound": "Sonido navideño",
+    "title": "Tema navideño",
+    "description": "Activa Diciembre en Papel durante la temporada para todo el equipo.",
+    "on": "Activado",
+    "off": "Desactivado",
+    "error": "No pudimos guardar el cambio. Inténtalo de nuevo."
+  },
   "storyDesign": {"customize":"Personalizar diseño","background":"Fondo","artBackground":"Fondo artístico","solidBackground":"Color sólido","accentColor":"Principal","secondaryColor":"Secundario","canvasColor":"Fondo","textColor":"Texto","showLogo":"Mostrar logo","showServices":"Mostrar servicios","cta":"Llamado a reservar","defaultCta":"Reserva desde el enlace de nuestra bio","ctaMode":"Destino de la historia","linkSticker":"Sticker de enlace","bioLink":"Enlace en bio","linkStickerHint":"Dejaremos un espacio limpio para que añadas el sticker de enlace al publicar en Instagram.","bioLinkHint":"La historia indicará que la reserva está disponible desde el enlace de tu biografía.","stickerDefaultCta":"Reserva aquí","stickerArea":"Tu sticker aquí","availabilityContent":"Contenido de la historia","withSchedule":"Con horarios","withoutSchedule":"Sin horarios","withScheduleHint":"Muestra días y horas disponibles.","withoutScheduleHint":"Promociona el servicio y lleva a reservar.","visibleInfo":"Información visible","showProfessional":"Profesional","showLocationName":"Sucursal","showAddress":"Dirección","individualDefaultHint":"En el plan Individual ocultamos el profesional por defecto; puedes mostrarlo si forma parte de tu marca."},
   "shell": {
     "logout": "Cerrar sesión",
