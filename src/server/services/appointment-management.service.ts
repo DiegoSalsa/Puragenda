@@ -65,7 +65,7 @@ type ResolvedManagedAppointment = {
 
 type ManagedAppointmentResolutionError = {
   error: string;
-  code?: "OUTSIDE_SCHEDULE";
+  code?: "OUTSIDE_SCHEDULE" | "APPOINTMENT_OVERLAP";
   requiresConfirmation?: boolean;
 };
 
@@ -76,6 +76,22 @@ function minutesOfDay(date: Date) {
 function parseClock(value: string) {
   const [hours, minutes] = value.split(":").map(Number);
   return hours * 60 + minutes;
+}
+
+function manualConflictMessage(
+  conflict: { customerName: string; startTime: Date; endTime: Date },
+  timezone: string,
+) {
+  const formatTime = (value: Date) => new Intl.DateTimeFormat("es-CL", {
+    timeZone: timezone,
+    hour: "2-digit",
+    minute: "2-digit",
+    hourCycle: "h23",
+  }).format(value);
+  const source = conflict.customerName === "Google Calendar"
+    ? "un evento de Google Calendar"
+    : "una cita existente";
+  return `La reserva se cruza con ${source} de ${formatTime(conflict.startTime)} a ${formatTime(conflict.endTime)}. ¿Agendar igualmente?`;
 }
 
 export async function resolveManagedAppointment(
@@ -302,7 +318,9 @@ export async function resolveManagedAppointment(
   }
 
   const [appointmentCollision, scheduleBlock] = await Promise.all([
-    checkAppointmentCollision(business.id, requestedStart, endTime, staff.id, excludeAppointmentId, location?.id),
+    input.allowConflictingAppointments === true
+      ? Promise.resolve({ hasCollision: false as const })
+      : checkAppointmentCollision(business.id, requestedStart, endTime, staff.id, excludeAppointmentId, location?.id),
     prisma.scheduleBlock.findFirst({
       where: {
         staffId: staff.id,
@@ -315,7 +333,13 @@ export async function resolveManagedAppointment(
     }),
   ]);
 
-  if (appointmentCollision.hasCollision) return { error: "Ese horario ya está ocupado" };
+  if (appointmentCollision.hasCollision && appointmentCollision.conflictingAppointment) {
+    return {
+      error: manualConflictMessage(appointmentCollision.conflictingAppointment, timezone),
+      code: "APPOINTMENT_OVERLAP",
+      requiresConfirmation: true,
+    };
+  }
   if (scheduleBlock) return { error: "El profesional tiene un bloqueo en ese horario" };
 
   return {

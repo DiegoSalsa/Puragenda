@@ -24,9 +24,11 @@ describe("validación de agenda interna", () => {
       ...valid,
       additionalServiceIds: ["service_2", "service_3"],
       allowOutsideSchedule: true,
+      allowConflictingAppointments: true,
     });
     expect(result.additionalServiceIds).toEqual(["service_2", "service_3"]);
     expect(result.allowOutsideSchedule).toBe(true);
+    expect(result.allowConflictingAppointments).toBe(true);
   });
 
   it("rechaza datos sin servicio, profesional o correo válido", () => {

@@ -98,6 +98,7 @@ export async function POST(request: NextRequest) {
       status: "CONFIRMED",
       internalNotes: parsed.data.internalNotes,
       allowPrioritySlots: true,
+      allowConflictingAppointments: parsed.data.allowConflictingAppointments,
     });
 
     if (!created.success) return Response.json({ error: created.error }, { status: 409 });
