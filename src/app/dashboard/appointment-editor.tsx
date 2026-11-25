@@ -52,6 +52,7 @@ export interface EditableAppointment {
   customerPhone: string | null;
   clientId: string | null;
   serviceId: string;
+  additionalServiceIds?: string[];
   staffId: string | null;
   startTime: string;
   internalNotes: string | null;
@@ -98,6 +99,7 @@ export function AppointmentEditor({
   const [customerEmail, setCustomerEmail] = useState(appointment?.customerEmail ?? "");
   const [customerPhone, setCustomerPhone] = useState(appointment?.customerPhone ?? "");
   const [serviceId, setServiceId] = useState(appointment?.serviceId ?? initialServiceId ?? services[0]?.id ?? "");
+  const [additionalServiceIds, setAdditionalServiceIds] = useState<string[]>(appointment?.additionalServiceIds ?? []);
   const [staffId, setStaffId] = useState(appointment?.staffId ?? initialStaffId ?? staff[0]?.id ?? "");
   const [date, setDate] = useState(format(initialDate, "yyyy-MM-dd"));
   const [time, setTime] = useState(format(initialDate, "HH:mm"));
@@ -108,21 +110,27 @@ export function AppointmentEditor({
   const [internalNotes, setInternalNotes] = useState(appointment?.internalNotes ?? "");
   const [sendConfirmation, setSendConfirmation] = useState(true);
   const [error, setError] = useState<string | null>(null);
+  const [scheduleWarning, setScheduleWarning] = useState<string | null>(null);
   const [pending, startTransition] = useTransition();
 
   const selectedService = services.find((service) => service.id === serviceId);
+  const selectedServices = useMemo(
+    () => [selectedService, ...additionalServiceIds.map((id) => services.find((service) => service.id === id))]
+      .filter((service): service is AppointmentEditorService => Boolean(service)),
+    [additionalServiceIds, selectedService, services],
+  );
   const eligibleStaff = useMemo(() => {
-    if (!selectedService || selectedService.staffIds.length === 0) return staff;
-    return staff.filter((member) => selectedService.staffIds.includes(member.id));
-  }, [selectedService, staff]);
+    return staff.filter((member) => selectedServices.every((service) => service.staffIds.length === 0 || service.staffIds.includes(member.id)));
+  }, [selectedServices, staff]);
   const selectedAlternatives = selectedService?.optionCategories.flatMap((category) =>
     category.alternatives.filter((alternative) => selectedOptionIds.includes(alternative.id))
   ) ?? [];
   const keepContract = !!appointment && serviceId === appointment.serviceId &&
-    JSON.stringify([...selectedOptionIds].sort()) === JSON.stringify(appointment.selectedOptions.flatMap(option => option.alternativeId ? [option.alternativeId] : []).sort());
-  const totalDuration = keepContract && appointment.totalDuration !== undefined ? appointment.totalDuration : (selectedService?.duration ?? 0) +
+    JSON.stringify([...selectedOptionIds].sort()) === JSON.stringify(appointment.selectedOptions.flatMap(option => option.alternativeId ? [option.alternativeId] : []).sort()) &&
+    JSON.stringify([...additionalServiceIds].sort()) === JSON.stringify([...(appointment.additionalServiceIds ?? [])].sort());
+  const totalDuration = keepContract && appointment.totalDuration !== undefined ? appointment.totalDuration : selectedServices.reduce((total, service) => total + service.duration, 0) +
     selectedAlternatives.reduce((sum, alternative) => sum + alternative.durationDelta, 0);
-  const totalPrice = keepContract && appointment.totalPrice !== undefined ? appointment.totalPrice : (selectedService?.price ?? 0) +
+  const totalPrice = keepContract && appointment.totalPrice !== undefined ? appointment.totalPrice : selectedServices.reduce((total, service) => total + service.price, 0) +
     selectedAlternatives.reduce((sum, alternative) => sum + alternative.priceDelta, 0);
 
   function chooseClient(nextId: string) {
@@ -137,11 +145,17 @@ export function AppointmentEditor({
 
   function chooseService(nextServiceId: string) {
     setServiceId(nextServiceId);
+    setAdditionalServiceIds((current) => current.filter((id) => id !== nextServiceId));
     setSelectedOptionIds([]);
     const nextService = services.find((service) => service.id === nextServiceId);
     if (nextService?.staffIds.length && !nextService.staffIds.includes(staffId)) {
       setStaffId(nextService.staffIds.find((id) => staff.some((member) => member.id === id)) ?? "");
     }
+  }
+
+  function chooseAdditionalServices(nextIds: string[]) {
+    setAdditionalServiceIds([...new Set(nextIds)].filter((id) => id !== serviceId));
+    setScheduleWarning(null);
   }
 
   function toggleOption(categoryId: string, alternativeId: string, maxSelections: number) {
@@ -157,9 +171,9 @@ export function AppointmentEditor({
     });
   }
 
-  function handleSubmit(event: React.FormEvent) {
-    event.preventDefault();
+  function submitAppointment(allowOutsideSchedule = false) {
     setError(null);
+    setScheduleWarning(null);
     const startTime = timeZone
       ? fromZonedTime(`${date}T${time}:00`, timeZone)
       : new Date(`${date}T${time}:00`);
@@ -180,6 +194,7 @@ export function AppointmentEditor({
             customerPhone,
             clientId: clientId || undefined,
             serviceId,
+            additionalServiceIds,
             staffId,
             locationId: locationId ?? appointment?.locationId ?? undefined,
             expectedUpdatedAt: appointment?.updatedAt,
@@ -187,17 +202,27 @@ export function AppointmentEditor({
             startTime: startTime.toISOString(),
             ...(canViewInternalNotes ? { internalNotes } : {}),
             sendConfirmation,
+            allowOutsideSchedule,
           }),
         },
       );
       const result = await response.json();
       if (!response.ok) {
+        if (result.code === "OUTSIDE_SCHEDULE" || result.requiresConfirmation) {
+          setScheduleWarning(result.error);
+          return;
+        }
         setError(result.error || t("saveError"));
         return;
       }
       onClose();
       router.refresh();
     });
+  }
+
+  function handleSubmit(event: React.FormEvent) {
+    event.preventDefault();
+    submitAppointment(false);
   }
 
   return (
@@ -248,6 +273,21 @@ export function AppointmentEditor({
                   {eligibleStaff.map((member) => <option key={member.id} value={member.id}>{member.name}</option>)}
                 </select>
               </div>
+
+              <label className="block space-y-1.5">
+                <span className="text-xs font-medium text-muted-foreground">{t("additionalServices")}</span>
+                <select
+                  multiple
+                  value={additionalServiceIds}
+                  onChange={(event) => chooseAdditionalServices(Array.from(event.target.selectedOptions, (option) => option.value))}
+                  className="min-h-24 w-full rounded-xl border border-border bg-background px-3 py-2.5 text-sm"
+                >
+                  {services.filter((service) => service.id !== serviceId).map((service) => (
+                    <option key={service.id} value={service.id}>{service.name}</option>
+                  ))}
+                </select>
+                <span className="text-xs text-muted-foreground">{t("additionalServicesHint")}</span>
+              </label>
 
               {keepContract && <p className="text-xs text-muted-foreground">Se conservan el precio, duración y opciones contratados. {appointment.selectedOptions.map(option => option.alternativeName).filter(Boolean).join(", ")}</p>}
               {selectedService?.optionCategories.map((category) => (
@@ -303,6 +343,15 @@ export function AppointmentEditor({
             </section>
 
             {error && <p className="rounded-xl border border-red-500/20 bg-red-500/10 p-3 text-sm text-red-400">{error}</p>}
+            {scheduleWarning && (
+              <div className="space-y-3 rounded-xl border border-amber-500/30 bg-amber-500/10 p-4 text-sm text-amber-200">
+                <p>{scheduleWarning}</p>
+                <div className="flex flex-col gap-2 sm:flex-row sm:justify-end">
+                  <button type="button" onClick={() => setScheduleWarning(null)} className="rounded-xl border border-border px-4 py-2.5 font-medium text-foreground">{t("reviewSchedule")}</button>
+                  <button type="button" onClick={() => submitAppointment(true)} disabled={pending} className="rounded-xl bg-amber-500 px-4 py-2.5 font-semibold text-black disabled:opacity-50">{t("bookAnyway")}</button>
+                </div>
+              </div>
+            )}
           </div>
 
           <div className="flex flex-col-reverse gap-3 border-t border-border bg-muted/20 px-5 py-4 sm:flex-row sm:justify-end">

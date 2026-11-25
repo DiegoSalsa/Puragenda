@@ -6,6 +6,7 @@ export const managedAppointmentSchema = z.object({
   customerPhone: z.string().trim().max(30).optional().default(""),
   clientId: z.string().trim().min(1).optional(),
   serviceId: z.string().trim().min(1, "Selecciona un servicio"),
+  additionalServiceIds: z.array(z.string().trim().min(1)).max(10, "Puedes añadir hasta 10 servicios adicionales").default([]),
   staffId: z.string().trim().min(1, "Selecciona un profesional"),
   locationId: z.string().trim().min(1).optional(),
   expectedUpdatedAt: z.string().datetime().optional(),
@@ -13,9 +14,10 @@ export const managedAppointmentSchema = z.object({
   startTime: z.string().datetime("La fecha y hora no son válidas"),
   internalNotes: z.string().trim().max(1000).optional().default(""),
   sendConfirmation: z.boolean().default(true),
+  allowOutsideSchedule: z.boolean().default(false),
 });
 
-export type ManagedAppointmentInput = z.infer<typeof managedAppointmentSchema>;
+export type ManagedAppointmentInput = z.input<typeof managedAppointmentSchema>;
 
 export const appointmentSettlementSchema = z.object({
   baseAmount: z.coerce.number().min(0, "El importe base no puede ser negativo").max(100_000_000),

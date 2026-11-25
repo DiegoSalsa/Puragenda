@@ -32,6 +32,7 @@ export type DashboardAppointment = {
   depositReceiptUploadedAt: string | null;
   serviceId: string;
   serviceName: string;
+  additionalServiceIds?: string[];
   staffId: string | null;
   staffName: string;
   selectedOptions?: { alternativeId?: string; categoryName: string; alternativeName: string; priceDelta: number; durationDelta: number }[];
@@ -330,6 +331,7 @@ export function AppointmentDetailDialog({
                 clientId: appointment.clientId,
                 serviceId: appointment.serviceId,
                 serviceName: appointment.serviceName,
+                additionalServiceIds: appointment.additionalServiceIds ?? [],
                 totalPrice: appointment.totalPrice,
                 totalDuration: (new Date(appointment.endTime).getTime() - new Date(appointment.startTime).getTime()) / 60_000,
                 staffId: appointment.staffId,

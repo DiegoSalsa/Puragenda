@@ -55,11 +55,18 @@ type ResolvedManagedAppointment = {
   endTime: Date;
   totalDuration: number;
   totalPrice: number;
+  additionalServiceIds: string[];
   selectedOptions: Prisma.InputJsonValue;
   service: { id: string; name: string };
   staff: { id: string; name: string };
   locationId?: string;
   preserveContract: boolean;
+};
+
+type ManagedAppointmentResolutionError = {
+  error: string;
+  code?: "OUTSIDE_SCHEDULE";
+  requiresConfirmation?: boolean;
 };
 
 function minutesOfDay(date: Date) {
@@ -75,18 +82,20 @@ export async function resolveManagedAppointment(
   business: { id: string; timezone: string; subscription?: { plan: "INDIVIDUAL" | "EQUIPO" | "TEST" } | null },
   input: ManagedAppointmentInput,
   excludeAppointmentId?: string,
-): Promise<{ error: string } | { value: ResolvedManagedAppointment }> {
+): Promise<ManagedAppointmentResolutionError | { value: ResolvedManagedAppointment }> {
   const requestedStart = new Date(input.startTime);
   if (Number.isNaN(requestedStart.getTime()) || requestedStart <= new Date()) {
     return { error: "La cita debe comenzar en una fecha futura" };
   }
 
+  const additionalServiceIds = [...new Set(input.additionalServiceIds ?? [])].filter((id) => id !== input.serviceId);
   const previous = excludeAppointmentId ? await prisma.appointment.findFirst({ where: { id: excludeAppointmentId, businessId: business.id } }) : null;
   const previousOptions = z.array(z.object({ alternativeId: z.string() }).passthrough()).safeParse(previous?.selectedOptions ?? []);
   const oldIds = previousOptions.success ? previousOptions.data.map(o => o.alternativeId).sort() : [];
   const preserveContract = !!previous && previous.serviceId === input.serviceId && previousOptions.success &&
-    JSON.stringify(oldIds) === JSON.stringify([...input.selectedOptionAlternativeIds].sort());
-  const [service, staff, locations, subscription] = await Promise.all([
+    JSON.stringify(oldIds) === JSON.stringify([...(input.selectedOptionAlternativeIds ?? [])].sort()) &&
+    JSON.stringify([...(previous.additionalServiceIds ?? [])].sort()) === JSON.stringify([...additionalServiceIds].sort());
+  const [service, additionalServices, staff, locations, subscription] = await Promise.all([
     prisma.service.findFirst({
       where: { ...(preserveContract ? {} : { isActive: true }), id: input.serviceId, businessId: business.id, bookingMode: "APPOINTMENT" },
       include: {
@@ -95,6 +104,13 @@ export async function resolveManagedAppointment(
           orderBy: { position: "asc" },
           include: { alternatives: { where: { isActive: true }, orderBy: { position: "asc" } } },
         },
+      },
+    }),
+    prisma.service.findMany({
+      where: { id: { in: additionalServiceIds }, businessId: business.id, isActive: true, bookingMode: "APPOINTMENT" },
+      include: {
+        locations: { select: { locationId: true } },
+        optionCategories: { where: { isActive: true }, orderBy: { position: "asc" }, include: { alternatives: { where: { isActive: true }, orderBy: { position: "asc" } } } },
       },
     }),
     prisma.staff.findFirst({
@@ -110,22 +126,24 @@ export async function resolveManagedAppointment(
   ]);
 
   if (!service) return { error: "El servicio no pertenece al negocio" };
+  if (additionalServices.length !== additionalServiceIds.length) return { error: "Uno o más servicios no pertenecen al negocio" };
   if (!staff) return { error: "El profesional no pertenece al negocio o está inactivo" };
   const activeLocations = locations.filter(item => item.isActive);
   const location = input.locationId ? activeLocations.find(item => item.id === input.locationId) : activeLocations.length === 1 ? activeLocations[0] : undefined;
   if ((input.locationId && !location) || (!location && locations.length > 0)) return { error: "Selecciona una sucursal válida" };
   const staffLocation = location ? staff.locations.find(item => item.locationId === location.id) : undefined;
-  if (location && (!staffLocation || !service.locations.some(item => item.locationId === location.id))) {
+  if (location && (!staffLocation || [service, ...additionalServices].some(item => !item.locations.some(assignment => assignment.locationId === location.id)))) {
     return { error: "El servicio o profesional no está asignado a esta sucursal" };
   }
   const timezone = location?.timezone || business.timezone;
 
   const assignedServiceIds = new Set(staff.services.map((item) => item.id));
-  if (assignedServiceIds.size > 0 && !assignedServiceIds.has(service.id)) {
-    return { error: `${staff.name} no realiza el servicio seleccionado` };
+  if (assignedServiceIds.size > 0) {
+    const unassigned = [service, ...additionalServices].filter((item) => !assignedServiceIds.has(item.id));
+    if (unassigned.length > 0) return { error: `${staff.name} no realiza: ${unassigned.map((item) => item.name).join(", ")}` };
   }
 
-  const selectedIds = new Set(input.selectedOptionAlternativeIds);
+  const selectedIds = new Set(input.selectedOptionAlternativeIds ?? []);
   const matchedIds = new Set<string>();
   const selectedOptions: {
     serviceId: string;
@@ -138,8 +156,8 @@ export async function resolveManagedAppointment(
     durationDelta: number;
     isHomeService: boolean;
   }[] = [];
-  let totalDuration = service.duration;
-  let totalPrice = service.price;
+  let totalDuration = [service, ...additionalServices].reduce((total, item) => total + item.duration, 0);
+  let totalPrice = [service, ...additionalServices].reduce((total, item) => total + item.price, 0);
 
   for (const category of preserveContract ? [] : service.optionCategories) {
     const selected = category.alternatives.filter((alternative) => selectedIds.has(alternative.id));
@@ -184,15 +202,17 @@ export async function resolveManagedAppointment(
   const useBusinessScheduleOnly = usesBusinessScheduleOnly(subscription?.plan);
   const effectiveStaffSchedule = staffLocation?.schedule.length ? staffLocation.schedule : staff.schedule;
 
-  if (!isServiceAvailableAtTime({
-    availabilityType: service.availabilityType,
-    specialWeekDays: service.specialWeekDays,
-    specialStartDate: service.specialStartDate?.toISOString().slice(0, 10) ?? null,
-    specialEndDate: service.specialEndDate?.toISOString().slice(0, 10) ?? null,
-    specialStartTime: service.specialStartTime,
-    specialEndTime: service.specialEndTime,
-  }, localStart, localEnd)) {
-    return { error: `${service.name} no está disponible en el día u horario seleccionado` };
+  for (const selectedService of [service, ...additionalServices]) {
+    if (!isServiceAvailableAtTime({
+      availabilityType: selectedService.availabilityType,
+      specialWeekDays: selectedService.specialWeekDays,
+      specialStartDate: selectedService.specialStartDate?.toISOString().slice(0, 10) ?? null,
+      specialEndDate: selectedService.specialEndDate?.toISOString().slice(0, 10) ?? null,
+      specialStartTime: selectedService.specialStartTime,
+      specialEndTime: selectedService.specialEndTime,
+    }, localStart, localEnd)) {
+      return { error: `${selectedService.name} no está disponible en el día u horario seleccionado` };
+    }
   }
 
   // Build a date-only key for override lookups
@@ -224,8 +244,9 @@ export async function resolveManagedAppointment(
     if (businessOverride.startTime && businessOverride.endTime) {
       const starts = minutesOfDay(localStart);
       const ends = minutesOfDay(localEnd);
-      if (starts < parseClock(businessOverride.startTime) || ends > parseClock(businessOverride.endTime)) {
-        return { error: "La cita queda fuera del horario de atención del negocio" };
+      if (starts < parseClock(businessOverride.startTime)) return { error: "La cita comienza antes del horario de atención del negocio" };
+      if (ends > parseClock(businessOverride.endTime) && input.allowOutsideSchedule !== true) {
+        return { error: "El servicio excede el horario de término del negocio. ¿Agendar igualmente?", code: "OUTSIDE_SCHEDULE", requiresConfirmation: true };
       }
       if (businessOverride.breakStart && businessOverride.breakEnd && starts < parseClock(businessOverride.breakEnd) && ends > parseClock(businessOverride.breakStart)) {
         return { error: "La cita se cruza con la pausa del negocio" };
@@ -237,8 +258,9 @@ export async function resolveManagedAppointment(
     if (businessHour) {
       const starts = minutesOfDay(localStart);
       const ends = minutesOfDay(localEnd);
-      if (starts < parseClock(businessHour.startTime) || ends > parseClock(businessHour.endTime)) {
-        return { error: "La cita queda fuera del horario de atención del negocio" };
+      if (starts < parseClock(businessHour.startTime)) return { error: "La cita comienza antes del horario de atención del negocio" };
+      if (ends > parseClock(businessHour.endTime) && input.allowOutsideSchedule !== true) {
+        return { error: "El servicio excede el horario de término del negocio. ¿Agendar igualmente?", code: "OUTSIDE_SCHEDULE", requiresConfirmation: true };
       }
       if (businessHour.breakStart && businessHour.breakEnd && starts < parseClock(businessHour.breakEnd) && ends > parseClock(businessHour.breakStart)) {
         return { error: "La cita se cruza con la pausa del negocio" };
@@ -252,8 +274,9 @@ export async function resolveManagedAppointment(
     if (staffOverride.startTime && staffOverride.endTime) {
       const starts = minutesOfDay(localStart);
       const ends = minutesOfDay(localEnd);
-      if (starts < parseClock(staffOverride.startTime) || ends > parseClock(staffOverride.endTime)) {
-        return { error: `La cita queda fuera del horario de ${staff.name}` };
+      if (starts < parseClock(staffOverride.startTime)) return { error: `La cita comienza antes del horario de ${staff.name}` };
+      if (ends > parseClock(staffOverride.endTime) && input.allowOutsideSchedule !== true) {
+        return { error: `El servicio excede el horario de término de ${staff.name}. ¿Agendar igualmente?`, code: "OUTSIDE_SCHEDULE", requiresConfirmation: true };
       }
       if (staffOverride.breakStart && staffOverride.breakEnd && starts < parseClock(staffOverride.breakEnd) && ends > parseClock(staffOverride.breakStart)) {
         return { error: `La cita se cruza con la pausa de ${staff.name}` };
@@ -264,8 +287,9 @@ export async function resolveManagedAppointment(
     if (!staffDay?.isWorking) return { error: `${staff.name} no trabaja ese día` };
     const starts = minutesOfDay(localStart);
     const ends = minutesOfDay(localEnd);
-    if (starts < parseClock(staffDay.startTime) || ends > parseClock(staffDay.endTime)) {
-      return { error: `La cita queda fuera del horario de ${staff.name}` };
+    if (starts < parseClock(staffDay.startTime)) return { error: `La cita comienza antes del horario de ${staff.name}` };
+    if (ends > parseClock(staffDay.endTime) && input.allowOutsideSchedule !== true) {
+      return { error: `El servicio excede el horario de término de ${staff.name}. ¿Agendar igualmente?`, code: "OUTSIDE_SCHEDULE", requiresConfirmation: true };
     }
     if (
       staffDay.breakStart &&
@@ -300,6 +324,7 @@ export async function resolveManagedAppointment(
       endTime,
       totalDuration,
       totalPrice,
+      additionalServiceIds,
       selectedOptions,
       preserveContract,
       service: { id: service.id, name: service.name },
