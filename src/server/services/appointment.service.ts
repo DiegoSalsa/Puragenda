@@ -82,10 +82,15 @@ export async function checkAppointmentCollision(
         range.startTime.getTime() !== ownGoogleEventRange.startTime.getTime() ||
         range.endTime.getTime() !== ownGoogleEventRange.endTime.getTime(),
     );
-    if (externalGoogleBusy.some((range) => startTime < range.endTime && endTime > range.startTime)) {
+    const conflictingGoogleRange = externalGoogleBusy.find((range) => startTime < range.endTime && endTime > range.startTime);
+    if (conflictingGoogleRange) {
       return {
         hasCollision: true,
-        conflictingAppointment: { customerName: "Google Calendar", startTime, endTime },
+        conflictingAppointment: {
+          customerName: "Google Calendar",
+          startTime: conflictingGoogleRange.startTime,
+          endTime: conflictingGoogleRange.endTime,
+        },
       };
     }
   }
@@ -126,6 +131,7 @@ export async function createAppointment(data: {
   status?: AppointmentStatus;
   internalNotes?: string;
   allowPrioritySlots?: boolean;
+  allowConflictingAppointments?: boolean;
   storyCampaignId?: string;
   contactFlowToken?: string;
 }, options?: { tx?: Prisma.TransactionClient; syncGoogle?: boolean }): Promise<
@@ -133,8 +139,10 @@ export async function createAppointment(data: {
   | { success: false; error: string; code?: string }
 > {
   if (!options?.tx) {
-    const external = await checkAppointmentCollision(data.businessId, data.startTime, data.endTime, data.staffId, undefined, data.locationId);
-    if (external.hasCollision) return { success: false as const, error: "El horario seleccionado ya está ocupado. Por favor selecciona otro horario.", code: "SLOT_CONFLICT" };
+    if (!data.allowConflictingAppointments) {
+      const external = await checkAppointmentCollision(data.businessId, data.startTime, data.endTime, data.staffId, undefined, data.locationId);
+      if (external.hasCollision) return { success: false as const, error: "El horario seleccionado ya está ocupado. Por favor selecciona otro horario.", code: "SLOT_CONFLICT" };
+    }
     try {
       const result = await prisma.$transaction((tx) => createAppointment(data, { tx, syncGoogle: false }));
       if (result.success && options?.syncGoogle !== false && !bookingReviewContext.getStore()) await syncAppointmentToGoogle(result.appointment.id);
@@ -145,6 +153,9 @@ export async function createAppointment(data: {
     }
   }
   const db = options.tx;
+  if (data.allowConflictingAppointments) {
+    await db.$executeRaw`SELECT set_config('puragenda.allow_manual_overlap', 'on', true)`;
+  }
   await fenceBookingOperation(db);
   await db.$queryRaw`SELECT pg_advisory_xact_lock(hashtextextended(${`booking-capacity:${data.businessId}`}, 0))::text`;
   if (bookingContractContext.getStore()) {
@@ -166,23 +177,25 @@ export async function createAppointment(data: {
     if (!availability.slots.some((slot) => slot.startTime === data.startTime.toISOString() && slot.endTime === data.endTime.toISOString())) throw new BookingSelectionError("El horario seleccionado ya no está disponible", "SLOT_CONFLICT", 409);
   }
   // Check collision for the specific staff member (or business-wide if no staff)
-  const { hasCollision } = await checkAppointmentCollision(
-    data.businessId,
-    data.startTime,
-    data.endTime,
-    data.staffId,
-    undefined,
-    data.locationId,
-    db,
-    false,
-  );
+  if (!data.allowConflictingAppointments) {
+    const { hasCollision } = await checkAppointmentCollision(
+      data.businessId,
+      data.startTime,
+      data.endTime,
+      data.staffId,
+      undefined,
+      data.locationId,
+      db,
+      false,
+    );
 
-  if (hasCollision) {
-    return {
-      success: false as const,
-      error: "El horario seleccionado ya está ocupado. Por favor selecciona otro horario.",
-      code: "SLOT_CONFLICT",
-    };
+    if (hasCollision) {
+      return {
+        success: false as const,
+        error: "El horario seleccionado ya está ocupado. Por favor selecciona otro horario.",
+        code: "SLOT_CONFLICT",
+      };
+    }
   }
 
   // Check collision with schedule blocks (breaks)

@@ -111,6 +111,7 @@ export function AppointmentEditor({
   const [sendConfirmation, setSendConfirmation] = useState(true);
   const [error, setError] = useState<string | null>(null);
   const [scheduleWarning, setScheduleWarning] = useState<string | null>(null);
+  const [warningCode, setWarningCode] = useState<"OUTSIDE_SCHEDULE" | "APPOINTMENT_OVERLAP" | null>(null);
   const [pending, startTransition] = useTransition();
 
   const selectedService = services.find((service) => service.id === serviceId);
@@ -156,6 +157,7 @@ export function AppointmentEditor({
   function chooseAdditionalServices(nextIds: string[]) {
     setAdditionalServiceIds([...new Set(nextIds)].filter((id) => id !== serviceId));
     setScheduleWarning(null);
+    setWarningCode(null);
   }
 
   function toggleOption(categoryId: string, alternativeId: string, maxSelections: number) {
@@ -171,9 +173,10 @@ export function AppointmentEditor({
     });
   }
 
-  function submitAppointment(allowOutsideSchedule = false) {
+  function submitAppointment(options: { allowOutsideSchedule?: boolean; allowConflictingAppointments?: boolean } = {}) {
     setError(null);
     setScheduleWarning(null);
+    setWarningCode(null);
     const startTime = timeZone
       ? fromZonedTime(`${date}T${time}:00`, timeZone)
       : new Date(`${date}T${time}:00`);
@@ -202,14 +205,16 @@ export function AppointmentEditor({
             startTime: startTime.toISOString(),
             ...(canViewInternalNotes ? { internalNotes } : {}),
             sendConfirmation,
-            allowOutsideSchedule,
+            allowOutsideSchedule: options.allowOutsideSchedule ?? false,
+            allowConflictingAppointments: options.allowConflictingAppointments ?? false,
           }),
         },
       );
       const result = await response.json();
       if (!response.ok) {
-        if (result.code === "OUTSIDE_SCHEDULE" || result.requiresConfirmation) {
+        if (result.code === "OUTSIDE_SCHEDULE" || result.code === "APPOINTMENT_OVERLAP" || result.requiresConfirmation) {
           setScheduleWarning(result.error);
+          setWarningCode(result.code);
           return;
         }
         setError(result.error || t("saveError"));
@@ -222,7 +227,7 @@ export function AppointmentEditor({
 
   function handleSubmit(event: React.FormEvent) {
     event.preventDefault();
-    submitAppointment(false);
+    submitAppointment();
   }
 
   return (
@@ -348,7 +353,15 @@ export function AppointmentEditor({
                 <p>{scheduleWarning}</p>
                 <div className="flex flex-col gap-2 sm:flex-row sm:justify-end">
                   <button type="button" onClick={() => setScheduleWarning(null)} className="rounded-xl border border-border px-4 py-2.5 font-medium text-foreground">{t("reviewSchedule")}</button>
-                  <button type="button" onClick={() => submitAppointment(true)} disabled={pending} className="rounded-xl bg-amber-500 px-4 py-2.5 font-semibold text-black disabled:opacity-50">{t("bookAnyway")}</button>
+                  <button
+                    type="button"
+                    onClick={() => submitAppointment({
+                      allowOutsideSchedule: warningCode === "OUTSIDE_SCHEDULE",
+                      allowConflictingAppointments: warningCode === "APPOINTMENT_OVERLAP",
+                    })}
+                    disabled={pending}
+                    className="rounded-xl bg-amber-500 px-4 py-2.5 font-semibold text-black disabled:opacity-50"
+                  >{t("bookAnyway")}</button>
                 </div>
               </div>
             )}

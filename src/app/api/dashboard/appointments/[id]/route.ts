@@ -493,6 +493,10 @@ export async function PUT(
         });
       }
 
+      if (parsed.data.allowConflictingAppointments) {
+        await tx.$executeRaw`SELECT set_config('puragenda.allow_manual_overlap', 'on', true)`;
+      }
+
       return tx.appointment.update({
         where: { id, businessId: business.id, updatedAt: existing.updatedAt },
         data: {

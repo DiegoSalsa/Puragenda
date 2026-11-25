@@ -15,6 +15,7 @@ export const managedAppointmentSchema = z.object({
   internalNotes: z.string().trim().max(1000).optional().default(""),
   sendConfirmation: z.boolean().default(true),
   allowOutsideSchedule: z.boolean().default(false),
+  allowConflictingAppointments: z.boolean().default(false),
 });
 
 export type ManagedAppointmentInput = z.input<typeof managedAppointmentSchema>;
