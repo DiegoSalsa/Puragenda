@@ -202,6 +202,7 @@ export default async function DashboardPage({ searchParams }: { searchParams: Pr
     depositReceiptUploadedAt: appointment.depositReceiptUploadedAt?.toISOString() ?? null,
     serviceId: appointment.serviceId,
     serviceName: appointment.service.name,
+    additionalServiceIds: appointment.additionalServiceIds,
     staffId: appointment.staffId,
     staffName: appointment.staff?.name || t("unassigned"),
     selectedOptions: (appointment.selectedOptions as { alternativeId?: string; categoryName: string; alternativeName: string; priceDelta: number; durationDelta: number }[] | null) ?? [],

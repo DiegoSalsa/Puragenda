@@ -45,7 +45,12 @@ export async function POST(request: NextRequest) {
     if (parsed.data.internalNotes && !permissions.includes(DASHBOARD_PERMISSIONS.APPOINTMENT_NOTES_VIEW)) return Response.json({ error: "Sin permiso para notas internas" }, { status: 403 });
 
     const resolved = await resolveManagedAppointment(business, parsed.data);
-    if ("error" in resolved) return Response.json({ error: resolved.error }, { status: 409 });
+    if ("error" in resolved) {
+      return Response.json(
+        { error: resolved.error, code: resolved.code, requiresConfirmation: resolved.requiresConfirmation },
+        { status: 409 },
+      );
+    }
 
     let client;
     if (parsed.data.clientId) {
@@ -83,6 +88,7 @@ export async function POST(request: NextRequest) {
       businessId: business.id,
       locationId: resolved.value.locationId,
       serviceId: resolved.value.service.id,
+      additionalServiceIds: resolved.value.additionalServiceIds,
       staffId: resolved.value.staff.id,
       clientId: client.id,
       totalDuration: resolved.value.totalDuration,

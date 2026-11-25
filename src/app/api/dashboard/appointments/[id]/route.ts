@@ -455,7 +455,12 @@ export async function PUT(
       return Response.json({ error: "La cita cambió; actualiza la agenda antes de editar", code: "APPOINTMENT_CHANGED" }, { status: 409 });
     }
     const resolved = await resolveManagedAppointment(business, { ...parsed.data, locationId: parsed.data.locationId ?? existing.locationId ?? undefined }, id);
-    if ("error" in resolved) return Response.json({ error: resolved.error }, { status: 409 });
+    if ("error" in resolved) {
+      return Response.json(
+        { error: resolved.error, code: resolved.code, requiresConfirmation: resolved.requiresConfirmation },
+        { status: 409 },
+      );
+    }
 
     const updated = await prisma.$transaction(async tx => {
       await tx.$queryRaw`SELECT pg_advisory_xact_lock(hashtextextended(${`booking-capacity:${business.id}`}, 0))::text`;
@@ -497,6 +502,7 @@ export async function PUT(
           customerPhone: parsed.data.customerPhone || null,
           clientId: client.id,
           serviceId: resolved.value.service.id,
+          additionalServiceIds: resolved.value.additionalServiceIds,
           staffId: resolved.value.staff.id,
           locationId: resolved.value.locationId,
           startTime: resolved.value.startTime,

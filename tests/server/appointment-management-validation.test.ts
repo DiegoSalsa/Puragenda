@@ -19,6 +19,16 @@ describe("validación de agenda interna", () => {
     expect(result.customerEmail).toBe("camila@example.com");
   });
 
+  it("acepta servicios adicionales y la confirmación fuera de horario", () => {
+    const result = managedAppointmentSchema.parse({
+      ...valid,
+      additionalServiceIds: ["service_2", "service_3"],
+      allowOutsideSchedule: true,
+    });
+    expect(result.additionalServiceIds).toEqual(["service_2", "service_3"]);
+    expect(result.allowOutsideSchedule).toBe(true);
+  });
+
   it("rechaza datos sin servicio, profesional o correo válido", () => {
     const result = managedAppointmentSchema.safeParse({
       ...valid,
